@@ -1,0 +1,40 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Variables de entorno (nunca subir secretos)
+.env
+.env.local
+.env.*.local
+*.env.local
+backend/.env
+
+# Builds
+dist/
+build/
+dist-app/
+.next/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Runtime
+uploads/
+coverage/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+*.pem
+
+# Prisma
+backend/prisma/migrations/*.sql.bak
+
+# Electron packaged
+dist-app/
+release/

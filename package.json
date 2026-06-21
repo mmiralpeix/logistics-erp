@@ -1,0 +1,21 @@
+{
+  "name": "logisticspro-erp",
+  "version": "1.0.0",
+  "description": "LogisticsPro ERP - Sistema de Gestión Logística Empresarial",
+  "main": "electron/main.js",
+  "author": "LogisticsPro",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "electron": "electron .",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "dist:win": "npm run build && electron-builder --win --x64",
+    "dist:preview": "electron-builder --win --x64 --dir"
+  },
+  "devDependencies": {
+    "electron": "^29.4.0",
+    "electron-builder": "^24.13.3"
+  }
+}

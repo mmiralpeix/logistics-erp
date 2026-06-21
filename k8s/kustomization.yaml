@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: logistics-erp
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - secrets.yaml
+  - postgres.yaml
+  - redis.yaml
+  - backend.yaml
+  - frontend.yaml
+  - ingress.yaml
+
+# Image overrides for production
+images:
+  - name: logistics-erp-backend
+    newTag: latest
+  - name: logistics-erp-frontend
+    newTag: latest
+
+# Common labels applied to all resources
+commonLabels:
+  project: logistics-erp
+  managed-by: kustomize

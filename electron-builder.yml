@@ -1,0 +1,48 @@
+appId: com.logisticspro.erp
+productName: LogisticsPro ERP
+copyright: "Copyright © 2024 LogisticsPro"
+
+# Archivos del proceso principal de Electron
+files:
+  - electron/**/*
+
+# Recursos extra empaquetados fuera del asar
+extraResources:
+  - from: backend
+    to: app/backend
+    filter:
+      - "dist/**/*"
+      - "node_modules/**/*"
+      - "prisma/**/*"
+      - ".env"
+      - "package.json"
+  - from: frontend
+    to: app/frontend
+    filter:
+      - ".next/**/*"
+      - "public/**/*"
+      - "package.json"
+      - ".env.local"
+
+# Configuración Windows
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: electron/icon.ico
+
+# Instalador NSIS (Windows)
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "LogisticsPro ERP"
+  runAfterFinish: true
+  installerHeader: electron/installer-header.bmp
+
+# Carpeta de salida
+directories:
+  output: dist-app
+  buildResources: build

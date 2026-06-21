@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(run)",
+      "Skill(run:*)",
+      "PowerShell(docker info 2>&1)",
+      "PowerShell(Get-Command docker -ErrorAction SilentlyContinue; Get-Item \"C:\\\\Program Files\\\\Docker\\\\Docker\\\\Docker Desktop.exe\" -ErrorAction SilentlyContinue; Get-Item \"$env:LOCALAPPDATA\\\\Programs\\\\Docker\\\\Docker\\\\Docker Desktop.exe\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\\" -Directory | Select-Object Name; Get-ChildItem \"$env:LOCALAPPDATA\\\\Programs\\\\\" -Directory -ErrorAction SilentlyContinue | Select-Object Name)",
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "PowerShell(wsl -- docker --version 2>&1)",
+      "PowerShell(winget --version 2>&1)",
+      "PowerShell(winget install PostgreSQL.PostgreSQL.16 --accept-source-agreements --accept-package-agreements 2>&1)",
+      "PowerShell($pgPath = \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\"; if \\(Test-Path $pgPath\\) { \"Found: $pgPath\" } else { Get-ChildItem \"C:\\\\Program Files\\\\PostgreSQL\\\\\" -ErrorAction SilentlyContinue })",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\"; $env:PGPASSWORD = \"\"; & psql -U postgres -c \"CREATE USER logistics_user WITH PASSWORD 'logistics_pass_2024';\" 2>&1; & psql -U postgres -c \"CREATE DATABASE logistics_erp OWNER logistics_user;\" 2>&1; & psql -U postgres -c \"GRANT ALL PRIVILEGES ON DATABASE logistics_erp TO logistics_user;\" 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\"; $env:PGPASSWORD = \"postgres\"; & \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\\\\psql.exe\" -U postgres -c \"SELECT version\\(\\);\" 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\manum\\\\logistics-erp\\\\backend\"; $env:DATABASE_URL = \"postgresql://logistics_user:logistics_pass_2024@localhost:5432/logistics_erp\"; npx prisma migrate deploy 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\manum\\\\logistics-erp\\\\backend\"; $env:DATABASE_URL = \"postgresql://logistics_user:logistics_pass_2024@localhost:5432/logistics_erp\"; npx prisma db push 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\manum\\\\logistics-erp\\\\backend\"; $env:DATABASE_URL = \"postgresql://logistics_user:logistics_pass_2024@localhost:5432/logistics_erp\"; npx ts-node prisma/seed.ts 2>&1)",
+      "PowerShell(Set-Location \"c:\\\\Users\\\\manum\\\\logistics-erp\\\\backend\"; $env:DATABASE_URL = \"postgresql://logistics_user:logistics_pass_2024@localhost:5432/logistics_erp\"; npm run start:dev 2>&1)",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3000\" -UseBasicParsing -TimeoutSec 5 2>&1)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:3001/api/auth/login\" -Method POST -ContentType \"application/json\" -Body '{\"email\":\"admin@logistics.com\",\"password\":\"Admin123!\"}' 2>&1)",
+      "PowerShell(Stop-Process -Id 13188 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(\"Proceso detenido\")",
+      "PowerShell(Invoke-WebRequest -Uri \"http://localhost:3000\" -UseBasicParsing -TimeoutSec 5)",
+      "PowerShell(Start-Process -FilePath \"c:\\\\Users\\\\manum\\\\logistics-erp\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" -ArgumentList \".\" -WorkingDirectory \"c:\\\\Users\\\\manum\\\\logistics-erp\")",
+      "PowerShell(Invoke-RestMethod \"http://localhost:3001/api/vehicles?limit=100\" -Headers @{Authorization=\"Bearer $\\(\\( Invoke-RestMethod -Uri 'http://localhost:3001/api/auth/login' -Method POST -ContentType 'application/json' -Body '{\"email\":\"admin@logistics.com\",\"password\":\"Admin123!\"}' \\).access_token\\)\"} | ConvertTo-Json -Depth 2 | Select-Object -First 20)",
+      "PowerShell(gh auth status 2>&1)",
+      "PowerShell(winget install GitHub.cli --accept-source-agreements --accept-package-agreements 2>&1)"
+    ]
+  }
+}

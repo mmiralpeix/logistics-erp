@@ -1,0 +1,613 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  OPERATIONS_MANAGER
+  DISPATCHER
+  DRIVER
+  ACCOUNTANT
+  VIEWER
+}
+
+enum VehicleType {
+  CAMION
+  SEMIRREMOLQUE
+  CAMIONETA
+  EQUIPO_ESPECIAL
+  CISTERNA
+  VOLQUETE
+  ACOPLADO
+}
+
+enum VehicleStatus {
+  DISPONIBLE
+  EN_VIAJE
+  EN_MANTENIMIENTO
+  FUERA_DE_SERVICIO
+  RESERVADO
+}
+
+enum TripStatus {
+  PENDIENTE
+  PROGRAMADO
+  EN_CURSO
+  FINALIZADO
+  CANCELADO
+  DEMORADO
+}
+
+enum MaintenanceType {
+  PREVENTIVO
+  CORRECTIVO
+}
+
+enum MaintenanceStatus {
+  PENDIENTE
+  EN_CURSO
+  COMPLETADO
+  CANCELADO
+}
+
+enum DocumentType {
+  SEGURO
+  ITV
+  RUTA
+  LICENCIA_CONDUCIR
+  CARTA_DE_PORTE
+  REMITO
+  CONTRATO
+  HOJA_RUTA
+  CERTIFICADO_MEDICO
+  HOJA_SEGURIDAD
+  OTRO
+}
+
+enum DangerousGoodsClass {
+  CLASE_1_EXPLOSIVOS
+  CLASE_2_GASES
+  CLASE_3_LIQUIDOS_INFLAMABLES
+  CLASE_4_SOLIDOS_INFLAMABLES
+  CLASE_5_OXIDANTES
+  CLASE_6_TOXICOS
+  CLASE_7_RADIOACTIVOS
+  CLASE_8_CORROSIVOS
+  CLASE_9_VARIOS
+}
+
+enum InvoiceStatus {
+  BORRADOR
+  EMITIDA
+  PAGADA
+  VENCIDA
+  ANULADA
+}
+
+enum InvoiceType {
+  FACTURA_A
+  FACTURA_B
+  FACTURA_C
+  REMITO
+  NOTA_CREDITO
+  NOTA_DEBITO
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  firstName   String
+  lastName    String
+  role        UserRole  @default(VIEWER)
+  phone       String?
+  avatarUrl   String?
+  isActive    Boolean   @default(true)
+  mfaEnabled  Boolean   @default(false)
+  mfaSecret   String?
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  auditLogs     AuditLog[]
+  assignedTrips Trip[]     @relation("DispatcherTrips")
+
+  @@map("users")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  oldValues Json?
+  newValues Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+model Client {
+  id                String   @id @default(cuid())
+  razonSocial       String
+  cuit              String   @unique
+  domicilio         String
+  ciudad            String
+  provincia         String
+  codigoPostal      String?
+  telefono          String?
+  email             String?
+  contactoPrincipal String?
+  condicionIVA      String   @default("RESPONSABLE_INSCRIPTO")
+  categoriaCliente  String   @default("STANDARD")
+  isActive          Boolean  @default(true)
+  notas             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  contacts ClientContact[]
+  contracts Contract[]
+  trips     Trip[]
+  invoices  Invoice[]
+
+  @@map("clients")
+}
+
+model ClientContact {
+  id        String  @id @default(cuid())
+  clientId  String
+  nombre    String
+  cargo     String?
+  telefono  String?
+  email     String?
+  isPrimary Boolean @default(false)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("client_contacts")
+}
+
+model Contract {
+  id          String    @id @default(cuid())
+  clientId    String
+  numero      String    @unique
+  descripcion String?
+  fechaInicio DateTime
+  fechaFin    DateTime?
+  tarifas     Json?
+  condiciones String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  client Client @relation(fields: [clientId], references: [id])
+
+  @@map("contracts")
+}
+
+model Vehicle {
+  id            String        @id @default(cuid())
+  patente       String        @unique
+  marca         String
+  modelo        String
+  anio          Int
+  tipo          VehicleType
+  capacidadKg   Float?
+  capacidadM3   Float?
+  tipoCarga     String?
+  status        VehicleStatus @default(DISPONIBLE)
+  color         String?
+  numeroChasis  String?
+  numeroMotor   String?
+  kilometraje   Float         @default(0)
+  horasMotor    Float         @default(0)
+  propietario   String?
+  isThirdParty  Boolean       @default(false)
+  empresa       String?
+
+  vencimientoSeguro DateTime?
+  vencimientoITV    DateTime?
+  vencimientoRUTA   DateTime?
+  numeroSeguro      String?
+  aseguradora       String?
+
+  isActive  Boolean  @default(true)
+  notas     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents    Document[]
+  maintenances Maintenance[]
+  fuelLogs     FuelLog[]
+  trips        Trip[]        @relation("VehicleTrips")
+  gpsDevice    GPSDevice?
+
+  @@map("vehicles")
+}
+
+model Driver {
+  id          String  @id @default(cuid())
+  dni         String  @unique
+  firstName   String
+  lastName    String
+  telefono    String?
+  email       String?
+  domicilio   String?
+  ciudad      String?
+  provincia   String?
+  cbu         String?
+  cuil        String?
+
+  fechaNacimiento DateTime?
+  fechaIngreso    DateTime?
+
+  licenciaTipo        String?
+  licenciaNumero      String?
+  licenciaVencimiento DateTime?
+
+  habilitadoCargasPeligrosas   Boolean   @default(false)
+  certificadoCargasPeligrosas  DateTime?
+  examenMedicoVencimiento      DateTime?
+  psicofisicoVencimiento       DateTime?
+
+  isActive  Boolean  @default(true)
+  notas     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents  Document[]
+  trips      Trip[]
+  trainings  DriverTraining[]
+  incidents  Incident[]
+
+  @@map("drivers")
+}
+
+model DriverTraining {
+  id          String    @id @default(cuid())
+  driverId    String
+  tipo        String
+  fecha       DateTime
+  vencimiento DateTime?
+  entidad     String?
+  aprobado    Boolean   @default(true)
+  certificado String?
+  notas       String?
+
+  driver Driver @relation(fields: [driverId], references: [id])
+
+  @@map("driver_trainings")
+}
+
+model Trip {
+  id           String     @id @default(cuid())
+  numero       String     @unique
+  clientId     String?
+  vehicleId    String
+  driverId     String
+  dispatcherId String?
+
+  origen      String
+  destino     String
+  origenLat   Float?
+  origenLon   Float?
+  destinoLat  Float?
+  destinoLon  Float?
+
+  fechaSalidaProgramada DateTime
+  fechaLlegadaEstimada  DateTime
+  fechaSalidaReal       DateTime?
+  fechaLlegadaReal      DateTime?
+
+  duracionEstimadaHoras   Float?
+  esperaEnDestinoHoras    Float   @default(0)
+  descansosConductorHoras Float   @default(0)
+  leadTimeTotal           Float?
+  distanciaKm             Float?
+
+  status TripStatus @default(PENDIENTE)
+
+  tipoCarga        String?
+  pesoCarga        Float?
+  volumenCarga     Float?
+  descripcionCarga String?
+
+  esCargaPeligrosa Boolean @default(false)
+  esMineria        Boolean @default(false)
+  esDistribucion   Boolean @default(false)
+
+  tarifaAcordada Float?
+  costoTotal     Float?
+  margenBruto    Float?
+
+  motivoCancelacion String?
+  notas             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  client      Client?  @relation(fields: [clientId], references: [id])
+  vehicle     Vehicle  @relation("VehicleTrips", fields: [vehicleId], references: [id])
+  driver      Driver   @relation(fields: [driverId], references: [id])
+  dispatcher  User?    @relation("DispatcherTrips", fields: [dispatcherId], references: [id])
+
+  dangerousGoods DangerousGoodsDeclaration?
+  costs          TripCost[]
+  checkpoints    TripCheckpoint[]
+  documents      Document[]
+  incidents      Incident[]
+  invoiceItems   InvoiceItem[]
+  fuelLogs       FuelLog[]
+
+  @@index([status])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([fechaSalidaProgramada])
+  @@map("trips")
+}
+
+model TripCheckpoint {
+  id        String    @id @default(cuid())
+  tripId    String
+  nombre    String
+  ubicacion String
+  lat       Float?
+  lon       Float?
+  estimado  DateTime
+  real      DateTime?
+  orden     Int       @default(0)
+  notas     String?
+  createdAt DateTime  @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("trip_checkpoints")
+}
+
+model DangerousGoodsDeclaration {
+  id              String              @id @default(cuid())
+  tripId          String              @unique
+  numeroONU       String
+  clase           DangerousGoodsClass
+  nombreTecnico   String
+  cantidadKg      Float?
+  grupoEmbalaje   String?
+  puntoInflamacion Float?
+
+  hojaSeguridad     Boolean @default(false)
+  equipoObligatorio Boolean @default(false)
+  permisosCompletos Boolean @default(false)
+  cumpleNormativa   Boolean @default(false)
+
+  notas String?
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("dangerous_goods_declarations")
+}
+
+model Maintenance {
+  id        String            @id @default(cuid())
+  vehicleId String
+  tipo      MaintenanceType
+  status    MaintenanceStatus @default(PENDIENTE)
+
+  descripcion  String
+  fecha        DateTime?
+  kmActual     Float?
+  kmProximo    Float?
+  fechaProxima DateTime?
+  horasActual  Float?
+  horasProxima Float?
+
+  taller        String?
+  mecanico      String?
+  costoManoObra Float?
+  costoRepuestos Float?
+  costoTotal    Float?
+
+  notas     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vehicle   Vehicle    @relation(fields: [vehicleId], references: [id])
+  documents Document[]
+
+  @@index([vehicleId])
+  @@index([status])
+  @@map("maintenances")
+}
+
+model FuelLog {
+  id        String @id @default(cuid())
+  vehicleId String
+  tripId    String?
+
+  fecha           DateTime
+  litros          Float
+  precioPorLitro  Float
+  costoTotal      Float
+  kmActual        Float?
+  proveedor       String?
+  tipoCombustible String   @default("DIESEL")
+  estacion        String?
+  factura         String?
+
+  rendimientoKmL Float?
+  esDesvio       Boolean @default(false)
+  notas          String?
+
+  createdAt DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  trip    Trip?   @relation(fields: [tripId], references: [id])
+
+  @@index([vehicleId])
+  @@index([fecha])
+  @@map("fuel_logs")
+}
+
+model Document {
+  id          String       @id @default(cuid())
+  tipo        DocumentType
+  nombre      String
+  descripcion String?
+
+  fileName  String
+  filePath  String
+  fileSize  Int?
+  mimeType  String?
+
+  vehicleId     String?
+  driverId      String?
+  tripId        String?
+  maintenanceId String?
+
+  fechaEmision     DateTime?
+  fechaVencimiento DateTime?
+  isExpired        Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+
+  vehicle     Vehicle?     @relation(fields: [vehicleId], references: [id])
+  driver      Driver?      @relation(fields: [driverId], references: [id])
+  trip        Trip?        @relation(fields: [tripId], references: [id])
+  maintenance Maintenance? @relation(fields: [maintenanceId], references: [id])
+
+  @@map("documents")
+}
+
+model TripCost {
+  id          String   @id @default(cuid())
+  tripId      String
+  categoria   String
+  descripcion String?
+  monto       Float
+  fecha       DateTime @default(now())
+  comprobante String?
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@map("trip_costs")
+}
+
+model Invoice {
+  id       String        @id @default(cuid())
+  numero   String        @unique
+  clientId String
+  tipo     InvoiceType   @default(FACTURA_A)
+  status   InvoiceStatus @default(BORRADOR)
+
+  fechaEmision     DateTime  @default(now())
+  fechaVencimiento DateTime?
+
+  subtotal Float @default(0)
+  iva      Float @default(0)
+  total    Float @default(0)
+
+  afipCAE            String?
+  afipCAEVencimiento DateTime?
+  afipPDFUrl         String?
+
+  notas     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Client        @relation(fields: [clientId], references: [id])
+  items  InvoiceItem[]
+
+  @@index([clientId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  tripId      String?
+  descripcion String
+  cantidad    Float   @default(1)
+  precioUnit  Float
+  subtotal    Float
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  trip    Trip?   @relation(fields: [tripId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model Incident {
+  id       String  @id @default(cuid())
+  tripId   String?
+  driverId String?
+
+  tipo          String
+  descripcion   String
+  fecha         DateTime
+  lugar         String?
+  costoEstimado Float?
+  resolucion    String?
+
+  createdAt DateTime @default(now())
+
+  trip   Trip?   @relation(fields: [tripId], references: [id])
+  driver Driver? @relation(fields: [driverId], references: [id])
+
+  @@map("incidents")
+}
+
+model GPSDevice {
+  id        String  @id @default(cuid())
+  vehicleId String? @unique
+
+  deviceId  String  @unique
+  proveedor String
+  modelo    String?
+  imei      String?
+  isActive  Boolean @default(true)
+
+  lastLat    Float?
+  lastLon    Float?
+  lastUpdate DateTime?
+  lastSpeed  Float?
+  lastEvent  String?
+
+  createdAt DateTime @default(now())
+
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  @@map("gps_devices")
+}
+
+model Geofence {
+  id          String  @id @default(cuid())
+  nombre      String
+  descripcion String?
+  coordinates Json
+  radio       Float?
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@map("geofences")
+}
+
+model SystemConfig {
+  id    String @id @default(cuid())
+  key   String @unique
+  value Json
+  label String?
+
+  @@map("system_config")
+}

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logistics-erp
+  labels:
+    app: logistics-erp
+    environment: production

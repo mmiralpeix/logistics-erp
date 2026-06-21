@@ -1,0 +1,280 @@
+name: LogisticsPro ERP — CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_BACKEND: ${{ github.repository }}-backend
+  IMAGE_FRONTEND: ${{ github.repository }}-frontend
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # JOB 1: Lint & Type Check
+  # ──────────────────────────────────────────────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [backend, frontend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./${{ matrix.app }}
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma client (backend only)
+        if: matrix.app == 'backend'
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: TypeScript type check
+        working-directory: ./${{ matrix.app }}
+        run: npx tsc --noEmit
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 2: Unit Tests
+  # ──────────────────────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: logistics_erp_test
+          POSTGRES_USER: logistics_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U logistics_user"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://logistics_user:test_password@localhost:5432/logistics_erp_test
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: test_jwt_secret_for_ci
+      NODE_ENV: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm ci --legacy-peer-deps
+
+      - name: Generate Prisma client
+        working-directory: ./backend
+        run: npx prisma generate
+
+      - name: Run database migrations
+        working-directory: ./backend
+        run: npx prisma migrate deploy
+
+      - name: Run backend tests
+        working-directory: ./backend
+        run: npm test -- --passWithNoTests --forceExit
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 3: Build Docker Images
+  # ──────────────────────────────────────────────────────────────
+  build:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      backend_tag: ${{ steps.meta-backend.outputs.tags }}
+      frontend_tag: ${{ steps.meta-frontend.outputs.tags }}
+      sha_short: ${{ steps.vars.outputs.sha_short }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata — Backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Extract metadata — Frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build & Push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build & Push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'http://backend-service:3001' }}
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 4: Deploy to Staging (develop branch)
+  # ──────────────────────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.logistics.yourdomain.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig (Staging)
+        run: |
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Update image tags in kustomization
+        working-directory: ./k8s
+        run: |
+          kustomize edit set image \
+            logistics-erp-backend=${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:sha-${{ needs.build.outputs.sha_short }} \
+            logistics-erp-frontend=${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:sha-${{ needs.build.outputs.sha_short }}
+
+      - name: Apply Kubernetes manifests (Staging)
+        run: kubectl apply -k ./k8s/
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/backend -n logistics-erp --timeout=300s
+          kubectl rollout status deployment/frontend -n logistics-erp --timeout=300s
+
+      - name: Run smoke tests
+        run: |
+          BACKEND_URL=$(kubectl get ingress logistics-ingress -n logistics-erp -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Testing health endpoint..."
+          curl -sf "http://${BACKEND_URL}/api/health" || echo "Warning: health check failed"
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 5: Deploy to Production (main branch)
+  # ──────────────────────────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: https://logistics.yourdomain.com
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Configure kubeconfig (Production)
+        run: |
+          echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Update image tags in kustomization
+        working-directory: ./k8s
+        run: |
+          kustomize edit set image \
+            logistics-erp-backend=${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:latest \
+            logistics-erp-frontend=${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:latest
+
+      - name: Apply Kubernetes manifests (Production)
+        run: kubectl apply -k ./k8s/
+
+      - name: Wait for rollout — Backend
+        run: kubectl rollout status deployment/backend -n logistics-erp --timeout=600s
+
+      - name: Wait for rollout — Frontend
+        run: kubectl rollout status deployment/frontend -n logistics-erp --timeout=300s
+
+      - name: Verify production health
+        run: |
+          echo "Production deployment successful!"
+          kubectl get pods -n logistics-erp
+          kubectl get services -n logistics-erp
