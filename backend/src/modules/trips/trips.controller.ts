@@ -43,6 +43,12 @@ export class TripsController {
     return this.tripsService.create(dto, userId);
   }
 
+  @Post('batch')
+  @ApiOperation({ summary: 'Programar despacho multi-unidad (Convoy) en lote' })
+  createBatch(@Body() dto: any, @CurrentUser('id') userId: string) {
+    return this.tripsService.createBatch(dto, userId);
+  }
+
   @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateTripDto) { return this.tripsService.update(id, dto); }
 
   @Patch(':id/status')

@@ -234,4 +234,146 @@ export class TripsService {
       },
     });
   }
+
+  async createBatch(dto: any, dispatcherId?: string) {
+    const { assignments, ...commonData } = dto;
+    if (!assignments || assignments.length === 0) {
+      throw new BadRequestException('Debe incluir al menos 1 asignación de vehículo y conductor para el convoy');
+    }
+
+    // Check for duplicate vehicle or driver within the batch
+    const vehicleIds = assignments.map((a: any) => a.vehicleId);
+    const driverIds = assignments.map((a: any) => a.driverId);
+    if (new Set(vehicleIds).size !== vehicleIds.length) {
+      throw new BadRequestException('Hay vehículos duplicados en el lote de asignaciones');
+    }
+    if (new Set(driverIds).size !== driverIds.length) {
+      throw new BadRequestException('Hay conductores duplicados en el lote de asignaciones');
+    }
+
+    const duracion = commonData.duracionEstimadaHoras || 12;
+    const espera = commonData.esperaEnDestinoHoras || 0;
+    const descanso = commonData.descansosConductorHoras || 0;
+    const leadTime = this.calculateLeadTime(duracion, espera, descanso);
+    const departure = new Date(commonData.fechaSalidaProgramada);
+    const estimatedArrival = this.calculateArrivalEstimate(departure, leadTime);
+
+    // Validate availability for each assignment
+    for (const item of assignments) {
+      const vehicleConflict = await this.prisma.trip.findFirst({
+        where: {
+          vehicleId: item.vehicleId,
+          status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
+          fechaSalidaProgramada: { lte: estimatedArrival },
+          fechaLlegadaEstimada: { gte: departure },
+        },
+        include: { vehicle: { select: { patente: true } } },
+      });
+      if (vehicleConflict) {
+        throw new BadRequestException(`El vehículo ${vehicleConflict.vehicle?.patente || item.vehicleId} ya tiene un viaje asignado en ese horario (${vehicleConflict.numero})`);
+      }
+
+      const driverConflict = await this.prisma.trip.findFirst({
+        where: {
+          driverId: item.driverId,
+          status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
+          fechaSalidaProgramada: { lte: estimatedArrival },
+          fechaLlegadaEstimada: { gte: departure },
+        },
+        include: { driver: { select: { firstName: true, lastName: true } } },
+      });
+      if (driverConflict) {
+        throw new BadRequestException(`El conductor ${driverConflict.driver?.firstName} ${driverConflict.driver?.lastName} ya tiene un viaje asignado en ese horario (${driverConflict.numero})`);
+      }
+
+      if (commonData.esCargaPeligrosa) {
+        const driver = await this.prisma.driver.findUnique({ where: { id: item.driverId } });
+        if (!driver?.habilitadoCargasPeligrosas) {
+          throw new BadRequestException(`El conductor ${driver?.firstName} ${driver?.lastName} no está habilitado para transporte de cargas peligrosas`);
+        }
+      }
+    }
+
+    // Generate Convoy Code (e.g. CNV-2026-8419)
+    const now = new Date();
+    const convoyCode = `CNV-${now.getFullYear()}-${Math.floor(Math.random() * 9000) + 1000}`;
+
+    // Execute atomic transaction for all convoy trips
+    const createdTrips = await this.prisma.$transaction(async (tx) => {
+      const results = [];
+      for (let i = 0; i < assignments.length; i++) {
+        const item = assignments[i];
+        const tripNumber = `VJ-${now.getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`;
+
+        const trip = await tx.trip.create({
+          data: {
+            numero: tripNumber,
+            convoyCode,
+            clientId: commonData.clientId || null,
+            contractId: commonData.contractId || null,
+            vehicleId: item.vehicleId,
+            driverId: item.driverId,
+            trailerId: item.trailerId || null,
+            dispatcherId: dispatcherId || null,
+            origen: commonData.origen,
+            destino: commonData.destino,
+            origenLat: commonData.origenLat || null,
+            origenLon: commonData.origenLon || null,
+            destinoLat: commonData.destinoLat || null,
+            destinoLon: commonData.destinoLon || null,
+            fechaSalidaProgramada: departure,
+            fechaLlegadaEstimada: estimatedArrival,
+            duracionEstimadaHoras: duracion,
+            esperaEnDestinoHoras: espera,
+            descansosConductorHoras: descanso,
+            leadTimeTotal: leadTime,
+            distanciaKm: commonData.distanciaKm || null,
+            status: TripStatus.PROGRAMADO,
+            tipoCarga: commonData.tipoCarga || null,
+            descripcionCarga: commonData.descripcionCarga || null,
+            pesoCarga: item.pesoCargaKg || commonData.pesoCargaGenericoKg || null,
+            numeroRemito: item.numeroRemito || null,
+            numeroOCCliente: item.numeroOCCliente || null,
+            esCargaPeligrosa: commonData.esCargaPeligrosa || false,
+            esMineria: commonData.esMineria || false,
+            esDistribucion: commonData.esDistribucion || false,
+            tarifaAcordada: item.tarifaAcordada || commonData.tarifaGenerica || null,
+            notas: commonData.notas ? `[CONVOY ${convoyCode}] ${commonData.notas}` : `[CONVOY ${convoyCode}]`,
+          },
+          include: {
+            vehicle: { select: { patente: true, marca: true, modelo: true } },
+            driver: { select: { firstName: true, lastName: true } },
+            client: { select: { razonSocial: true } },
+          },
+        });
+
+        // Add Dangerous Goods declaration if present
+        if (commonData.esCargaPeligrosa && commonData.dangerousGoods) {
+          await tx.dangerousGoodsDeclaration.create({
+            data: {
+              tripId: trip.id,
+              numeroONU: commonData.dangerousGoods.numeroONU || '1202',
+              clase: commonData.dangerousGoods.clase || 'CLASE_3_LIQUIDOS_INFLAMABLES',
+              nombreTecnico: commonData.dangerousGoods.nombreTecnico || 'GASOIL / DIESEL',
+              cantidadKg: item.pesoCargaKg || 30000,
+              grupoEmbalaje: commonData.dangerousGoods.grupoEmbalaje || 'III',
+              hojaSeguridad: true,
+              equipoObligatorio: true,
+              permisosCompletos: true,
+              cumpleNormativa: true,
+            },
+          });
+        }
+
+        results.push(trip);
+      }
+      return results;
+    });
+
+    return {
+      convoyCode,
+      count: createdTrips.length,
+      trips: createdTrips,
+    };
+  }
 }

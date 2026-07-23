@@ -84,6 +84,7 @@ export const tripsApi = {
   getAll: (params?: any) => api.get('/trips', { params }),
   getOne: (id: string) => api.get(`/trips/${id}`),
   create: (data: any) => api.post('/trips', data),
+  createBatch: (data: any) => api.post('/trips/batch', data),
   update: (id: string, data: any) => api.patch(`/trips/${id}`, data),
   updateStatus: (id: string, status: string, notes?: string) => api.patch(`/trips/${id}/status`, { status, notes }),
   addCost: (id: string, data: any) => api.post(`/trips/${id}/costs`, data),

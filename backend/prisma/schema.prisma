@@ -356,6 +356,8 @@ model Trip {
 
   contractId String?
 
+  convoyCode        String?
+
   motivoCancelacion String?
   notas             String?
   createdAt         DateTime @default(now())
@@ -380,6 +382,7 @@ model Trip {
   @@index([vehicleId])
   @@index([driverId])
   @@index([fechaSalidaProgramada])
+  @@index([convoyCode])
   @@map("trips")
 }
 
