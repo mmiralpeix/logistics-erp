@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { clientsApi, vehiclesApi, driversApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
-import { Plus, Trash2, Truck, UserCheck, ShieldAlert, Layers } from 'lucide-react';
+import { Plus, Trash2, Truck, UserCheck, ShieldAlert, Layers, MapPin, Calendar, DollarSign, FileCheck, FileText, Container } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface BatchTripModalProps {
@@ -30,6 +30,8 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
     tarifaGenerica: 450000,
     pesoCargaGenericoKg: 30000,
     esCargaPeligrosa: false,
+    esMineria: false,
+    esDistribucion: false,
     notas: '',
   });
 
@@ -43,7 +45,6 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
   const setField = (key: string, value: any) => {
     setForm((f: any) => {
       const updated = { ...f, [key]: value };
-      // Actualizar tarifa por omisión en asignaciones si se cambia la tarifa genérica
       if (key === 'tarifaGenerica' && value) {
         setAssignments((prev) =>
           prev.map((a) => ({
@@ -87,10 +88,11 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
   };
 
   const totalConvoyTariff = assignments.reduce((acc, curr) => acc + (Number(curr.tarifaAcordada) || Number(form.tarifaGenerica) || 0), 0);
+  const totalWeightTon = (assignments.length * (form.pesoCargaGenericoKg || 30000)) / 1000;
 
   const handleSubmit = () => {
     if (!form.origen || !form.destino || !form.fechaSalidaProgramada) {
-      toast.error('Complete Origen, Destino y Fecha de Salida');
+      toast.error('Por favor ingrese Origen, Destino y Fecha de Salida');
       return;
     }
 
@@ -108,34 +110,58 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal animate-fade-in max-w-4xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+      <div className="modal animate-fade-in max-w-6xl max-h-[92vh] flex flex-col shadow-2xl rounded-2xl overflow-hidden">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Programar Despacho en Convoy (Multi-Unidad)</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Emisión en lote de viajes simultáneos hacia un mismo destino</p>
+              <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                Programar Despacho en Convoy
+                <span className="badge badge-blue text-xs py-0.5 px-2 font-bold">Multi-Unidad</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Emisión simultánea de viajes agrupados hacia un mismo destino</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg">✕</button>
+
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold">Unidades</span>
+                <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">{assignments.length} Camiones</span>
+              </div>
+              <div className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] uppercase font-semibold">Carga Est.</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200 text-sm">{totalWeightTon} Tn</span>
+              </div>
+            </div>
+
+            <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+              ✕
+            </button>
+          </div>
         </div>
 
-        {/* Form Body Scrollable */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+        {/* Modal Form Body */}
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/50 dark:bg-slate-900/50">
           {/* Sección 1: Ruta y Condiciones Generales */}
-          <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-700/60 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-              1. Datos de Ruta y Condiciones de Carga
-            </h3>
+          <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                1. Datos de Ruta y Condiciones de Carga
+              </h3>
+              <span className="text-xs text-slate-400">Paso 1 de 2</span>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="label">Cliente</label>
-                <select value={form.clientId || ''} onChange={(e) => setField('clientId', e.target.value)} className="input">
-                  <option value="">Seleccionar cliente...</option>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="lg:col-span-2">
+                <label className="label font-semibold">Cliente *</label>
+                <select value={form.clientId || ''} onChange={(e) => setField('clientId', e.target.value)} className="input py-2">
+                  <option value="">Seleccionar cliente de la cartera...</option>
                   {clients?.map((c: any) => (
                     <option key={c.id} value={c.id}>{c.razonSocial} (CUIT: {c.cuit})</option>
                   ))}
@@ -143,133 +169,156 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
               </div>
 
               <div>
-                <label className="label">Origen *</label>
-                <input type="text" value={form.origen} onChange={(e) => setField('origen', e.target.value)} className="input" placeholder="Ej: Rosario, Santa Fe" />
+                <label className="label font-semibold">Origen *</label>
+                <input type="text" value={form.origen} onChange={(e) => setField('origen', e.target.value)} className="input py-2" placeholder="Ej: Rosario, Santa Fe" />
               </div>
 
               <div>
-                <label className="label">Destino *</label>
-                <input type="text" value={form.destino} onChange={(e) => setField('destino', e.target.value)} className="input" placeholder="Ej: San Lorenzo, Terminal 6" />
+                <label className="label font-semibold">Destino *</label>
+                <input type="text" value={form.destino} onChange={(e) => setField('destino', e.target.value)} className="input py-2" placeholder="Ej: San Lorenzo, Terminal 6" />
               </div>
 
               <div>
-                <label className="label">Fecha y Hora de Salida *</label>
-                <input type="datetime-local" value={form.fechaSalidaProgramada} onChange={(e) => setField('fechaSalidaProgramada', e.target.value)} className="input" />
+                <label className="label font-semibold">Fecha y Hora Salida *</label>
+                <input type="datetime-local" value={form.fechaSalidaProgramada} onChange={(e) => setField('fechaSalidaProgramada', e.target.value)} className="input py-2" />
               </div>
 
               <div>
-                <label className="label">Duración Estimada (Horas)</label>
-                <input type="number" value={form.duracionEstimadaHoras} onChange={(e) => setField('duracionEstimadaHoras', Number(e.target.value))} className="input" />
+                <label className="label font-semibold">Duración Est. (Horas)</label>
+                <input type="number" value={form.duracionEstimadaHoras} onChange={(e) => setField('duracionEstimadaHoras', Number(e.target.value))} className="input py-2" />
               </div>
 
               <div>
-                <label className="label">Distancia Estimada (Km)</label>
-                <input type="number" value={form.distanciaKm} onChange={(e) => setField('distanciaKm', Number(e.target.value))} className="input" />
+                <label className="label font-semibold">Distancia Est. (Km)</label>
+                <input type="number" value={form.distanciaKm} onChange={(e) => setField('distanciaKm', Number(e.target.value))} className="input py-2" />
               </div>
 
               <div>
-                <label className="label">Tipo de Carga</label>
-                <input type="text" value={form.tipoCarga} onChange={(e) => setField('tipoCarga', e.target.value)} className="input" placeholder="Ej: Graneles / Combustible / Minerales" />
+                <label className="label font-semibold">Tarifa Base por Unidad ($)</label>
+                <input type="number" value={form.tarifaGenerica} onChange={(e) => setField('tarifaGenerica', Number(e.target.value))} className="input py-2 font-bold text-emerald-600 dark:text-emerald-400" placeholder="450000" />
               </div>
 
               <div>
-                <label className="label">Tarifa Estándar por Unidad ($)</label>
-                <input type="number" value={form.tarifaGenerica} onChange={(e) => setField('tarifaGenerica', Number(e.target.value))} className="input" placeholder="450000" />
+                <label className="label font-semibold">Tipo de Carga</label>
+                <input type="text" value={form.tipoCarga} onChange={(e) => setField('tipoCarga', e.target.value)} className="input py-2" placeholder="Ej: Graneles / Combustible" />
               </div>
 
               <div>
-                <label className="label">Peso Estimado por Unidad (Kg)</label>
-                <input type="number" value={form.pesoCargaGenericoKg} onChange={(e) => setField('pesoCargaGenericoKg', Number(e.target.value))} className="input" placeholder="30000" />
+                <label className="label font-semibold">Peso Estimado / Unidad (Kg)</label>
+                <input type="number" value={form.pesoCargaGenericoKg} onChange={(e) => setField('pesoCargaGenericoKg', Number(e.target.value))} className="input py-2" placeholder="30000" />
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="label font-semibold">Descripción General de Carga</label>
+                <input type="text" value={form.descripcionCarga} onChange={(e) => setField('descripcionCarga', e.target.value)} className="input py-2" placeholder="Detalle adicional..." />
               </div>
             </div>
 
-            <div className="flex items-center gap-6 pt-2">
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={form.esCargaPeligrosa} onChange={(e) => setField('esCargaPeligrosa', e.target.checked)} className="rounded text-blue-600" />
-                Carga Peligrosa (Decreto 779/95)
+            <div className="flex flex-wrap items-center gap-6 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                <input type="checkbox" checked={form.esCargaPeligrosa} onChange={(e) => setField('esCargaPeligrosa', e.target.checked)} className="rounded text-blue-600 w-4 h-4" />
+                <span>⚠ Carga Peligrosa (Decreto 779/95)</span>
               </label>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={form.esMineria} onChange={(e) => setField('esMineria', e.target.checked)} className="rounded text-blue-600" />
-                Operación Minera
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                <input type="checkbox" checked={form.esMineria} onChange={(e) => setField('esMineria', e.target.checked)} className="rounded text-blue-600 w-4 h-4" />
+                <span>⛰️ Operación Minera</span>
               </label>
-              <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-                <input type="checkbox" checked={form.esDistribucion} onChange={(e) => setField('esDistribucion', e.target.checked)} className="rounded text-blue-600" />
-                Distribución Capilar
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                <input type="checkbox" checked={form.esDistribucion} onChange={(e) => setField('esDistribucion', e.target.checked)} className="rounded text-blue-600 w-4 h-4" />
+                <span>📦 Distribución Capilar</span>
               </label>
             </div>
           </div>
 
           {/* Sección 2: Tabla de Asignación de Unidades en Convoy */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  2. Asignación de Camiones, Conductores y Remitos
+                  2. Asignación de Flota, Choferes y Remitos Independientes
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Remitos y N° OC independientes por cada unidad del convoy</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cada camión cuenta con su N° de Remito y N° OC de cliente independiente</p>
               </div>
 
-              <button onClick={addAssignmentRow} type="button" className="btn-secondary text-xs flex items-center gap-1">
-                <Plus className="w-3.5 h-3.5" /> Agregar Camión al Convoy
+              <button onClick={addAssignmentRow} type="button" className="btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-sm">
+                <Plus className="w-4 h-4" /> Añadir Camión
               </button>
             </div>
 
-            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
-              <table className="w-full text-xs">
+            {/* Table Container with Horizontal Scroll */}
+            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-x-auto shadow-sm">
+              <table className="w-full text-xs min-w-[950px]">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
-                    <th className="px-3 py-2.5 text-center w-8">#</th>
-                    <th className="px-3 py-2.5 text-left">Camión / Vehículo *</th>
-                    <th className="px-3 py-2.5 text-left">Conductor *</th>
-                    <th className="px-3 py-2.5 text-left">Semirremolque</th>
-                    <th className="px-3 py-2.5 text-left">N° Remito (Independiente)</th>
-                    <th className="px-3 py-2.5 text-left">N° OC Cliente</th>
-                    <th className="px-3 py-2.5 text-left w-28">Tarifa ($)</th>
-                    <th className="px-3 py-2.5 text-center w-10">Acción</th>
+                  <tr className="bg-slate-100/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 font-bold uppercase tracking-wider">
+                    <th className="px-3 py-3 text-center w-12">#</th>
+                    <th className="px-3 py-3 text-left min-w-[210px]">
+                      <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-blue-600" /> Camión / Chasis *</span>
+                    </th>
+                    <th className="px-3 py-3 text-left min-w-[190px]">
+                      <span className="flex items-center gap-1"><UserCheck className="w-3.5 h-3.5 text-emerald-600" /> Conductor *</span>
+                    </th>
+                    <th className="px-3 py-3 text-left min-w-[170px]">
+                      <span className="flex items-center gap-1"><Container className="w-3.5 h-3.5 text-purple-600" /> Semirremolque</span>
+                    </th>
+                    <th className="px-3 py-3 text-left min-w-[150px]">
+                      <span className="flex items-center gap-1"><FileCheck className="w-3.5 h-3.5 text-indigo-600" /> N° Remito (Indep.)</span>
+                    </th>
+                    <th className="px-3 py-3 text-left min-w-[140px]">
+                      <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5 text-amber-600" /> N° OC Cliente</span>
+                    </th>
+                    <th className="px-3 py-3 text-left min-w-[130px]">
+                      <span className="flex items-center gap-1"><DollarSign className="w-3.5 h-3.5 text-emerald-600" /> Tarifa ($)</span>
+                    </th>
+                    <th className="px-3 py-3 text-center w-12">Quitar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700/60 bg-white dark:bg-slate-900">
                   {assignments.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                      <td className="px-3 py-2 text-center font-bold text-slate-500">{idx + 1}</td>
+                    <tr key={idx} className="hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors">
+                      {/* Numeral Pill */}
+                      <td className="px-3 py-2.5 text-center">
+                        <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center justify-center mx-auto">
+                          {idx + 1}
+                        </span>
+                      </td>
 
-                      {/* Select Vehículo */}
-                      <td className="px-2 py-2">
+                      {/* Select Camión */}
+                      <td className="px-2 py-2.5">
                         <select
                           value={item.vehicleId}
                           onChange={(e) => updateAssignment(idx, 'vehicleId', e.target.value)}
-                          className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Seleccionar Camión...</option>
+                          <option value="">Elegir Camión de Flota...</option>
                           {vehicles?.map((v: any) => (
-                            <option key={v.id} value={v.id}>{v.patente} - {v.marca} {v.modelo}</option>
+                            <option key={v.id} value={v.id}>{v.patente} — {v.marca} {v.modelo}</option>
                           ))}
                         </select>
                       </td>
 
                       {/* Select Conductor */}
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-2.5">
                         <select
                           value={item.driverId}
                           onChange={(e) => updateAssignment(idx, 'driverId', e.target.value)}
-                          className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <option value="">Seleccionar Conductor...</option>
+                          <option value="">Elegir Conductor...</option>
                           {drivers?.map((d: any) => (
                             <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
                           ))}
                         </select>
                       </td>
 
-                      {/* Select Acoplado/Semirremolque */}
-                      <td className="px-2 py-2">
+                      {/* Select Semirremolque */}
+                      <td className="px-2 py-2.5">
                         <select
                           value={item.trailerId}
                           onChange={(e) => updateAssignment(idx, 'trailerId', e.target.value)}
-                          className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs focus:ring-1 focus:ring-blue-500"
+                          className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200"
                         >
-                          <option value="">(Ninguno / N/A)</option>
+                          <option value="">(Sin Semirremolque)</option>
                           {vehicles?.filter((v: any) => v.tipo?.includes('SEMI') || v.tipo === 'ACOPLADO' || v.tipo === 'BATEA').map((v: any) => (
                             <option key={v.id} value={v.id}>{v.patente} ({v.tipo})</option>
                           ))}
@@ -277,46 +326,46 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                       </td>
 
                       {/* N° Remito Independiente */}
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-2.5">
                         <input
                           type="text"
                           value={item.numeroRemito}
                           onChange={(e) => updateAssignment(idx, 'numeroRemito', e.target.value)}
                           placeholder={`REM-${1000 + idx}`}
-                          className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs"
+                          className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-purple-700 dark:text-purple-300"
                         />
                       </td>
 
                       {/* N° OC Cliente */}
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-2.5">
                         <input
                           type="text"
                           value={item.numeroOCCliente}
                           onChange={(e) => updateAssignment(idx, 'numeroOCCliente', e.target.value)}
                           placeholder="OC-9921"
-                          className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs"
+                          className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-blue-700 dark:text-blue-300"
                         />
                       </td>
 
                       {/* Tarifa ($) */}
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-2.5">
                         <input
                           type="number"
                           value={item.tarifaAcordada}
                           onChange={(e) => updateAssignment(idx, 'tarifaAcordada', Number(e.target.value))}
-                          className="w-full px-2 py-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs font-medium"
+                          className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-400"
                         />
                       </td>
 
                       {/* Acciones */}
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-2 py-2.5 text-center">
                         <button
                           onClick={() => removeAssignmentRow(idx)}
                           type="button"
-                          className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
                           title="Quitar camión del convoy"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -325,40 +374,47 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
               </table>
 
               {/* Botón destacado + para agregar más unidades */}
-              <div className="p-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-center">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-center">
                 <button
                   onClick={addAssignmentRow}
                   type="button"
-                  className="w-full py-2.5 px-4 border-2 border-dashed border-blue-300 dark:border-blue-700/60 hover:border-blue-500 dark:hover:border-blue-500 bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 group"
+                  className="w-full py-3 px-4 border-2 border-dashed border-blue-400 dark:border-blue-700 hover:border-blue-600 dark:hover:border-blue-500 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100/70 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 group shadow-sm"
                 >
-                  <div className="w-5 h-5 rounded-full bg-blue-600 group-hover:bg-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm transition-transform group-hover:scale-110">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 group-hover:bg-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-md transition-transform group-hover:scale-110">
                     +
                   </div>
-                  <span>Añadir otra unidad al Convoy (Camión {assignments.length + 1})</span>
+                  <span>Añadir otra unidad al Convoy (Camión #{assignments.length + 1})</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer con Resumen y Acciones */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between">
+        {/* Footer con Resumen Ejecutivo y Acciones */}
+        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-4 sticky bottom-0 z-10">
           <div className="flex items-center gap-6">
-            <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Total Camiones Convoy</span>
-              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{assignments.length} Unidades</span>
+            <div className="flex items-center gap-3 px-4 py-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 rounded-xl">
+              <Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div>
+                <span className="text-[10px] text-blue-600 dark:text-blue-400 uppercase tracking-wider font-bold block">Camiones en Convoy</span>
+                <span className="text-base font-extrabold text-blue-900 dark:text-blue-100">{assignments.length} Unidades</span>
+              </div>
             </div>
-            <div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Tarifa Total Convoy</span>
-              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{formatMoney(totalConvoyTariff)}</span>
+
+            <div className="flex items-center gap-3 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 rounded-xl">
+              <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <div>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase tracking-wider font-bold block">Tarifa Total Convoy</span>
+                <span className="text-base font-extrabold text-emerald-900 dark:text-emerald-100">{formatMoney(totalConvoyTariff)}</span>
+              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <button onClick={onClose} disabled={isLoading} className="btn-secondary">
+            <button onClick={onClose} disabled={isLoading} className="btn-secondary py-2.5 px-5">
               Cancelar
             </button>
-            <button onClick={handleSubmit} disabled={isLoading} className="btn-primary flex items-center gap-2">
+            <button onClick={handleSubmit} disabled={isLoading} className="btn-primary py-2.5 px-6 flex items-center gap-2 shadow-md">
               {isLoading ? (
                 <span>Emitiendo Convoy...</span>
               ) : (
