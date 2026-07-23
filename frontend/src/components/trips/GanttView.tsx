@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsApi } from '@/lib/api';
 import { formatDate, TRIP_STATUS_MAP } from '@/lib/utils';
-import { addDays, format, differenceInMinutes, startOfDay, eachDayOfInterval } from 'date-fns';
+import { addDays, format, startOfDay, eachDayOfInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -28,12 +28,6 @@ export function GanttView() {
     refetchInterval: 60000,
   });
 
-  const rescheduleMutation = useMutation({
-    mutationFn: ({ id, newDeparture }: any) => tripsApi.reschedule(id, newDeparture, 'Reprogramado desde vista Gantt'),
-    onSuccess: () => { toast.success('Viaje reprogramado'); qc.invalidateQueries({ queryKey: ['gantt'] }); },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error al reprogramar'),
-  });
-
   const totalWidth = DAYS_TO_SHOW * 24 * HOUR_WIDTH;
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
@@ -46,10 +40,6 @@ export function GanttView() {
   function widthFromRange(start: Date, end: Date) {
     const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     return Math.max(hours * HOUR_WIDTH, 40);
-  }
-
-  function dateFromX(x: number) {
-    return new Date(startMs + (x / HOUR_WIDTH) * 3600000);
   }
 
   const nowX = xFromDate(new Date());
@@ -73,9 +63,9 @@ export function GanttView() {
   return (
     <div className="card">
       {/* Gantt Header controls */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-white">Planificación de Viajes - Vista Gantt</h3>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Planificación de Viajes - Vista Gantt</h3>
           <span className="badge badge-blue">{format(startDate, 'dd MMM', { locale: es })} → {format(endDate, 'dd MMM yyyy', { locale: es })}</span>
         </div>
         <div className="flex items-center gap-2">
@@ -95,16 +85,16 @@ export function GanttView() {
       <div className="overflow-x-auto">
         <div style={{ minWidth: `${totalWidth + 180}px` }}>
           {/* Day headers */}
-          <div className="flex border-b border-slate-700 bg-slate-900/50">
-            <div className="w-44 flex-shrink-0 px-4 py-2 text-xs text-slate-500 font-semibold border-r border-slate-700">Vehículo</div>
+          <div className="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+            <div className="w-44 flex-shrink-0 px-4 py-2 text-xs text-slate-500 font-semibold border-r border-slate-200 dark:border-slate-700">Vehículo</div>
             <div className="relative" style={{ width: totalWidth }}>
               {days.map((day) => (
                 <div
                   key={day.toISOString()}
-                  className="absolute border-r border-slate-700 px-2 py-2"
+                  className="absolute border-r border-slate-200 dark:border-slate-700 px-2 py-2"
                   style={{ left: xFromDate(day), width: 24 * HOUR_WIDTH }}
                 >
-                  <span className={`text-xs font-semibold ${format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'text-blue-400' : 'text-slate-400'}`}>
+                  <span className={`text-xs font-semibold ${format(day, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400'}`}>
                     {format(day, 'EEE dd/MM', { locale: es })}
                   </span>
                 </div>
@@ -113,12 +103,12 @@ export function GanttView() {
           </div>
 
           {/* Hour markers */}
-          <div className="flex border-b border-slate-700/50 bg-slate-900/30">
-            <div className="w-44 flex-shrink-0 border-r border-slate-700" />
+          <div className="flex border-b border-slate-200 dark:border-slate-700/50 bg-slate-100/50 dark:bg-slate-900/30">
+            <div className="w-44 flex-shrink-0 border-r border-slate-200 dark:border-slate-700" />
             <div className="relative" style={{ width: totalWidth, height: 20 }}>
               {Array.from({ length: DAYS_TO_SHOW * 24 }).map((_, i) => (
                 i % 6 === 0 && (
-                  <div key={i} className="absolute text-[10px] text-slate-600" style={{ left: i * HOUR_WIDTH + 2, top: 3 }}>
+                  <div key={i} className="absolute text-[10px] text-slate-500 dark:text-slate-600" style={{ left: i * HOUR_WIDTH + 2, top: 3 }}>
                     {String(i % 24).padStart(2, '0')}h
                   </div>
                 )
@@ -128,21 +118,21 @@ export function GanttView() {
 
           {/* Rows */}
           {grouped.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">
+            <div className="text-center py-16 text-slate-500 dark:text-slate-400">
               <p className="text-sm">No hay viajes en el período seleccionado</p>
             </div>
           ) : grouped.map(([vehiclePlate, vehicleTrips]) => (
-            <div key={vehiclePlate} className="flex border-b border-slate-700/50 hover:bg-slate-800/30 transition-colors" style={{ height: ROW_HEIGHT }}>
-              <div className="w-44 flex-shrink-0 border-r border-slate-700 px-3 flex items-center">
+            <div key={vehiclePlate} className="flex border-b border-slate-200 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors" style={{ height: ROW_HEIGHT }}>
+              <div className="w-44 flex-shrink-0 border-r border-slate-200 dark:border-slate-700 px-3 flex items-center">
                 <div>
-                  <p className="text-xs font-medium text-slate-200">{vehiclePlate}</p>
+                  <p className="text-xs font-medium text-slate-900 dark:text-slate-200">{vehiclePlate}</p>
                   <p className="text-[10px] text-slate-500">{vehicleTrips[0]?.vehicle?.marca} {vehicleTrips[0]?.vehicle?.modelo}</p>
                 </div>
               </div>
               <div className="relative flex-1 overflow-hidden" style={{ width: totalWidth }}>
                 {/* Grid lines */}
                 {days.map((day) => (
-                  <div key={day.toISOString()} className="absolute top-0 bottom-0 border-r border-slate-700/30" style={{ left: xFromDate(day) }} />
+                  <div key={day.toISOString()} className="absolute top-0 bottom-0 border-r border-slate-200/50 dark:border-slate-700/30" style={{ left: xFromDate(day) }} />
                 ))}
                 {/* Now line */}
                 {nowX > 0 && nowX < totalWidth && (
@@ -178,7 +168,7 @@ export function GanttView() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 px-5 py-3 border-t border-slate-700 text-xs text-slate-400">
+      <div className="flex items-center gap-4 px-5 py-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400">
         <span className="font-medium">Leyenda:</span>
         {Object.entries(TRIP_STATUS_MAP).map(([key, val]) => (
           <div key={key} className="flex items-center gap-1.5">

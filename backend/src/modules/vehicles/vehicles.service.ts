@@ -2,23 +2,37 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { VehicleStatus } from '@prisma/client';
+import { VehicleStatus, VehicleType } from '@prisma/client';
 
 @Injectable()
 export class VehiclesService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(search?: string, status?: VehicleStatus, page: any = 1, limit: any = 20) {
+  async findAll(search?: string, status?: VehicleStatus, category?: string, type?: VehicleType, page: any = 1, limit: any = 20) {
     const p = Math.max(1, Number(page) || 1);
     const l = Math.max(1, Number(limit) || 20);
     const skip = (p - 1) * l;
     const where: any = { isActive: true };
+
     if (search) where.OR = [
       { patente: { contains: search, mode: 'insensitive' } },
       { marca: { contains: search, mode: 'insensitive' } },
       { modelo: { contains: search, mode: 'insensitive' } },
     ];
     if (status) where.status = status;
+    if (type) where.tipo = type;
+
+    if (category) {
+      if (category === 'MOTRIZ') {
+        where.tipo = { in: ['CAMION', 'TRACTOR', 'CAMIONETA', 'EQUIPO_ESPECIAL'] };
+      } else if (category === 'REMOLCADO') {
+        where.tipo = { in: ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'BATEA', 'BITREN', 'CISTERNA', 'VOLQUETE', 'ACOPLADO'] };
+      } else if (category === 'CARRETON') {
+        where.tipo = { in: ['CARRETON', 'EQUIPO_ESPECIAL'] };
+      } else if (category === 'UTILITARIO') {
+        where.tipo = { in: ['CAMIONETA'] };
+      }
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.vehicle.findMany({
@@ -79,6 +93,7 @@ export class VehiclesService {
           { vencimientoSeguro: { lte: in30 } },
           { vencimientoITV: { lte: in30 } },
           { vencimientoRUTA: { lte: in30 } },
+          { vencimientoEstanqueidad: { lte: in30 } },
         ],
       },
     });

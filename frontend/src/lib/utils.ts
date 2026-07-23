@@ -76,11 +76,16 @@ export const VEHICLE_STATUS_MAP: Record<string, { label: string; cls: string }> 
 };
 
 export const VEHICLE_TYPE_MAP: Record<string, string> = {
-  CAMION: 'Camión',
-  SEMIRREMOLQUE: 'Semirremolque',
-  CAMIONETA: 'Camioneta',
-  EQUIPO_ESPECIAL: 'Equipo Especial',
-  CISTERNA: 'Cisterna',
+  CAMION: 'Camión Rígido',
+  TRACTOR: 'Tractor de Carretera',
+  SEMIRREMOLQUE: 'Semirremolque Sider / Baranda',
+  SEMI_CISTERNA: 'Semi Cisterna',
+  CARRETON: 'Carretón Pesado',
+  BATEA: 'Batea Volcable',
+  BITREN: 'Bitren / Escalado',
+  CAMIONETA: 'Camioneta / Utilitario',
+  EQUIPO_ESPECIAL: 'Grúa / Equipo Especial',
+  CISTERNA: 'Cisterna Camión',
   VOLQUETE: 'Volquete',
   ACOPLADO: 'Acoplado',
 };

@@ -4,7 +4,7 @@ import { usersApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatDate } from '@/lib/utils';
 import { ROLE_LABELS } from '@/lib/auth';
-import { Shield, User, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function UsersPage() {
@@ -32,24 +32,24 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? <tr><td colSpan={5} className="text-center py-12 text-slate-400">Cargando...</td></tr>
+              {isLoading ? <tr><td colSpan={5} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando...</td></tr>
                 : users?.map((u: any) => (
                   <tr key={u.id} className="table-row">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center text-blue-400 font-bold text-xs">
+                        <div className="w-8 h-8 bg-blue-100 dark:bg-blue-600/20 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs">
                           {u.firstName[0]}{u.lastName[0]}
                         </div>
                         <div>
-                          <p className="font-medium text-white">{u.firstName} {u.lastName}</p>
-                          <p className="text-xs text-slate-400">{u.email}</p>
+                          <p className="font-medium text-slate-900 dark:text-white">{u.firstName} {u.lastName}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{u.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="badge badge-blue">{ROLE_LABELS[u.role] || u.role}</span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{formatDate(u.lastLogin) || 'Nunca'}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{formatDate(u.lastLogin) || 'Nunca'}</td>
                     <td className="px-4 py-3">
                       {u.isActive
                         ? <span className="badge badge-green flex items-center gap-1 w-fit"><CheckCircle className="w-3 h-3" /> Activo</span>

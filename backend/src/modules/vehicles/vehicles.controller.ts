@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { VehicleStatus } from '@prisma/client';
+import { VehicleStatus, VehicleType } from '@prisma/client';
 
 @ApiTags('Vehicles')
 @ApiBearerAuth('JWT')
@@ -11,8 +11,16 @@ import { VehicleStatus } from '@prisma/client';
 export class VehiclesController {
   constructor(private vehiclesService: VehiclesService) {}
 
-  @Get() findAll(@Query('search') s?: string, @Query('status') st?: VehicleStatus, @Query('page') p?: number, @Query('limit') l?: number) {
-    return this.vehiclesService.findAll(s, st, p, l);
+  @Get()
+  findAll(
+    @Query('search') s?: string,
+    @Query('status') st?: VehicleStatus,
+    @Query('category') cat?: string,
+    @Query('type') t?: VehicleType,
+    @Query('page') p?: number,
+    @Query('limit') l?: number,
+  ) {
+    return this.vehiclesService.findAll(s, st, cat, t, p, l);
   }
 
   @Get('expiring') getExpiring() { return this.vehiclesService.getExpiringDocuments(); }

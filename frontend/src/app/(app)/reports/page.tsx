@@ -29,7 +29,7 @@ export default function ReportsPage() {
   const reports = [
     {
       id: 'trips',
-      icon: <MapPin className="w-8 h-8 text-blue-400" />,
+      icon: <MapPin className="w-8 h-8 text-blue-600 dark:text-blue-400" />,
       title: 'Reporte de Viajes',
       description: 'Listado completo de viajes con origen, destino, vehículo, conductor, costos y margen de rentabilidad.',
       badge: 'Excel',
@@ -40,7 +40,7 @@ export default function ReportsPage() {
     },
     {
       id: 'fleet',
-      icon: <Truck className="w-8 h-8 text-purple-400" />,
+      icon: <Truck className="w-8 h-8 text-purple-600 dark:text-purple-400" />,
       title: 'Reporte de Flota',
       description: 'Estado actual de todos los vehículos, vencimientos de documentación, kilometraje y costos históricos.',
       badge: 'Excel',
@@ -51,7 +51,7 @@ export default function ReportsPage() {
     },
     {
       id: 'fuel',
-      icon: <Fuel className="w-8 h-8 text-orange-400" />,
+      icon: <Fuel className="w-8 h-8 text-orange-600 dark:text-orange-400" />,
       title: 'Reporte de Combustible',
       description: 'Historial de cargas, consumos, rendimientos promedio y detección de desvíos por vehículo.',
       badge: 'Excel',
@@ -72,8 +72,8 @@ export default function ReportsPage() {
       <div className="p-6 space-y-6">
         {/* Date filter */}
         <div className="card p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-blue-400" /> Filtro de Período
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-300 mb-3 flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Filtro de Período
           </h3>
           <div className="flex items-center gap-4">
             <div>
@@ -103,12 +103,12 @@ export default function ReportsPage() {
           {reports.map((report) => (
             <div key={report.id} className="card p-6 flex flex-col gap-4 hover:border-blue-500/30 transition-colors">
               <div className="flex items-start justify-between">
-                <div className="p-3 bg-slate-700/50 rounded-xl">{report.icon}</div>
+                <div className="p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl">{report.icon}</div>
                 <span className={report.badgeCls}>{report.badge}</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-white mb-1">{report.title}</h3>
-                <p className="text-sm text-slate-400">{report.description}</p>
+                <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">{report.title}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">{report.description}</p>
                 {report.hasDates && (
                   <p className="text-xs text-slate-500 mt-2">
                     Período: {dates.from} al {dates.to}
@@ -132,8 +132,8 @@ export default function ReportsPage() {
 
         {/* API docs link */}
         <div className="card p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-2">Acceso a la API</h3>
-          <p className="text-sm text-slate-400 mb-3">Todos los módulos disponen de API REST documentada. Intégralos con tus sistemas existentes.</p>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-300 mb-2">Acceso a la API</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">Todos los módulos disponen de API REST documentada. Intégralos con tus sistemas existentes.</p>
           <a href="http://localhost:3001/api/docs" target="_blank" rel="noopener noreferrer" className="btn-secondary">
             <FileSpreadsheet className="w-4 h-4" /> Abrir Swagger API Docs
           </a>

@@ -43,6 +43,7 @@ export const dashboardApi = {
   getMonthlyChart: () => api.get('/dashboard/monthly-chart'),
   getExpiringAlerts: () => api.get('/dashboard/expiring-alerts'),
   getTripDistribution: () => api.get('/dashboard/trip-distribution'),
+  getTripStatusDistribution: () => api.get('/dashboard/trip-distribution'),
 };
 
 export const clientsApi = {
@@ -52,6 +53,8 @@ export const clientsApi = {
   update: (id: string, data: any) => api.patch(`/clients/${id}`, data),
   remove: (id: string) => api.delete(`/clients/${id}`),
   getHistory: (id: string) => api.get(`/clients/${id}/history`),
+  getContracts: (id: string) => api.get(`/clients/${id}/contracts`),
+  createContract: (id: string, data: any) => api.post(`/clients/${id}/contracts`, data),
 };
 
 export const vehiclesApi = {

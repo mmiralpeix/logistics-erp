@@ -6,7 +6,6 @@ import { Header } from '@/components/layout/Header';
 import { formatDate, formatMoney } from '@/lib/utils';
 import { Plus, Fuel, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function FuelPage() {
   const [showModal, setShowModal] = useState(false);
@@ -38,41 +37,41 @@ export default function FuelPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="stat-card">
-            <Fuel className="w-5 h-5 text-orange-400" />
-            <p className="text-2xl font-bold text-white">{(stats?.totals?._sum?.litros || 0).toLocaleString('es-AR')} L</p>
-            <p className="text-sm text-slate-400">Total litros (período)</p>
+            <Fuel className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{(stats?.totals?._sum?.litros || 0).toLocaleString('es-AR')} L</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Total litros (período)</p>
           </div>
           <div className="stat-card">
-            <TrendingUp className="w-5 h-5 text-green-400" />
-            <p className="text-2xl font-bold text-white">{formatMoney(stats?.totals?._sum?.costoTotal)}</p>
-            <p className="text-sm text-slate-400">Costo total combustible</p>
+            <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-green-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatMoney(stats?.totals?._sum?.costoTotal)}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Costo total combustible</p>
           </div>
           <div className="stat-card">
-            <TrendingUp className="w-5 h-5 text-blue-400" />
-            <p className="text-2xl font-bold text-white">{(stats?.totals?._avg?.rendimientoKmL || 0).toFixed(2)} km/L</p>
-            <p className="text-sm text-slate-400">Rendimiento promedio</p>
+            <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{(stats?.totals?._avg?.rendimientoKmL || 0).toFixed(2)} km/L</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Rendimiento promedio</p>
           </div>
           <div className="stat-card">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-            <p className="text-2xl font-bold text-white">{stats?.anomalies || 0}</p>
-            <p className="text-sm text-slate-400">Desvíos detectados</p>
+            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats?.anomalies || 0}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Desvíos detectados</p>
           </div>
         </div>
 
         {/* Deviations alert */}
         {deviations && deviations.length > 0 && (
-          <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-            <h3 className="text-sm font-semibold text-red-300 flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4" /> Desvíos de rendimiento detectados
+          <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-xl">
+            <h3 className="text-sm font-semibold text-red-900 dark:text-red-300 flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-4 h-4 text-red-500" /> Desvíos de rendimiento detectados
             </h3>
             <div className="space-y-2">
               {deviations.slice(0, 3).map((d: any) => (
-                <div key={d.id} className="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                <div key={d.id} className="flex items-center justify-between bg-white dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg px-4 py-2">
                   <div>
-                    <span className="text-sm font-medium text-red-300">{d.vehicle?.patente} - {d.vehicle?.marca}</span>
-                    <p className="text-xs text-red-400/80">{formatDate(d.fecha)} · {d.litros}L · Rendimiento: {d.rendimientoKmL} km/L</p>
+                    <span className="text-sm font-medium text-red-900 dark:text-red-300">{d.vehicle?.patente} - {d.vehicle?.marca}</span>
+                    <p className="text-xs text-red-700 dark:text-red-400/80">{formatDate(d.fecha)} · {d.litros}L · Rendimiento: {d.rendimientoKmL} km/L</p>
                   </div>
-                  {d.notas && <p className="text-xs text-red-400 max-w-xs">{d.notas}</p>}
+                  {d.notas && <p className="text-xs text-red-700 dark:text-red-400 max-w-xs">{d.notas}</p>}
                 </div>
               ))}
             </div>
@@ -81,7 +80,7 @@ export default function FuelPage() {
 
         {/* Table */}
         <div className="card overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+          <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
             <h3 className="section-title">Registro de Cargas</h3>
           </div>
           <table className="w-full text-sm">
@@ -100,27 +99,27 @@ export default function FuelPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={9} className="text-center py-12 text-slate-400">Cargando...</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando...</td></tr>
               ) : data?.data?.map((log: any) => (
-                <tr key={log.id} className={`table-row ${log.esDesvio ? 'bg-red-500/5' : ''}`}>
-                  <td className="px-4 py-3 text-xs text-slate-400">{formatDate(log.fecha)}</td>
+                <tr key={log.id} className={`table-row ${log.esDesvio ? 'bg-red-50 dark:bg-red-500/5' : ''}`}>
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{formatDate(log.fecha)}</td>
                   <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-white">{log.vehicle?.patente}</p>
-                    <p className="text-xs text-slate-400">{log.vehicle?.marca} {log.vehicle?.modelo}</p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white">{log.vehicle?.patente}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{log.vehicle?.marca} {log.vehicle?.modelo}</p>
                   </td>
-                  <td className="px-4 py-3 text-slate-300">{log.litros} L</td>
-                  <td className="px-4 py-3 text-slate-300">{formatMoney(log.precioPorLitro)}</td>
-                  <td className="px-4 py-3 font-medium text-white">{formatMoney(log.costoTotal)}</td>
-                  <td className="px-4 py-3 text-xs text-slate-400">{log.kmActual?.toLocaleString('es-AR') || '-'} km</td>
+                  <td className="px-4 py-3 text-slate-800 dark:text-slate-300">{log.litros} L</td>
+                  <td className="px-4 py-3 text-slate-800 dark:text-slate-300">{formatMoney(log.precioPorLitro)}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{formatMoney(log.costoTotal)}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{log.kmActual?.toLocaleString('es-AR') || '-'} km</td>
                   <td className="px-4 py-3">
                     {log.rendimientoKmL ? (
                       <div className="flex items-center gap-1">
-                        {log.rendimientoKmL < 1.2 ? <TrendingDown className="w-3.5 h-3.5 text-red-400" /> : <TrendingUp className="w-3.5 h-3.5 text-green-400" />}
-                        <span className={log.rendimientoKmL < 1.2 ? 'text-red-400' : 'text-green-400'}>{log.rendimientoKmL} km/L</span>
+                        {log.rendimientoKmL < 1.2 ? <TrendingDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" /> : <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-green-400" />}
+                        <span className={log.rendimientoKmL < 1.2 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-green-400'}>{log.rendimientoKmL} km/L</span>
                       </div>
                     ) : '-'}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-400">{log.proveedor || '-'}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{log.proveedor || '-'}</td>
                   <td className="px-4 py-3">
                     {log.esDesvio ? <span className="badge badge-red">⚠ Desvío</span> : <span className="badge badge-green">Normal</span>}
                   </td>
@@ -144,9 +143,9 @@ function FuelModal({ onClose, onSave }: { onClose: () => void; onSave: (d: any) 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal animate-fade-in">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <h2 className="text-lg font-semibold text-white">Registrar Carga de Combustible</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Registrar Carga de Combustible</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">✕</button>
         </div>
         <div className="p-6 grid grid-cols-2 gap-4">
           <div className="col-span-2">
@@ -170,12 +169,12 @@ function FuelModal({ onClose, onSave }: { onClose: () => void; onSave: (d: any) 
           <div><label className="label">Proveedor / Estación</label><input type="text" value={form.proveedor || ''} onChange={(e) => set('proveedor', e.target.value)} className="input" placeholder="YPF, Shell, Axion..." /></div>
           <div className="col-span-2"><label className="label">Notas</label><textarea rows={2} value={form.notas || ''} onChange={(e) => set('notas', e.target.value)} className="input resize-none" /></div>
           {form.litros && form.precioPorLitro && (
-            <div className="col-span-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-sm font-medium text-blue-400">Costo total estimado: {formatMoney(Number(form.litros) * Number(form.precioPorLitro))}</p>
+            <div className="col-span-2 p-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Costo total estimado: {formatMoney(Number(form.litros) * Number(form.precioPorLitro))}</p>
             </div>
           )}
         </div>
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-700">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
           <button onClick={onClose} className="btn-secondary">Cancelar</button>
           <button onClick={() => onSave({ ...form, costoTotal: Number(form.litros) * Number(form.precioPorLitro) })} className="btn-primary">Registrar Carga</button>
         </div>

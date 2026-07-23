@@ -48,4 +48,16 @@ export class ClientsController {
   getHistory(@Param('id') id: string) {
     return this.clientsService.getHistory(id);
   }
+
+  @Get(':id/contracts')
+  @ApiOperation({ summary: 'Listar Órdenes de Compra / Contratos del cliente' })
+  getContracts(@Param('id') id: string) {
+    return this.clientsService.getContracts(id);
+  }
+
+  @Post(':id/contracts')
+  @ApiOperation({ summary: 'Crear Órden de Compra / Contrato para el cliente' })
+  createContract(@Param('id') id: string, @Body() dto: any) {
+    return this.clientsService.createContract(id, dto);
+  }
 }

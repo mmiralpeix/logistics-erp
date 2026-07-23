@@ -155,21 +155,81 @@ async function main() {
     },
   });
 
-  const client4 = await prisma.client.upsert({
-    where: { cuit: '20-35678901-4' },
+  const clientLitio = await prisma.client.upsert({
+    where: { cuit: '30-71889900-3' },
     update: {},
     create: {
-      razonSocial: 'Constructora Andina S.A.',
-      cuit: '20-35678901-4',
-      domicilio: 'Av. Argentina 4500',
-      ciudad: 'Neuquén',
-      provincia: 'Neuquén',
-      codigoPostal: '8300',
-      telefono: '0299-448-9012',
-      email: 'compras@constructoraandina.com',
-      contactoPrincipal: 'Arq. Fernando Castillo',
+      razonSocial: 'Litio Minera Argentina S.A.',
+      cuit: '30-71889900-3',
+      domicilio: 'Ruta Provincial 70 s/n - Salar de Olaroz',
+      ciudad: 'Susques',
+      provincia: 'Jujuy',
+      codigoPostal: '4640',
+      telefono: '0388-424-9900',
+      email: 'logistica@litiominera.com.ar',
+      contactoPrincipal: 'Ing. Gustavo Albarracín',
+      condicionIVA: 'RESPONSABLE_INSCRIPTO',
+      categoriaCliente: 'VIP',
+      notas: 'Operación de Litio en Puna Jujueña/Salta. Contrato por Órdenes de Compra con 30 Tn mínimo por viaje + excedente.',
+      contacts: {
+        create: [
+          { nombre: 'Ing. Gustavo Albarracín', cargo: 'Gerente de Logística Minera', telefono: '0388-424-9901', email: 'galbarracin@litiominera.com.ar', isPrimary: true },
+        ],
+      },
+    },
+  });
+
+  const clientBBC = await prisma.client.upsert({
+    where: { cuit: '30-71998811-4' },
+    update: {},
+    create: {
+      razonSocial: 'BBC Construcciones S.A.',
+      cuit: '30-71998811-4',
+      domicilio: 'Av. Industrial 1200',
+      ciudad: 'Salta',
+      provincia: 'Salta',
+      codigoPostal: '4400',
+      telefono: '0387-432-1100',
+      email: 'compras@bbcconstrucciones.com.ar',
+      contactoPrincipal: 'Ing. Esteban Moreno',
+      condicionIVA: 'RESPONSABLE_INSCRIPTO',
+      categoriaCliente: 'PREMIUM',
+    },
+  });
+
+  const clientNortrading = await prisma.client.upsert({
+    where: { cuit: '30-68112233-5' },
+    update: {},
+    create: {
+      razonSocial: 'Nortrading S.R.L.',
+      cuit: '30-68112233-5',
+      domicilio: 'Ruta 9 Km 1550',
+      ciudad: 'General Güemes',
+      provincia: 'Salta',
+      codigoPostal: '4430',
+      telefono: '0387-491-2233',
+      email: 'operaciones@nortrading.com',
+      contactoPrincipal: 'Lic. Martin Zalazar',
       condicionIVA: 'RESPONSABLE_INSCRIPTO',
       categoriaCliente: 'STANDARD',
+    },
+  });
+
+  const contractLitio = await prisma.contract.upsert({
+    where: { numero: 'OC-LMA-2024-089' },
+    update: {},
+    create: {
+      numero: 'OC-LMA-2024-089',
+      clientId: clientLitio.id,
+      descripcion: 'Transporte de Carbonato de Litio y Materiales de Explotación (Salar Olaroz - Puerto Rosario)',
+      cantidadViajes: 50,
+      pesoMinimoKg: 30000,
+      tarifaBase: 380000,
+      tarifaExcedentePorTn: 14500,
+      fechaInicio: new Date('2024-01-01'),
+      fechaFin: new Date('2024-12-31'),
+      status: 'ACTIVA',
+      condiciones: 'Mínimo garantizado 30 Tn por viaje. Excedente se liquida a $14.500/Tn adicional.',
     },
   });
 
@@ -331,7 +391,75 @@ async function main() {
     },
   });
 
-  console.log('✅ Vehículos creados');
+  const vehicleCarreton = await prisma.vehicle.upsert({
+    where: { patente: 'AA 999 XX' },
+    update: {},
+    create: {
+      patente: 'AA 999 XX',
+      marca: 'Vulcano',
+      modelo: 'Carretón Pesado 60 Tn',
+      anio: 2022,
+      tipo: VehicleType.CARRETON,
+      capacidadKg: 60000,
+      tipoCarga: 'Maquinaria Pesada / Orugas / Minería',
+      status: VehicleStatus.DISPONIBLE,
+      color: 'Amarillo',
+      cantidadEjes: 4,
+      tipoEnganche: 'Perno Rey 3.5"',
+      vencimientoSeguro: future(10),
+      vencimientoITV: future(6),
+      propietario: 'PROPIA',
+      isThirdParty: false,
+    },
+  });
+
+  const vehicleCisterna = await prisma.vehicle.upsert({
+    where: { patente: 'BB 888 YY' },
+    update: {},
+    create: {
+      patente: 'BB 888 YY',
+      marca: 'Cormetal',
+      modelo: 'Semi Cisterna 35.000 Lts',
+      anio: 2023,
+      tipo: VehicleType.SEMI_CISTERNA,
+      capacidadKg: 35000,
+      capacidadM3: 35,
+      cantidadCompartimentos: 3,
+      cantidadEjes: 3,
+      tipoCarga: 'Combustible / Hidrocarburos (UN1203)',
+      status: VehicleStatus.DISPONIBLE,
+      color: 'Aluminio / Blanco',
+      vencimientoSeguro: future(12),
+      vencimientoITV: future(8),
+      vencimientoEstanqueidad: future(6),
+      propietario: 'PROPIA',
+      isThirdParty: false,
+    },
+  });
+
+  const vehicleTractor = await prisma.vehicle.upsert({
+    where: { patente: 'CC 777 ZZ' },
+    update: {},
+    create: {
+      patente: 'CC 777 ZZ',
+      marca: 'Scania',
+      modelo: 'R 500 V8 6x4 Heavy Duty',
+      anio: 2022,
+      tipo: VehicleType.TRACTOR,
+      capacidadKg: 65000,
+      kilometraje: 98400,
+      tipoCarga: 'Tracción Pesada / Minería',
+      status: VehicleStatus.DISPONIBLE,
+      color: 'Rojo',
+      vencimientoSeguro: future(9),
+      vencimientoITV: future(5),
+      vencimientoRUTA: future(11),
+      propietario: 'PROPIA',
+      isThirdParty: false,
+    },
+  });
+
+  console.log('✅ Vehículos y Equipos Creados');
 
   // ============================
   // CONDUCTORES
@@ -441,6 +569,11 @@ async function main() {
   // ============================
   // VIAJES
   // ============================
+  await prisma.tripCheckpoint.deleteMany({});
+  await prisma.dangerousGoodsDeclaration.deleteMany({});
+  await prisma.tripCost.deleteMany({});
+  await prisma.trip.deleteMany({});
+
   const now = new Date();
   const addHours = (date: Date, hours: number) => new Date(date.getTime() + hours * 60 * 60 * 1000);
   const addDays = (date: Date, days: number) => new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
@@ -470,6 +603,8 @@ async function main() {
       tipoCarga: 'Materiales de Minería',
       pesoCarga: 32000,
       descripcionCarga: 'Equipamiento pesado para yacimiento',
+      numeroRemito: 'R-0001-00014892',
+      numeroOCCliente: 'OC-BBC-4091',
       esMineria: true,
       tarifaAcordada: 185000,
       notas: 'Viaje prioritario - coordinar con supervisor de planta',
@@ -573,45 +708,64 @@ async function main() {
   const trip4 = await prisma.trip.create({
     data: {
       numero: 'VJ-2024-004',
-      clientId: client4.id,
-      vehicleId: vehicle5.id,
+      clientId: clientLitio.id,
+      contractId: contractLitio.id,
+      vehicleId: vehicleTractor.id,
+      trailerId: vehicleCisterna.id,
       driverId: driver4.id,
       dispatcherId: dispatcher.id,
-      origen: 'Neuquén Capital',
-      destino: 'Zapala, Neuquén',
-      fechaSalidaProgramada: addDays(now, 3),
-      fechaLlegadaEstimada: addDays(now, 3),
-      duracionEstimadaHoras: 3,
-      esperaEnDestinoHoras: 6,
-      leadTimeTotal: 9,
-      distanciaKm: 185,
-      status: TripStatus.PENDIENTE,
-      tipoCarga: 'Maquinaria Pesada / Izaje',
-      pesoCarga: 55000,
-      descripcionCarga: 'Grúa telescópica para obra Ruta 22',
-      tarifaAcordada: 280000,
+      origen: 'Salar de Olaroz, Jujuy',
+      destino: 'Puerto Rosario, Santa Fe',
+      fechaSalidaProgramada: addDays(now, -1),
+      fechaLlegadaEstimada: addDays(now, 1),
+      fechaSalidaReal: addDays(now, -1),
+      duracionEstimadaHoras: 28,
+      esperaEnDestinoHoras: 4,
+      descansosConductorHoras: 16,
+      leadTimeTotal: 48,
+      distanciaKm: 1420,
+      status: TripStatus.EN_CURSO,
+      tipoCarga: 'SALMUERA',
+      pesoCarga: 34500,
+      pesoExcedenteKg: 4500,
+      montoExcedente: 65250,
+      tarifaAcordada: 445250,
+      numeroRemito: 'R-0002-00045123',
+      numeroOCCliente: 'OC-LMA-2024-089',
+      descripcionCarga: 'Salmuera Concentrada de Litio (34,5 Tn Balanza)',
+      esMineria: true,
+      notas: 'Mínimo 30 Tn -> 4.5 Tn excedente liquidado a $14.500/Tn extra',
     },
   });
 
   const trip5 = await prisma.trip.create({
     data: {
       numero: 'VJ-2024-005',
-      clientId: client1.id,
-      vehicleId: vehicle1.id,
-      driverId: driver1.id,
-      origen: 'Buenos Aires, CABA',
-      destino: 'Comodoro Rivadavia, Chubut',
-      fechaSalidaProgramada: addDays(now, 7),
-      fechaLlegadaEstimada: addDays(now, 9),
-      duracionEstimadaHoras: 24,
-      esperaEnDestinoHoras: 4,
-      descansosConductorHoras: 16,
-      leadTimeTotal: 44,
-      distanciaKm: 1650,
-      status: TripStatus.PROGRAMADO,
-      tipoCarga: 'Insumos Mineros',
-      pesoCarga: 38000,
-      tarifaAcordada: 510000,
+      clientId: clientBBC.id,
+      vehicleId: vehicleTractor.id,
+      trailerId: vehicleCarreton.id,
+      driverId: driver2.id,
+      dispatcherId: dispatcher.id,
+      origen: 'Salta Capital',
+      destino: 'Yacimiento Cauchari, Jujuy',
+      fechaSalidaProgramada: addDays(now, -3),
+      fechaLlegadaEstimada: addDays(now, -2),
+      fechaSalidaReal: addDays(now, -3),
+      fechaLlegadaReal: addDays(now, -2),
+      duracionEstimadaHoras: 10,
+      esperaEnDestinoHoras: 2,
+      leadTimeTotal: 12,
+      distanciaKm: 340,
+      status: TripStatus.FINALIZADO,
+      tipoCarga: 'CARRETON',
+      pesoCarga: 48000,
+      tarifaAcordada: 380000,
+      costoTotal: 195000,
+      margenBruto: 185000,
+      numeroRemito: 'R-0001-00099120',
+      numeroOCCliente: 'OC-BBC-4091',
+      descripcionCarga: 'Excavadora CAT 336 en Carretón 60 Tn',
+      esMineria: true,
     },
   });
 
@@ -693,6 +847,8 @@ async function main() {
   // ============================
   // FACTURAS
   // ============================
+  await prisma.invoiceItem.deleteMany({});
+  await prisma.invoice.deleteMany({});
   const invoice1 = await prisma.invoice.create({
     data: {
       numero: 'FA-0001-00000001',
@@ -736,6 +892,7 @@ async function main() {
   // ============================
   // DISPOSITIVOS GPS
   // ============================
+  await prisma.gPSDevice.deleteMany({});
   await prisma.gPSDevice.createMany({
     data: [
       { vehicleId: vehicle1.id, deviceId: 'TELTONIKA-001-AB123CD', proveedor: 'Teltonika', modelo: 'FMB920', isActive: true, lastLat: -45.2500, lastLon: -68.0000, lastUpdate: new Date(), lastSpeed: 85 },

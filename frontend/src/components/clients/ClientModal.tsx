@@ -12,7 +12,7 @@ export function ClientModal({ client, onClose }: Props) {
   const isEdit = !!client;
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-    defaultValues: client || { condicionIVA: 'RESPONSABLE_INSCRIPTO', categoriaCliente: 'STANDARD', provincia: 'Chubut' },
+    defaultValues: client || { condicionIVA: 'RESPONSABLE_INSCRIPTO', provincia: 'Chubut' },
   });
 
   const mutation = useMutation({
@@ -28,12 +28,12 @@ export function ClientModal({ client, onClose }: Props) {
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal animate-fade-in">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <Building2 className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold text-white">{isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
+            <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg"><X className="w-4 h-4" /></button>
         </div>
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="p-6 space-y-4">
@@ -41,7 +41,7 @@ export function ClientModal({ client, onClose }: Props) {
             <div className="col-span-2">
               <label className="label">Razón Social *</label>
               <input {...register('razonSocial', { required: 'Requerido' })} className="input" placeholder="Empresa S.A." />
-              {errors.razonSocial && <p className="text-red-400 text-xs mt-1">{String(errors.razonSocial?.message)}</p>}
+              {errors.razonSocial && <p className="text-red-500 text-xs mt-1">{String(errors.razonSocial?.message)}</p>}
             </div>
             <div>
               <label className="label">CUIT *</label>
@@ -80,17 +80,9 @@ export function ClientModal({ client, onClose }: Props) {
               <label className="label">Email</label>
               <input {...register('email')} type="email" className="input" placeholder="contacto@empresa.com" />
             </div>
-            <div>
+            <div className="col-span-2">
               <label className="label">Contacto Principal</label>
               <input {...register('contactoPrincipal')} className="input" placeholder="Ing. Juan Pérez" />
-            </div>
-            <div>
-              <label className="label">Categoría</label>
-              <select {...register('categoriaCliente')} className="input">
-                <option value="STANDARD">Standard</option>
-                <option value="PREMIUM">Premium</option>
-                <option value="VIP">VIP</option>
-              </select>
             </div>
             <div className="col-span-2">
               <label className="label">Notas</label>
@@ -98,7 +90,7 @@ export function ClientModal({ client, onClose }: Props) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-700">
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
             <button type="submit" disabled={isSubmitting} className="btn-primary disabled:opacity-60">
               {isSubmitting ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear Cliente'}

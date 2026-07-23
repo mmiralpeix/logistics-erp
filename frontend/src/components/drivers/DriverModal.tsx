@@ -22,12 +22,12 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal animate-fade-in max-w-3xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <UserCheck className="w-5 h-5 text-blue-400" />
-            <h2 className="text-lg font-semibold text-white">{isEdit ? 'Editar Conductor' : 'Nuevo Conductor'}</h2>
+            <UserCheck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{isEdit ? 'Editar Conductor' : 'Nuevo Conductor'}</h2>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg"><X className="w-4 h-4" /></button>
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg"><X className="w-4 h-4" /></button>
         </div>
 
         <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="p-6">
@@ -78,8 +78,8 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
             </div>
 
             {/* Licencia */}
-            <div className="col-span-3 mt-2 pt-4 border-t border-slate-700">
-              <h3 className="text-sm font-semibold text-slate-300 mb-3">Licencia de Conducir</h3>
+            <div className="col-span-3 mt-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-300 mb-3">Licencia de Conducir</h3>
             </div>
             <div>
               <label className="label">Tipo de licencia</label>
@@ -107,10 +107,10 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
             </div>
 
             {/* Dangerous goods */}
-            <div className="col-span-3 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+            <div className="col-span-3 p-3 bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/20 rounded-lg">
               <label className="flex items-center gap-2 cursor-pointer mb-2">
                 <input {...register('habilitadoCargasPeligrosas')} type="checkbox" className="w-4 h-4 text-red-600 rounded" />
-                <span className="text-sm font-medium text-slate-300">Habilitado para Cargas Peligrosas (ONU)</span>
+                <span className="text-sm font-medium text-slate-800 dark:text-slate-300">Habilitado para Cargas Peligrosas (ONU)</span>
               </label>
               <div>
                 <label className="label">Vcto. Cert. Cargas Peligrosas</label>
@@ -128,7 +128,7 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-slate-700">
+          <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
             <button type="button" onClick={onClose} className="btn-secondary">Cancelar</button>
             <button type="submit" disabled={isSubmitting} className="btn-primary disabled:opacity-60">
               {isSubmitting ? 'Guardando...' : isEdit ? 'Actualizar' : 'Crear Conductor'}

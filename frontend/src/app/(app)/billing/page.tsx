@@ -43,24 +43,24 @@ export default function BillingPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="stat-card">
-            <DollarSign className="w-5 h-5 text-green-400" />
-            <p className="text-2xl font-bold text-white">{formatMoney(stats?.monthly?._sum?.total)}</p>
-            <p className="text-sm text-slate-400">Facturado este mes ({stats?.monthly?._count || 0})</p>
+            <DollarSign className="w-5 h-5 text-emerald-600 dark:text-green-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatMoney(stats?.monthly?._sum?.total)}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Facturado este mes ({stats?.monthly?._count || 0})</p>
           </div>
           <div className="stat-card">
-            <Clock className="w-5 h-5 text-blue-400" />
-            <p className="text-2xl font-bold text-white">{formatMoney(stats?.pending?._sum?.total)}</p>
-            <p className="text-sm text-slate-400">Pendiente de cobro ({stats?.pending?._count || 0})</p>
+            <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatMoney(stats?.pending?._sum?.total)}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Pendiente de cobro ({stats?.pending?._count || 0})</p>
           </div>
           <div className="stat-card">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-            <p className="text-2xl font-bold text-white">{formatMoney(stats?.overdue?._sum?.total)}</p>
-            <p className="text-sm text-slate-400">Vencidas ({stats?.overdue?._count || 0})</p>
+            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatMoney(stats?.overdue?._sum?.total)}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Vencidas ({stats?.overdue?._count || 0})</p>
           </div>
           <div className="stat-card">
-            <CheckCircle className="w-5 h-5 text-emerald-400" />
-            <p className="text-2xl font-bold text-white">{formatMoney(stats?.collected?._sum?.total)}</p>
-            <p className="text-sm text-slate-400">Cobrado ({stats?.collected?._count || 0})</p>
+            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{formatMoney(stats?.collected?._sum?.total)}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Cobrado ({stats?.collected?._count || 0})</p>
           </div>
         </div>
 
@@ -89,32 +89,32 @@ export default function BillingPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={10} className="text-center py-12 text-slate-400">Cargando...</td></tr>
+                <tr><td colSpan={10} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando...</td></tr>
               ) : data?.data?.map((inv: any) => {
                 const st = INVOICE_STATUS_MAP[inv.status] || { label: inv.status, cls: 'badge-gray' };
                 return (
                   <tr key={inv.id} className="table-row">
-                    <td className="px-4 py-3"><p className="font-mono text-sm font-medium text-white">{inv.numero}</p></td>
+                    <td className="px-4 py-3"><p className="font-mono text-sm font-medium text-slate-900 dark:text-white">{inv.numero}</p></td>
                     <td className="px-4 py-3">
-                      <p className="text-sm text-slate-300">{inv.client?.razonSocial}</p>
-                      <p className="text-xs text-slate-500">{inv.client?.cuit}</p>
+                      <p className="text-sm text-slate-800 dark:text-slate-300">{inv.client?.razonSocial}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{inv.client?.cuit}</p>
                     </td>
                     <td className="px-4 py-3"><span className="badge badge-gray">{inv.tipo?.replace('_', ' ')}</span></td>
                     <td className="px-4 py-3"><span className={st.cls}>{st.label}</span></td>
-                    <td className="px-4 py-3 text-xs text-slate-400">{formatDate(inv.fechaEmision)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{formatDate(inv.fechaEmision)}</td>
                     <td className="px-4 py-3">
-                      <span className={inv.fechaVencimiento && new Date(inv.fechaVencimiento) < new Date() ? 'text-red-400 text-xs font-medium' : 'text-xs text-slate-400'}>
+                      <span className={inv.fechaVencimiento && new Date(inv.fechaVencimiento) < new Date() ? 'text-red-600 dark:text-red-400 text-xs font-medium' : 'text-xs text-slate-500 dark:text-slate-400'}>
                         {formatDate(inv.fechaVencimiento)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-sm text-slate-300">{formatMoney(inv.subtotal)}</td>
-                    <td className="px-4 py-3 text-right text-sm text-slate-400">{formatMoney(inv.iva)}</td>
-                    <td className="px-4 py-3 text-right text-sm font-bold text-white">{formatMoney(inv.total)}</td>
+                    <td className="px-4 py-3 text-right text-sm text-slate-800 dark:text-slate-300">{formatMoney(inv.subtotal)}</td>
+                    <td className="px-4 py-3 text-right text-sm text-slate-500 dark:text-slate-400">{formatMoney(inv.iva)}</td>
+                    <td className="px-4 py-3 text-right text-sm font-bold text-slate-900 dark:text-white">{formatMoney(inv.total)}</td>
                     <td className="px-4 py-3">
                       <select
                         value={inv.status}
                         onChange={(e) => updateMutation.mutate({ id: inv.id, status: e.target.value })}
-                        className="text-xs bg-slate-700 border border-slate-600 rounded px-2 py-1 text-slate-300"
+                        className="text-xs bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded px-2 py-1 text-slate-800 dark:text-slate-200"
                       >
                         {Object.entries(INVOICE_STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                       </select>
@@ -125,8 +125,8 @@ export default function BillingPage() {
             </tbody>
           </table>
           {data && data.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-700">
-              <p className="text-sm text-slate-400">Total: {data.total} facturas</p>
+            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700">
+              <p className="text-sm text-slate-600 dark:text-slate-400">Total: {data.total} facturas</p>
               <div className="flex gap-2">
                 <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary py-1 px-3 disabled:opacity-40">Anterior</button>
                 <button onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))} disabled={page === data.totalPages} className="btn-secondary py-1 px-3 disabled:opacity-40">Siguiente</button>
@@ -152,9 +152,9 @@ function InvoiceModal({ onClose, onSave }: { onClose: () => void; onSave: (d: an
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal animate-fade-in max-w-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <div className="flex items-center gap-3"><Receipt className="w-5 h-5 text-blue-400" /><h2 className="text-lg font-semibold text-white">Nueva Factura</h2></div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-3"><Receipt className="w-5 h-5 text-blue-600 dark:text-blue-400" /><h2 className="text-lg font-semibold text-slate-900 dark:text-white">Nueva Factura</h2></div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">✕</button>
         </div>
         <div className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -189,13 +189,13 @@ function InvoiceModal({ onClose, onSave }: { onClose: () => void; onSave: (d: an
             <button onClick={() => set('items', [...form.items, { descripcion: '', cantidad: 1, precioUnit: 0 }])} className="btn-secondary py-1 text-xs mt-1">+ Agregar ítem</button>
           </div>
 
-          <div className="p-4 bg-slate-900/50 border border-slate-700 rounded-xl text-right space-y-1">
-            <p className="text-slate-400 text-sm">Subtotal: <strong className="text-white">{formatMoney(subtotal)}</strong></p>
-            <p className="text-slate-400 text-sm">IVA (21%): <strong className="text-white">{formatMoney(iva)}</strong></p>
-            <p className="text-lg font-bold text-white">Total: {formatMoney(subtotal + iva)}</p>
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-right space-y-1">
+            <p className="text-slate-600 dark:text-slate-400 text-sm">Subtotal: <strong className="text-slate-900 dark:text-white">{formatMoney(subtotal)}</strong></p>
+            <p className="text-slate-600 dark:text-slate-400 text-sm">IVA (21%): <strong className="text-slate-900 dark:text-white">{formatMoney(iva)}</strong></p>
+            <p className="text-lg font-bold text-slate-900 dark:text-white">Total: {formatMoney(subtotal + iva)}</p>
           </div>
         </div>
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-700">
+        <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700">
           <button onClick={onClose} className="btn-secondary">Cancelar</button>
           <button onClick={() => onSave(form)} className="btn-primary">Crear Factura</button>
         </div>

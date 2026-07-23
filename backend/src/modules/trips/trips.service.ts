@@ -60,7 +60,9 @@ export class TripsService {
         orderBy: { fechaSalidaProgramada: 'desc' },
         include: {
           client: { select: { razonSocial: true, cuit: true } },
+          contract: { select: { numero: true, tarifaBase: true, pesoMinimoKg: true, tarifaExcedentePorTn: true } },
           vehicle: { select: { patente: true, marca: true, modelo: true, tipo: true } },
+          trailer: { select: { patente: true, marca: true, modelo: true, tipo: true } },
           driver: { select: { firstName: true, lastName: true, telefono: true } },
           dangerousGoods: true,
           _count: { select: { costs: true, incidents: true } },
@@ -76,7 +78,9 @@ export class TripsService {
       where: { id },
       include: {
         client: true,
+        contract: true,
         vehicle: true,
+        trailer: true,
         driver: true,
         dispatcher: { select: { firstName: true, lastName: true, email: true } },
         dangerousGoods: true,

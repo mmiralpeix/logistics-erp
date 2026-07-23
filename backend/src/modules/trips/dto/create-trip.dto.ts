@@ -28,8 +28,12 @@ class CreateDangerousGoodsDto {
 
 export class CreateTripDto {
   @ApiPropertyOptional() @IsOptional() @IsString() clientId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() contractId?: string;
   @ApiProperty() @IsString() vehicleId: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() trailerId?: string;
   @ApiProperty() @IsString() driverId: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() numeroRemito?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() numeroOCCliente?: string;
   @ApiProperty() @IsString() origen: string;
   @ApiProperty() @IsString() destino: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() origenLat?: number;

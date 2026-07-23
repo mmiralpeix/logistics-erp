@@ -19,7 +19,12 @@ enum UserRole {
 
 enum VehicleType {
   CAMION
+  TRACTOR
   SEMIRREMOLQUE
+  SEMI_CISTERNA
+  CARRETON
+  BATEA
+  BITREN
   CAMIONETA
   EQUIPO_ESPECIAL
   CISTERNA
@@ -181,18 +186,24 @@ model ClientContact {
 }
 
 model Contract {
-  id          String    @id @default(cuid())
-  clientId    String
-  numero      String    @unique
-  descripcion String?
-  fechaInicio DateTime
-  fechaFin    DateTime?
-  tarifas     Json?
-  condiciones String?
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
+  id                   String    @id @default(cuid())
+  clientId             String
+  numero               String    @unique
+  descripcion          String?
+  cantidadViajes       Int?
+  pesoMinimoKg         Float?    @default(30000)
+  tarifaBase           Float?
+  tarifaExcedentePorTn Float?
+  fechaInicio          DateTime
+  fechaFin             DateTime?
+  tarifas              Json?
+  condiciones          String?
+  status               String    @default("ACTIVA")
+  isActive             Boolean   @default(true)
+  createdAt            DateTime  @default(now())
 
   client Client @relation(fields: [clientId], references: [id])
+  trips  Trip[]
 
   @@map("contracts")
 }
@@ -217,11 +228,16 @@ model Vehicle {
   isThirdParty  Boolean       @default(false)
   empresa       String?
 
-  vencimientoSeguro DateTime?
-  vencimientoITV    DateTime?
-  vencimientoRUTA   DateTime?
-  numeroSeguro      String?
-  aseguradora       String?
+  vencimientoSeguro       DateTime?
+  vencimientoITV          DateTime?
+  vencimientoRUTA         DateTime?
+  vencimientoEstanqueidad DateTime?
+  numeroSeguro            String?
+  aseguradora             String?
+
+  cantidadEjes            Int?
+  cantidadCompartimentos  Int?
+  tipoEnganche            String?
 
   isActive  Boolean  @default(true)
   notas     String?
@@ -232,6 +248,7 @@ model Vehicle {
   maintenances Maintenance[]
   fuelLogs     FuelLog[]
   trips        Trip[]        @relation("VehicleTrips")
+  trailerTrips Trip[]        @relation("TrailerTrips")
   gpsDevice    GPSDevice?
 
   @@map("vehicles")
@@ -296,6 +313,7 @@ model Trip {
   numero       String     @unique
   clientId     String?
   vehicleId    String
+  trailerId    String?
   driverId     String
   dispatcherId String?
 
@@ -323,22 +341,30 @@ model Trip {
   pesoCarga        Float?
   volumenCarga     Float?
   descripcionCarga String?
+  numeroRemito     String?
+  numeroOCCliente  String?
 
   esCargaPeligrosa Boolean @default(false)
   esMineria        Boolean @default(false)
   esDistribucion   Boolean @default(false)
 
-  tarifaAcordada Float?
-  costoTotal     Float?
-  margenBruto    Float?
+  tarifaAcordada  Float?
+  pesoExcedenteKg Float?
+  montoExcedente  Float?
+  costoTotal      Float?
+  margenBruto     Float?
+
+  contractId String?
 
   motivoCancelacion String?
   notas             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  client      Client?  @relation(fields: [clientId], references: [id])
-  vehicle     Vehicle  @relation("VehicleTrips", fields: [vehicleId], references: [id])
+  client      Client?   @relation(fields: [clientId], references: [id])
+  contract    Contract? @relation(fields: [contractId], references: [id])
+  vehicle     Vehicle   @relation("VehicleTrips", fields: [vehicleId], references: [id])
+  trailer     Vehicle?  @relation("TrailerTrips", fields: [trailerId], references: [id])
   driver      Driver   @relation(fields: [driverId], references: [id])
   dispatcher  User?    @relation("DispatcherTrips", fields: [dispatcherId], references: [id])
 
