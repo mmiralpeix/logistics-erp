@@ -455,24 +455,35 @@ model Maintenance {
   @@map("maintenances")
 }
 
+enum ConsumableType {
+  DIESEL
+  UREA
+  ACEITE_MOTOR
+  LUBRICANTE
+  ADITIVO
+  OTRO
+}
+
 model FuelLog {
   id        String @id @default(cuid())
   vehicleId String
   tripId    String?
 
-  fecha           DateTime
-  litros          Float
-  precioPorLitro  Float
-  costoTotal      Float
-  kmActual        Float?
-  proveedor       String?
-  tipoCombustible String   @default("DIESEL")
-  estacion        String?
-  factura         String?
+  fecha               DateTime
+  litros              Float
+  precioPorLitro      Float
+  costoTotal          Float
+  kmActual            Float?
+  proveedor           String?
+  tipoCombustible     String         @default("DIESEL")
+  tipoConsumible      ConsumableType @default(DIESEL)
+  estacion            String?
+  factura             String?
 
-  rendimientoKmL Float?
-  esDesvio       Boolean @default(false)
-  notas          String?
+  rendimientoKmL      Float?
+  ratioUreaPorcentaje Float?
+  esDesvio            Boolean        @default(false)
+  notas               String?
 
   createdAt DateTime @default(now())
 
@@ -481,6 +492,7 @@ model FuelLog {
 
   @@index([vehicleId])
   @@index([fecha])
+  @@index([tipoConsumible])
   @@map("fuel_logs")
 }
 

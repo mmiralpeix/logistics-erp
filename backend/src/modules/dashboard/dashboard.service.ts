@@ -157,4 +157,67 @@ export class DashboardService {
     );
     return counts;
   }
+
+  async getVehicleConsumptionChart() {
+    const vehicles = await this.prisma.vehicle.findMany({
+      where: { isActive: true },
+      select: { id: true, patente: true, marca: true, modelo: true },
+    });
+
+    const logs = await this.prisma.fuelLog.findMany({
+      select: {
+        vehicleId: true,
+        tipoConsumible: true,
+        litros: true,
+        costoTotal: true,
+        rendimientoKmL: true,
+      },
+    });
+
+    const map = new Map<string, { patente: string; marcaModelo: string; dieselLitros: number; ureaLitros: number; costoTotal: number; rendimientos: number[] }>();
+
+    vehicles.forEach((v) => {
+      map.set(v.id, {
+        patente: v.patente,
+        marcaModelo: `${v.marca} ${v.modelo}`,
+        dieselLitros: 0,
+        ureaLitros: 0,
+        costoTotal: 0,
+        rendimientos: [],
+      });
+    });
+
+    logs.forEach((log) => {
+      const entry = map.get(log.vehicleId);
+      if (entry) {
+        if (log.tipoConsumible === 'UREA') {
+          entry.ureaLitros += log.litros || 0;
+        } else {
+          entry.dieselLitros += log.litros || 0;
+        }
+        entry.costoTotal += log.costoTotal || 0;
+        if (log.rendimientoKmL && log.rendimientoKmL > 0) {
+          entry.rendimientos.push(log.rendimientoKmL);
+        }
+      }
+    });
+
+    return Array.from(map.values())
+      .map((item) => {
+        const avgRendimiento = item.rendimientos.length > 0
+          ? Math.round((item.rendimientos.reduce((a, b) => a + b, 0) / item.rendimientos.length) * 100) / 100
+          : 0;
+        const consumoL100Km = avgRendimiento > 0 ? Math.round((100 / avgRendimiento) * 10) / 10 : 0;
+        return {
+          patente: item.patente,
+          marcaModelo: item.marcaModelo,
+          dieselLitros: Math.round(item.dieselLitros),
+          ureaLitros: Math.round(item.ureaLitros),
+          costoTotal: Math.round(item.costoTotal),
+          rendimientoKmL: avgRendimiento,
+          consumoL100Km,
+        };
+      })
+      .filter((item) => item.dieselLitros > 0 || item.ureaLitros > 0);
+  }
 }

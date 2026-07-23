@@ -37,4 +37,10 @@ export class DashboardController {
   getTripStatusDistribution() {
     return this.dashboardService.getTripStatusDistribution();
   }
+
+  @Get('vehicle-consumption')
+  @ApiOperation({ summary: 'Consumo y rendimiento por dominio / vehículo' })
+  getVehicleConsumptionChart() {
+    return this.dashboardService.getVehicleConsumptionChart();
+  }
 }

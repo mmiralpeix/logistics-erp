@@ -12,6 +12,7 @@ import { DriversModule } from './modules/drivers/drivers.module';
 import { TripsModule } from './modules/trips/trips.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { FuelModule } from './modules/fuel/fuel.module';
+import { ConsumablesModule } from './modules/consumables/consumables.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { CostsModule } from './modules/costs/costs.module';
 import { BillingModule } from './modules/billing/billing.module';
@@ -37,6 +38,7 @@ import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.
     TripsModule,
     MaintenanceModule,
     FuelModule,
+    ConsumablesModule,
     DocumentsModule,
     CostsModule,
     BillingModule,

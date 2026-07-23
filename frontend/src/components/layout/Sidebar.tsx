@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore, ROLE_LABELS } from '@/lib/auth';
 import {
-  LayoutDashboard, Users, Truck, UserCheck, MapPin, Wrench, Fuel,
+  LayoutDashboard, Users, Truck, UserCheck, MapPin, Wrench, Droplet, Fuel,
   FileText, Receipt, BarChart2, Satellite, Settings,
   ChevronRight, LogOut, Shield, Package
 } from 'lucide-react';
@@ -16,7 +16,7 @@ const navItems = [
   { href: '/drivers', icon: UserCheck, label: 'Conductores', description: 'Personal de conducción' },
   { href: '/trips', icon: MapPin, label: 'Viajes', description: 'Planificación multidía' },
   { href: '/maintenance', icon: Wrench, label: 'Mantenimiento', description: 'Preventivo y correctivo' },
-  { href: '/fuel', icon: Fuel, label: 'Combustible', description: 'Control y rendimiento' },
+  { href: '/consumables', icon: Droplet, label: 'Consumibles', description: 'Diésel, Urea y fluidos' },
   { href: '/dangerous-goods', icon: Package, label: 'C. Peligrosas', description: 'Decreto 779/95' },
   { href: '/documents', icon: FileText, label: 'Documentos', description: 'Gestión documental' },
   { href: '/billing', icon: Receipt, label: 'Facturación', description: 'Remitos y facturas' },

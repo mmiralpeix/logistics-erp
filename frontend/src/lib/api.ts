@@ -44,6 +44,7 @@ export const dashboardApi = {
   getExpiringAlerts: () => api.get('/dashboard/expiring-alerts'),
   getTripDistribution: () => api.get('/dashboard/trip-distribution'),
   getTripStatusDistribution: () => api.get('/dashboard/trip-distribution'),
+  getVehicleConsumptionChart: () => api.get('/dashboard/vehicle-consumption'),
 };
 
 export const clientsApi = {
@@ -99,12 +100,14 @@ export const maintenanceApi = {
   getUpcoming: () => api.get('/maintenance/upcoming'),
 };
 
-export const fuelApi = {
-  getAll: (params?: any) => api.get('/fuel', { params }),
-  create: (data: any) => api.post('/fuel', data),
-  getStats: (params?: any) => api.get('/fuel/stats', { params }),
-  getDeviations: () => api.get('/fuel/deviations'),
+export const consumablesApi = {
+  getAll: (params?: any) => api.get('/consumables', { params }),
+  create: (data: any) => api.post('/consumables', data),
+  getStats: (params?: any) => api.get('/consumables/stats', { params }),
+  getDeviations: () => api.get('/consumables/deviations'),
 };
+
+export const fuelApi = consumablesApi;
 
 export const billingApi = {
   getAll: (params?: any) => api.get('/billing/invoices', { params }),

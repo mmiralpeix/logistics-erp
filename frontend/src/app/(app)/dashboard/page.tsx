@@ -1,10 +1,11 @@
 'use client';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatMoney, formatDate, TRIP_STATUS_MAP } from '@/lib/utils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
-import { Truck, Users, MapPin, DollarSign, AlertTriangle, TrendingUp, Fuel, CheckCircle } from 'lucide-react';
+import { Truck, Users, MapPin, DollarSign, AlertTriangle, TrendingUp, Fuel, CheckCircle, ChevronLeft, ChevronRight, Droplet } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'];
@@ -13,8 +14,12 @@ export default function DashboardPage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
+  const [activeChartView, setActiveChartView] = useState<'monthly' | 'consumption'>('monthly');
+  const [consumptionMetric, setConsumptionMetric] = useState<'consumoLKm' | 'rendimientoKmL' | 'consumoL100Km' | 'dieselLitros'>('consumoLKm');
+
   const { data: stats, isLoading } = useQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.getStats().then((r) => r.data), refetchInterval: 60000 });
   const { data: monthlyChart } = useQuery({ queryKey: ['monthly-chart'], queryFn: () => dashboardApi.getMonthlyChart().then((r) => r.data) });
+  const { data: vehicleConsumption } = useQuery({ queryKey: ['vehicle-consumption-chart'], queryFn: () => dashboardApi.getVehicleConsumptionChart().then((r) => r.data) });
   const { data: recentTrips } = useQuery({ queryKey: ['recent-trips'], queryFn: () => dashboardApi.getRecentTrips(8).then((r) => r.data) });
   const { data: expiringAlerts } = useQuery({ queryKey: ['expiring-alerts'], queryFn: () => dashboardApi.getExpiringAlerts().then((r) => r.data) });
   const { data: tripDistribution } = useQuery({ queryKey: ['trip-distribution'], queryFn: () => dashboardApi.getTripDistribution().then((r) => r.data) });
@@ -35,6 +40,10 @@ export default function DashboardPage() {
 
   const rawDist = tripDistribution || [];
   const filteredDist = rawDist.filter((d: any) => d.count > 0);
+
+  const toggleView = () => {
+    setActiveChartView((prev) => (prev === 'monthly' ? 'consumption' : 'monthly'));
+  };
 
   return (
     <div>
@@ -109,36 +118,192 @@ export default function DashboardPage() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Monthly Revenue Chart */}
-          <div className="lg:col-span-2 card p-5">
-            <h3 className="section-title mb-4">Facturación y Viajes (últimos 6 meses)</h3>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={monthlyChart || []}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="mes" tick={{ fill: axisColor, fontSize: 11 }} />
-                <YAxis tick={{ fill: axisColor, fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-                    border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
-                    borderRadius: '8px',
-                    color: isDark ? '#F1F5F9' : '#0F172A',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                  }}
-                  labelStyle={{ color: isDark ? '#F1F5F9' : '#0F172A', fontWeight: 'bold' }}
-                  formatter={(v: any) => [formatMoney(v), '']}
-                />
-                <Legend
-                  formatter={(v) => (
-                    <span className="text-slate-800 dark:text-slate-200 text-xs font-medium ml-1">
-                      {v}
-                    </span>
+          {/* Main Chart Card with View Switcher Carousel */}
+          <div className="lg:col-span-2 card p-5 relative flex flex-col justify-between">
+            {/* Chart Header with Navigation Controls */}
+            <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-700/60 pb-3">
+              <div className="flex items-center gap-2">
+                {activeChartView === 'monthly' ? (
+                  <h3 className="section-title flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    Facturación y Viajes (últimos 6 meses)
+                  </h3>
+                ) : (
+                  <h3 className="section-title flex items-center gap-2">
+                    <Droplet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    Consumo por Dominio / Patente
+                  </h3>
+                )}
+              </div>
+
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-2">
+                {activeChartView === 'consumption' && (
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700 mr-2 text-xs">
+                    <button
+                      onClick={() => setConsumptionMetric('consumoLKm')}
+                      className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                        consumptionMetric === 'consumoLKm'
+                          ? 'bg-emerald-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                      title="Litros consumidos por kilómetro (L/km)"
+                    >
+                      L/km
+                    </button>
+                    <button
+                      onClick={() => setConsumptionMetric('rendimientoKmL')}
+                      className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                        consumptionMetric === 'rendimientoKmL'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                      title="Rendimiento en kilómetros por litro (km/L)"
+                    >
+                      km/L
+                    </button>
+                    <button
+                      onClick={() => setConsumptionMetric('consumoL100Km')}
+                      className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                        consumptionMetric === 'consumoL100Km'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                      title="Consumo estimado en litros cada 100km"
+                    >
+                      L/100km
+                    </button>
+                    <button
+                      onClick={() => setConsumptionMetric('dieselLitros')}
+                      className={`px-2 py-0.5 rounded font-semibold transition-colors ${
+                        consumptionMetric === 'dieselLitros'
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                      title="Litros totales cargados"
+                    >
+                      Litros
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={toggleView}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                    title="Vista anterior"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs font-semibold px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded border border-slate-200 dark:border-slate-700">
+                    {activeChartView === 'monthly' ? '1 / 2' : '2 / 2'}
+                  </span>
+                  <button
+                    onClick={toggleView}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+                    title="Siguiente vista"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* View 1: Monthly Revenue & Fuel Chart */}
+            {activeChartView === 'monthly' && (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart data={monthlyChart || []}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis dataKey="mes" tick={{ fill: axisColor, fontSize: 11 }} />
+                  <YAxis tick={{ fill: axisColor, fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+                      borderRadius: '8px',
+                      color: isDark ? '#F1F5F9' : '#0F172A',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                    labelStyle={{ color: isDark ? '#F1F5F9' : '#0F172A', fontWeight: 'bold' }}
+                    formatter={(v: any) => [formatMoney(v), '']}
+                  />
+                  <Legend
+                    formatter={(v) => (
+                      <span className="text-slate-800 dark:text-slate-200 text-xs font-medium ml-1">
+                        {v}
+                      </span>
+                    )}
+                  />
+                  <Bar dataKey="facturacion" fill="#2563EB" name="Facturación ($)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  <Bar dataKey="combustible" fill="#F59E0B" name="Combustible ($)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* View 2: Vehicle Domain Consumption Chart */}
+            {activeChartView === 'consumption' && (
+              <ResponsiveContainer width="100%" height={260}>
+                <BarChart
+                  data={(vehicleConsumption || []).map((v: any) => ({
+                    ...v,
+                    consumoLKm: v.rendimientoKmL > 0 ? Number((1 / v.rendimientoKmL).toFixed(3)) : 0,
+                  }))}
+                  barGap={6}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                  <XAxis dataKey="patente" tick={{ fill: axisColor, fontSize: 11, fontWeight: 'bold' }} />
+                  <YAxis
+                    tick={{ fill: axisColor, fontSize: 11 }}
+                    tickFormatter={(v) =>
+                      consumptionMetric === 'consumoLKm'
+                        ? `${v} L/km`
+                        : consumptionMetric === 'rendimientoKmL'
+                        ? `${v} km/L`
+                        : consumptionMetric === 'consumoL100Km'
+                        ? `${v} L`
+                        : `${v}L`
+                    }
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                      border: isDark ? '1px solid #334155' : '1px solid #E2E8F0',
+                      borderRadius: '8px',
+                      color: isDark ? '#F1F5F9' : '#0F172A',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                    }}
+                    labelStyle={{ color: isDark ? '#F1F5F9' : '#0F172A', fontWeight: 'bold' }}
+                    formatter={(value: any, name: any, item: any) => {
+                      const payload = item.payload || {};
+                      if (name.includes('Litros x KM')) return [`${value} L/km (${payload.marcaModelo})`, name];
+                      if (name.includes('Rendimiento')) return [`${value} km/L (${payload.marcaModelo})`, name];
+                      if (name.includes('Consumo (L/100km)')) return [`${value} L/100km (${payload.marcaModelo})`, name];
+                      if (name.includes('Diésel')) return [`${value} Litros (${formatMoney(payload.costoTotal)})`, name];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend
+                    formatter={(v) => (
+                      <span className="text-slate-800 dark:text-slate-200 text-xs font-medium ml-1">
+                        {v}
+                      </span>
+                    )}
+                  />
+                  {consumptionMetric === 'consumoLKm' && (
+                    <Bar dataKey="consumoLKm" fill="#10B981" name="Consumo (Litros x KM)" radius={[6, 6, 0, 0]} maxBarSize={24} />
                   )}
-                />
-                <Bar dataKey="facturacion" fill="#2563EB" name="Facturación ($)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="combustible" fill="#F59E0B" name="Combustible ($)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+                  {consumptionMetric === 'rendimientoKmL' && (
+                    <Bar dataKey="rendimientoKmL" fill="#2563EB" name="Rendimiento (km/L)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  )}
+                  {consumptionMetric === 'consumoL100Km' && (
+                    <Bar dataKey="consumoL100Km" fill="#F59E0B" name="Consumo (L/100km)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  )}
+                  {consumptionMetric === 'dieselLitros' && (
+                    <Bar dataKey="dieselLitros" fill="#8B5CF6" name="Diésel Cargado (Litros)" radius={[6, 6, 0, 0]} maxBarSize={24} />
+                  )}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Trip Distribution Pie */}
