@@ -314,7 +314,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                           onClick={() => removeAssignmentRow(idx)}
                           type="button"
                           className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 rounded"
-                          title="Quitar camión"
+                          title="Quitar camión del convoy"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -323,6 +323,20 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                   ))}
                 </tbody>
               </table>
+
+              {/* Botón destacado + para agregar más unidades */}
+              <div className="p-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-center">
+                <button
+                  onClick={addAssignmentRow}
+                  type="button"
+                  className="w-full py-2.5 px-4 border-2 border-dashed border-blue-300 dark:border-blue-700/60 hover:border-blue-500 dark:hover:border-blue-500 bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-100/50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 group"
+                >
+                  <div className="w-5 h-5 rounded-full bg-blue-600 group-hover:bg-blue-700 text-white flex items-center justify-center text-sm font-bold shadow-sm transition-transform group-hover:scale-110">
+                    +
+                  </div>
+                  <span>Añadir otra unidad al Convoy (Camión {assignments.length + 1})</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
