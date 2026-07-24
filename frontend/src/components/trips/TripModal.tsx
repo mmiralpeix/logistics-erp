@@ -7,7 +7,7 @@ import { X, Map, Clock, AlertTriangle, FileText, Calculator, FileCheck, Truck, C
 import { useEffect } from 'react';
 import { formatMoney } from '@/lib/utils';
 
-export function TripModal({ trip, onClose }: { trip?: any; onClose: () => void }) {
+export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () => void; onSave?: () => void }) {
   const qc = useQueryClient();
   const isEdit = !!trip;
 
@@ -69,6 +69,7 @@ export function TripModal({ trip, onClose }: { trip?: any; onClose: () => void }
       toast.success(isEdit ? 'Viaje actualizado' : 'Viaje creado exitosamente');
       qc.invalidateQueries({ queryKey: ['trips'] });
       qc.invalidateQueries({ queryKey: ['gantt'] });
+      onSave?.();
       onClose();
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Error al guardar viaje'),
