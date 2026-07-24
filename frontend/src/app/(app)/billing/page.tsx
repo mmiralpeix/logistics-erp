@@ -447,8 +447,12 @@ function NewCertificationModal({ onClose, onSuccess }: { onClose: () => void; on
   // Calculations
   const selectedTripsObj = uncertifiedTrips?.filter((t: any) => selectedTripIds.includes(t.id)) || [];
   const totalAmount = selectedTripsObj.reduce((s: number, t: any) => s + (t.tarifaAcordada || 0) + (t.montoExcedente || 0), 0);
-  const totalExcessKg = selectedTripsObj.reduce((s: number, t: any) => s + (t.pesoExcedenteKg || 0), 0);
-  const totalExcessTn = totalExcessKg / 1000;
+  const getTripExcessTn = (t: any) => {
+    if (t.pesoExcedenteKg) return t.pesoExcedenteKg / 1000;
+    if (t.pesoCarga && t.pesoCarga > 30000) return (t.pesoCarga - 30000) / 1000;
+    return 0;
+  };
+  const totalExcessTn = selectedTripsObj.reduce((s: number, t: any) => s + getTripExcessTn(t), 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -543,7 +547,9 @@ function NewCertificationModal({ onClose, onSuccess }: { onClose: () => void; on
                           <td className="p-2 font-mono font-medium">{t.numeroRemito || t.numero}</td>
                           <td className="p-2">{t.origen} ➔ {t.destino}</td>
                           <td className="p-2">{t.driver?.lastName} ({t.vehicle?.patente})</td>
-                          <td className="p-2 text-right font-mono">{t.pesoExcedenteKg ? `${(t.pesoExcedenteKg / 1000).toFixed(2)} Tn` : '-'}</td>
+                          <td className="p-2 text-right font-mono font-semibold text-amber-700 dark:text-amber-300">
+                            {getTripExcessTn(t) > 0 ? `${getTripExcessTn(t).toFixed(2)} Tn` : '-'}
+                          </td>
                           <td className="p-2 text-right font-bold">{formatMoney((t.tarifaAcordada || 0) + (t.montoExcedente || 0))}</td>
                         </tr>
                       ))}

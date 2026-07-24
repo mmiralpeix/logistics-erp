@@ -39,7 +39,10 @@ export class CertificationsService {
     let montoTotal = 0;
 
     trips.forEach((t) => {
-      const excessKg = t.pesoExcedenteKg || 0;
+      let excessKg = t.pesoExcedenteKg || 0;
+      if (!excessKg && t.pesoCarga && t.pesoCarga > 30000) {
+        excessKg = t.pesoCarga - 30000;
+      }
       totalTnExcedente += excessKg / 1000;
       montoTotal += (t.tarifaAcordada || 0) + (t.montoExcedente || 0);
     });

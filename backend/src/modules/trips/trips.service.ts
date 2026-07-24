@@ -183,6 +183,10 @@ export class TripsService {
       }
     });
 
+    if (sanitizedData.pesoCarga && (sanitizedData.pesoExcedenteKg === undefined || sanitizedData.pesoExcedenteKg === null)) {
+      sanitizedData.pesoExcedenteKg = Math.max(0, Number(sanitizedData.pesoCarga) - 30000);
+    }
+
     return this.prisma.trip.update({ where: { id }, data: sanitizedData, include: { client: true, vehicle: true, driver: true } });
   }
 
