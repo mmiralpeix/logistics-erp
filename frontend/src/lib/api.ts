@@ -120,6 +120,15 @@ export const billingApi = {
   createFromTrip: (data: any) => api.post('/billing/invoices/from-trip', data),
 };
 
+export const certificationsApi = {
+  getAll: (params?: any) => api.get('/certifications', { params }),
+  getUncertifiedTrips: (clientId?: string) => api.get('/certifications/uncertified-trips', { params: { clientId } }),
+  getOne: (id: string) => api.get(`/certifications/${id}`),
+  create: (data: any) => api.post('/certifications', data),
+  update: (id: string, data: any) => api.patch(`/certifications/${id}`, data),
+  remove: (id: string) => api.delete(`/certifications/${id}`),
+};
+
 export const reportsApi = {
   downloadTripsExcel: (from: string, to: string) => api.get('/reports/trips/excel', { params: { from, to }, responseType: 'blob' }),
   downloadFleetExcel: () => api.get('/reports/fleet/excel', { responseType: 'blob' }),

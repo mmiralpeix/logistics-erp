@@ -167,6 +167,7 @@ model Client {
   contracts Contract[]
   trips     Trip[]
   invoices  Invoice[]
+  certifications Certification[]
 
   @@map("clients")
 }
@@ -204,6 +205,7 @@ model Contract {
 
   client Client @relation(fields: [clientId], references: [id])
   trips  Trip[]
+  certifications Certification[]
 
   @@map("contracts")
 }
@@ -358,16 +360,21 @@ model Trip {
 
   convoyCode        String?
 
+  certificationId     String?
+  numeroCertificado   String?
+  estadoCertificacion String  @default("SIN_CERTIFICAR")
+
   motivoCancelacion String?
   notas             String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  client      Client?   @relation(fields: [clientId], references: [id])
-  contract    Contract? @relation(fields: [contractId], references: [id])
-  vehicle     Vehicle   @relation("VehicleTrips", fields: [vehicleId], references: [id])
-  trailer     Vehicle?  @relation("TrailerTrips", fields: [trailerId], references: [id])
-  driver      Driver   @relation(fields: [driverId], references: [id])
+  client        Client?        @relation(fields: [clientId], references: [id])
+  contract      Contract?      @relation(fields: [contractId], references: [id])
+  certification Certification? @relation(fields: [certificationId], references: [id])
+  vehicle       Vehicle        @relation("VehicleTrips", fields: [vehicleId], references: [id])
+  trailer       Vehicle?       @relation("TrailerTrips", fields: [trailerId], references: [id])
+  driver        Driver         @relation(fields: [driverId], references: [id])
   dispatcher  User?    @relation("DispatcherTrips", fields: [dispatcherId], references: [id])
 
   dangerousGoods DangerousGoodsDeclaration?
@@ -561,12 +568,15 @@ model Invoice {
   afipCAEVencimiento DateTime?
   afipPDFUrl         String?
 
+  certificationId String?
+
   notas     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client Client        @relation(fields: [clientId], references: [id])
-  items  InvoiceItem[]
+  client        Client         @relation(fields: [clientId], references: [id])
+  certification Certification? @relation(fields: [certificationId], references: [id])
+  items         InvoiceItem[]
 
   @@index([clientId])
   @@index([status])
@@ -651,4 +661,41 @@ model SystemConfig {
   label String?
 
   @@map("system_config")
+}
+
+enum CertificationStatus {
+  BORRADOR
+  EN_REVISION
+  APROBADO
+  FACTURADO
+  RECHAZADO
+}
+
+model Certification {
+  id                  String              @id @default(cuid())
+  numeroCertificado   Int                 // 1, 2, 3... correlativo por cliente
+  clientId            String
+  contractId          String?
+  numeroOC            String?             // N° Orden de Compra
+  periodo             String?             // Ej: "Enero 2026"
+  fechaEmision        DateTime            @default(now())
+  fechaAprobacion     DateTime?
+  cantidadViajes      Int                 @default(0)
+  toneladasExcedentes Float               @default(0)
+  montoTotal          Float               @default(0)
+  estado              CertificationStatus @default(EN_REVISION)
+  diasEnGestion       Int?                @default(0)
+  observaciones       String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  client   Client    @relation(fields: [clientId], references: [id])
+  contract Contract? @relation(fields: [contractId], references: [id])
+  trips    Trip[]
+  invoices Invoice[]
+
+  @@unique([clientId, numeroCertificado])
+  @@index([clientId])
+  @@index([estado])
+  @@map("certifications")
 }

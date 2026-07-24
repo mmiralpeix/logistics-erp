@@ -21,6 +21,7 @@ import { GpsModule } from './modules/gps/gps.module';
 import { HealthModule } from './modules/health/health.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.module';
+import { CertificationsModule } from './modules/certifications/certifications.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.
     VehiclesModule,
     DriversModule,
     TripsModule,
+    CertificationsModule,
     MaintenanceModule,
     FuelModule,
     ConsumablesModule,

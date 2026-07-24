@@ -178,7 +178,7 @@ export default function TripsPage() {
                         </p>
                       </td>
 
-                      {/* Documentation: Remito & OC */}
+                      {/* Documentation: Remito, OC & Certificado */}
                       <td className="px-4 py-3">
                         <div className="space-y-1">
                           {trip.numeroRemito ? (
@@ -200,6 +200,14 @@ export default function TripsPage() {
                             >
                               ⚠️ Sin OC — Cargar
                             </button>
+                          )}
+
+                          {trip.numeroCertificado ? (
+                            <span className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 w-fit border border-amber-200 dark:border-amber-800">
+                              <FileCheck className="w-3 h-3" /> Cert. #{trip.numeroCertificado}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 block">Sin certificar</span>
                           )}
                         </div>
                       </td>
