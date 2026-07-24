@@ -163,7 +163,27 @@ export class TripsService {
   async update(id: string, dto: UpdateTripDto) {
     await this.findOne(id);
     const { checkpoints, dangerousGoods, ...data } = dto;
-    return this.prisma.trip.update({ where: { id }, data, include: { client: true, vehicle: true, driver: true } });
+
+    const sanitizedData: any = { ...data };
+
+    ['fechaSalidaProgramada', 'fechaLlegadaEstimada', 'fechaSalidaReal', 'fechaLlegadaReal'].forEach((dateKey) => {
+      if (sanitizedData[dateKey]) {
+        const parsedDate = new Date(sanitizedData[dateKey]);
+        if (!isNaN(parsedDate.getTime())) {
+          sanitizedData[dateKey] = parsedDate;
+        } else {
+          delete sanitizedData[dateKey];
+        }
+      }
+    });
+
+    ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'pesoExcedenteKg', 'montoExcedente'].forEach((numKey) => {
+      if (sanitizedData[numKey] !== undefined && sanitizedData[numKey] !== null && sanitizedData[numKey] !== '') {
+        sanitizedData[numKey] = Number(sanitizedData[numKey]);
+      }
+    });
+
+    return this.prisma.trip.update({ where: { id }, data: sanitizedData, include: { client: true, vehicle: true, driver: true } });
   }
 
   async updateStatus(id: string, status: TripStatus, notes?: string) {

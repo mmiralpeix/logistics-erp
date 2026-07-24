@@ -15,11 +15,38 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   const { data: drivers } = useQuery({ queryKey: ['drivers-select'], queryFn: () => driversApi.getAll({ limit: 100 }).then((r) => r.data.data) });
   const { data: clients } = useQuery({ queryKey: ['clients-select'], queryFn: () => clientsApi.getAll({ limit: 100 }).then((r) => r.data.data) });
 
+  const formatDateTimeInput = (d?: any) => {
+    if (!d) return '';
+    try {
+      const date = new Date(d);
+      if (isNaN(date.getTime())) return '';
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    } catch {
+      return '';
+    }
+  };
+
+  const initialValues = trip
+    ? {
+        ...trip,
+        fechaSalidaProgramada: formatDateTimeInput(trip.fechaSalidaProgramada),
+        fechaLlegadaEstimada: formatDateTimeInput(trip.fechaLlegadaEstimada),
+        fechaSalidaReal: formatDateTimeInput(trip.fechaSalidaReal),
+        fechaLlegadaReal: formatDateTimeInput(trip.fechaLlegadaReal),
+      }
+    : {
+        status: 'PENDIENTE',
+        tipoCarga: 'SALMUERA',
+        esCargaPeligrosa: false,
+        esMineria: false,
+        esDistribucion: false,
+        duracionEstimadaHoras: 8,
+        esperaEnDestinoHoras: 2,
+        descansosConductorHoras: 2,
+      };
+
   const { register, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm({
-    defaultValues: trip || {
-      status: 'PENDIENTE', tipoCarga: 'SALMUERA', esCargaPeligrosa: false, esMineria: false, esDistribucion: false,
-      duracionEstimadaHoras: 8, esperaEnDestinoHoras: 2, descansosConductorHoras: 2,
-    },
+    defaultValues: initialValues,
   });
 
   const selectedClientId = watch('clientId');
@@ -184,32 +211,34 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
               </div>
             </div>
 
-            {/* Timing */}
+            {/* Timing & Dates */}
             <div className="col-span-2 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-300 flex items-center gap-2 mb-3">
-                <Clock className="w-4 h-4 text-emerald-600 dark:text-green-400" /> Lead Time Multidía
+                <Clock className="w-4 h-4 text-emerald-600 dark:text-green-400" /> Control de Días y Fechas de Viaje
               </h3>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div>
-                  <label className="label">Salida programada *</label>
-                  <input {...register('fechaSalidaProgramada', { required: true })} type="datetime-local" className="input" />
+                  <label className="label">Salida Programada</label>
+                  <input {...register('fechaSalidaProgramada')} type="datetime-local" className="input" />
+                </div>
+                <div>
+                  <label className="label">Fecha Carga / Salida Real</label>
+                  <input {...register('fechaSalidaReal')} type="datetime-local" className="input" />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Momento real de carga/salida</p>
+                </div>
+                <div>
+                  <label className="label">Fecha Llegada Real</label>
+                  <input {...register('fechaLlegadaReal')} type="datetime-local" className="input" />
+                  <p className="text-[10px] text-slate-400 mt-0.5">Momento real de descarga</p>
                 </div>
                 <div>
                   <label className="label">Duración de ruta (h)</label>
                   <input {...register('duracionEstimadaHoras')} type="number" step="0.5" className="input" min="0" />
                 </div>
-                <div>
-                  <label className="label">Espera en destino (h)</label>
-                  <input {...register('esperaEnDestinoHoras')} type="number" step="0.5" className="input" min="0" />
-                </div>
-                <div>
-                  <label className="label">Descansos conductor (h)</label>
-                  <input {...register('descansosConductorHoras')} type="number" step="0.5" className="input" min="0" />
-                </div>
               </div>
               <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-                <span>Ruta: <strong>{duracion}h</strong> · Espera: <strong>{espera}h</strong> · Descanso: <strong>{descanso}h</strong></span>
-                <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">Lead Time: {totalLeadTime}h ({(totalLeadTime / 24).toFixed(1)} días)</span>
+                <span>Espera en destino: <strong>{espera}h</strong> · Descanso: <strong>{descanso}h</strong></span>
+                <span className="font-bold text-blue-600 dark:text-blue-400 text-sm">Lead Time Estimado: {totalLeadTime}h ({(totalLeadTime / 24).toFixed(1)} días)</span>
               </div>
             </div>
 
