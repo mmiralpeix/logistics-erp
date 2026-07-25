@@ -19,6 +19,7 @@ export default function MaintenancePage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [spareCategory, setSpareCategory] = useState('');
+  const [spareSearch, setSpareSearch] = useState('');
 
   const qc = useQueryClient();
 
@@ -134,6 +135,17 @@ export default function MaintenancePage() {
       m.vehicle?.patente?.toLowerCase().includes(q) ||
       m.descripcion?.toLowerCase().includes(q) ||
       m.taller?.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredSpareParts = spareParts?.filter((p: any) => {
+    if (!spareSearch) return true;
+    const q = spareSearch.toLowerCase();
+    return (
+      p.sku?.toLowerCase().includes(q) ||
+      p.nombre?.toLowerCase().includes(q) ||
+      p.ubicacion?.toLowerCase().includes(q) ||
+      p.marcasCompatibles?.toLowerCase().includes(q)
     );
   });
 
@@ -450,11 +462,22 @@ export default function MaintenancePage() {
         {activeTab === 'inventory' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
-              <div className="flex gap-3 items-center w-full sm:w-auto">
+              <div className="flex flex-wrap gap-3 items-center w-full sm:w-auto">
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar repuesto, SKU, marca..."
+                    value={spareSearch}
+                    onChange={(e) => setSpareSearch(e.target.value)}
+                    className="input pl-9 text-sm w-full"
+                  />
+                </div>
+
                 <select
                   value={spareCategory}
                   onChange={(e) => setSpareCategory(e.target.value)}
-                  className="input w-48 text-sm"
+                  className="input w-44 text-sm"
                 >
                   <option value="">Todas las categorías</option>
                   <option value="FILTROS">Filtros</option>
@@ -501,14 +524,14 @@ export default function MaintenancePage() {
                         Cargando inventario de Pañol...
                       </td>
                     </tr>
-                  ) : spareParts?.length === 0 ? (
+                  ) : filteredSpareParts?.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="text-center py-12 text-slate-500">
-                        No hay repuestos registrados en Pañol.
+                        No se encontraron repuestos en Pañol.
                       </td>
                     </tr>
                   ) : (
-                    spareParts?.map((p: any) => {
+                    filteredSpareParts?.map((p: any) => {
                       const isLowStock = p.stockActual <= p.stockMinimo;
                       return (
                         <tr key={p.id} className="table-row">

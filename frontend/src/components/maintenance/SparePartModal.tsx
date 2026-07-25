@@ -59,6 +59,7 @@ const HITCH_TYPES = [
 export function SparePartModal({ initialData, onClose, onSave }: SparePartModalProps) {
   const [form, setForm] = useState<any>(
     initialData || {
+      sku: `SKU-${Date.now().toString().slice(-6)}`,
       categoria: 'FILTROS',
       ambito: 'UNIVERSAL',
       stockActual: 1,
@@ -74,8 +75,10 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalSku = form.sku?.trim() || `SKU-${Date.now().toString().slice(-6)}`;
     onSave({
       ...form,
+      sku: finalSku,
       stockActual: Number(form.stockActual) || 0,
       stockMinimo: Number(form.stockMinimo) || 1,
       precioUnitario: Number(form.precioUnitario) || 0,
@@ -100,14 +103,22 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="label">Código SKU / Parte *</label>
+              <div className="flex items-center justify-between">
+                <label className="label">Código SKU / Parte</label>
+                <button
+                  type="button"
+                  onClick={() => set('sku', `SKU-${Date.now().toString().slice(-6)}`)}
+                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-semibold"
+                >
+                  Generar
+                </button>
+              </div>
               <input
                 type="text"
-                required
                 value={form.sku || ''}
                 onChange={(e) => set('sku', e.target.value)}
-                className="input font-mono"
-                placeholder="Ej: REP-FIL-001"
+                className="input font-mono text-xs"
+                placeholder="Ej: SKU-FIL-001"
               />
             </div>
 
