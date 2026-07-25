@@ -7,6 +7,9 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
+    "dev": "powershell -ExecutionPolicy Bypass -File ./start-app.ps1",
+    "index": "powershell -ExecutionPolicy Bypass -File ./.agents/scripts/update-graph.ps1",
+    "test:agents": "powershell -ExecutionPolicy Bypass -File ./.agents/scripts/run-tests.ps1",
     "electron": "electron .",
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
