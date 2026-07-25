@@ -8,10 +8,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: { 
       queries: { 
-        staleTime: 0,            // Datos siempre frescos (sin caché retenido)
-        gcTime: 0,               // Sin permanencia en memoria al cambiar de módulo
-        refetchOnMount: 'always', // Carga siempre datos reales en vivo
-        refetchOnWindowFocus: true,
+        staleTime: 30000,         // 30 segundos de frescura
+        gcTime: 300000,          // 5 minutos en memoria
+        refetchOnWindowFocus: false,
         retry: 1 
       } 
     },
