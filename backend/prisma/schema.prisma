@@ -471,19 +471,44 @@ model Maintenance {
 }
 
 model MaintenanceItem {
-  id             String   @id @default(cuid())
+  id             String     @id @default(cuid())
   maintenanceId  String
+  sparePartId    String?
   descripcion    String
   repuestoCodigo String?
-  cantidad       Float    @default(1)
-  costoUnitario  Float    @default(0)
-  costoTotal     Float    @default(0)
-  createdAt      DateTime @default(now())
+  cantidad       Float      @default(1)
+  costoUnitario  Float      @default(0)
+  costoTotal     Float      @default(0)
+  createdAt      DateTime   @default(now())
 
   maintenance Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+  sparePart   SparePart?  @relation(fields: [sparePartId], references: [id])
 
   @@index([maintenanceId])
+  @@index([sparePartId])
   @@map("maintenance_items")
+}
+
+model SparePart {
+  id                 String   @id @default(cuid())
+  sku                String   @unique
+  nombre             String
+  categoria          String   @default("FILTROS")
+  stockActual        Float    @default(0)
+  stockMinimo        Float    @default(1)
+  precioUnitario     Float    @default(0)
+  ubicacion          String?
+  tiposCompatibles   String?  @default("TODOS")
+  modelosCompatibles String?
+  notas              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  items MaintenanceItem[]
+
+  @@index([sku])
+  @@index([categoria])
+  @@map("spare_parts")
 }
 
 enum ConsumableType {

@@ -52,6 +52,7 @@ export class MaintenanceService {
         create: items.map((i: any) => ({
           descripcion: i.descripcion,
           repuestoCodigo: i.repuestoCodigo || null,
+          sparePartId: i.sparePartId || null,
           cantidad: Number(i.cantidad) || 1,
           costoUnitario: Number(i.costoUnitario) || 0,
           costoTotal: (Number(i.cantidad) || 1) * (Number(i.costoUnitario) || 0),
@@ -61,6 +62,18 @@ export class MaintenanceService {
       const itemsSum = items.reduce((acc: number, item: any) => acc + (Number(item.cantidad) || 1) * (Number(item.costoUnitario) || 0), 0);
       data.costoRepuestos = itemsSum;
       data.costoTotal = (Number(data.costoManoObra) || 0) + itemsSum;
+
+      // Deduct stock from SparePart
+      for (const item of items) {
+        if (item.sparePartId) {
+          const part = await this.prisma.sparePart.findUnique({ where: { id: item.sparePartId } });
+          if (part) {
+            const qty = Number(item.cantidad) || 1;
+            const newStock = Math.max(0, part.stockActual - qty);
+            await this.prisma.sparePart.update({ where: { id: item.sparePartId }, data: { stockActual: newStock } });
+          }
+        }
+      }
     }
 
     const maintenance = await this.prisma.maintenance.create({
@@ -95,11 +108,24 @@ export class MaintenanceService {
           maintenanceId: id,
           descripcion: i.descripcion,
           repuestoCodigo: i.repuestoCodigo || null,
+          sparePartId: i.sparePartId || null,
           cantidad: Number(i.cantidad) || 1,
           costoUnitario: Number(i.costoUnitario) || 0,
           costoTotal: (Number(i.cantidad) || 1) * (Number(i.costoUnitario) || 0),
         })),
       });
+
+      // Deduct stock for spare parts
+      for (const item of items) {
+        if (item.sparePartId) {
+          const part = await this.prisma.sparePart.findUnique({ where: { id: item.sparePartId } });
+          if (part) {
+            const qty = Number(item.cantidad) || 1;
+            const newStock = Math.max(0, part.stockActual - qty);
+            await this.prisma.sparePart.update({ where: { id: item.sparePartId }, data: { stockActual: newStock } });
+          }
+        }
+      }
     }
 
     const updated = await this.prisma.maintenance.update({

@@ -103,6 +103,15 @@ export const maintenanceApi = {
   getCosts: () => api.get('/maintenance/costs-by-vehicle'),
 };
 
+export const sparePartsApi = {
+  getAll: (params?: any) => api.get('/maintenance/spare-parts', { params }),
+  getOne: (id: string) => api.get(`/maintenance/spare-parts/${id}`),
+  create: (data: any) => api.post('/maintenance/spare-parts', data),
+  update: (id: string, data: any) => api.patch(`/maintenance/spare-parts/${id}`, data),
+  adjustStock: (id: string, delta: number) => api.patch(`/maintenance/spare-parts/${id}/stock`, { delta }),
+  remove: (id: string) => api.delete(`/maintenance/spare-parts/${id}`),
+};
+
 export const consumablesApi = {
   getAll: (params?: any) => api.get('/consumables', { params }),
   create: (data: any) => api.post('/consumables', data),

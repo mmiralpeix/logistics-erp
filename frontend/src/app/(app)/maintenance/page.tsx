@@ -1,20 +1,24 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { maintenanceApi, vehiclesApi } from '@/lib/api';
+import { maintenanceApi, vehiclesApi, sparePartsApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatDate, formatMoney, MAINTENANCE_STATUS_MAP } from '@/lib/utils';
-import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search } from 'lucide-react';
+import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search, Package, Layers } from 'lucide-react';
 import { WorkOrderModal } from '@/components/maintenance/WorkOrderModal';
 import { MaintenanceHealthCard } from '@/components/maintenance/MaintenanceHealthCard';
+import { SparePartModal } from '@/components/maintenance/SparePartModal';
 import toast from 'react-hot-toast';
 
 export default function MaintenancePage() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'health' | 'costs'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'health' | 'costs' | 'inventory'>('orders');
   const [showModal, setShowModal] = useState(false);
+  const [showSpareModal, setShowSpareModal] = useState(false);
   const [editData, setEditData] = useState<any>(null);
+  const [editSpareData, setEditSpareData] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [spareCategory, setSpareCategory] = useState('');
 
   const qc = useQueryClient();
 
@@ -44,6 +48,11 @@ export default function MaintenancePage() {
     queryFn: () => vehiclesApi.getAll({ limit: 100 }).then((r) => r.data.data),
   });
 
+  const { data: spareParts, isLoading: isLoadingSpares } = useQuery({
+    queryKey: ['spare-parts-inventory', spareCategory],
+    queryFn: () => sparePartsApi.getAll({ categoria: spareCategory || undefined }).then((r) => r.data),
+  });
+
   // Mutations
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: any) => maintenanceApi.update(id, data),
@@ -51,7 +60,7 @@ export default function MaintenancePage() {
       toast.success('Orden de Trabajo actualizada');
       qc.invalidateQueries({ queryKey: ['maintenance'] });
       qc.invalidateQueries({ queryKey: ['maintenance-health-stats'] });
-      qc.invalidateQueries({ queryKey: ['vehicles-fleet-health'] });
+      qc.invalidateQueries({ queryKey: ['spare-parts-inventory'] });
     },
   });
 
@@ -61,11 +70,40 @@ export default function MaintenancePage() {
       toast.success('Orden de Trabajo (OT) registrada exitosamente');
       qc.invalidateQueries({ queryKey: ['maintenance'] });
       qc.invalidateQueries({ queryKey: ['maintenance-health-stats'] });
-      qc.invalidateQueries({ queryKey: ['vehicles-fleet-health'] });
+      qc.invalidateQueries({ queryKey: ['spare-parts-inventory'] });
       setShowModal(false);
       setEditData(null);
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al guardar OT'),
+  });
+
+  const createSpareMutation = useMutation({
+    mutationFn: (data: any) => sparePartsApi.create(data),
+    onSuccess: () => {
+      toast.success('Repuesto guardado en Pañol');
+      qc.invalidateQueries({ queryKey: ['spare-parts-inventory'] });
+      setShowSpareModal(false);
+      setEditSpareData(null);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Error al guardar repuesto'),
+  });
+
+  const updateSpareMutation = useMutation({
+    mutationFn: ({ id, ...data }: any) => sparePartsApi.update(id, data),
+    onSuccess: () => {
+      toast.success('Repuesto actualizado');
+      qc.invalidateQueries({ queryKey: ['spare-parts-inventory'] });
+      setShowSpareModal(false);
+      setEditSpareData(null);
+    },
+  });
+
+  const deleteSpareMutation = useMutation({
+    mutationFn: (id: string) => sparePartsApi.remove(id),
+    onSuccess: () => {
+      toast.success('Repuesto eliminado');
+      qc.invalidateQueries({ queryKey: ['spare-parts-inventory'] });
+    },
   });
 
   const handleEdit = (ot: any) => {
@@ -192,6 +230,20 @@ export default function MaintenancePage() {
             }`}
           >
             <DollarSign className="w-4 h-4" /> Análisis de Costos ($/Km)
+          </button>
+
+          <button
+            onClick={() => setActiveTab('inventory')}
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+              activeTab === 'inventory'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Package className="w-4 h-4" /> Pañol & Stock Repuestos
+            {spareParts?.some((p: any) => p.stockActual <= p.stockMinimo) && (
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
           </button>
         </div>
 
@@ -363,9 +415,141 @@ export default function MaintenancePage() {
             </table>
           </div>
         )}
+
+        {/* TAB 4: INVENTORY / PAÑOL */}
+        {activeTab === 'inventory' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
+              <div className="flex gap-3 items-center w-full sm:w-auto">
+                <select
+                  value={spareCategory}
+                  onChange={(e) => setSpareCategory(e.target.value)}
+                  className="input w-48 text-sm"
+                >
+                  <option value="">Todas las categorías</option>
+                  <option value="FILTROS">Filtros</option>
+                  <option value="LUBRICANTES">Lubricantes</option>
+                  <option value="FRENOS">Frenos</option>
+                  <option value="NEUMATICOS">Neumáticos</option>
+                  <option value="CORREAS">Correas</option>
+                  <option value="SISTEMA_ELECTRICO">Sistema Eléctrico</option>
+                  <option value="VALVULAS_CISTERNA">Válvulas Cisterna</option>
+                  <option value="SUSPENSION">Suspensión</option>
+                  <option value="VARIOS">Varios</option>
+                </select>
+              </div>
+
+              <button
+                onClick={() => {
+                  setEditSpareData(null);
+                  setShowSpareModal(true);
+                }}
+                className="btn-primary"
+              >
+                <Plus className="w-4 h-4" /> Nuevo Repuesto en Pañol
+              </button>
+            </div>
+
+            <div className="card overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="table-header">
+                    <th className="px-4 py-3 text-left">SKU</th>
+                    <th className="px-4 py-3 text-left">Repuesto / Insumo</th>
+                    <th className="px-4 py-3 text-left">Categoría</th>
+                    <th className="px-4 py-3 text-left">Stock Actual</th>
+                    <th className="px-4 py-3 text-left">Ubicación</th>
+                    <th className="px-4 py-3 text-left">Compatibilidad</th>
+                    <th className="px-4 py-3 text-left">Precio Unitario</th>
+                    <th className="px-4 py-3 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingSpares ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                        Cargando inventario de Pañol...
+                      </td>
+                    </tr>
+                  ) : spareParts?.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                        No hay repuestos registrados en Pañol.
+                      </td>
+                    </tr>
+                  ) : (
+                    spareParts?.map((p: any) => {
+                      const isLowStock = p.stockActual <= p.stockMinimo;
+                      return (
+                        <tr key={p.id} className="table-row">
+                          <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900 dark:text-white">
+                            {p.sku}
+                          </td>
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-slate-900 dark:text-white">{p.nombre}</p>
+                            {p.notas && <p className="text-xs text-slate-500">{p.notas}</p>}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="badge badge-gray">{p.categoria}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`font-bold text-sm ${
+                                  isLowStock ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                                }`}
+                              >
+                                {p.stockActual} u.
+                              </span>
+                              {isLowStock && (
+                                <span className="badge badge-red flex items-center gap-1 text-[10px]">
+                                  <AlertTriangle className="w-3 h-3" /> Bajo Stock (Mín: {p.stockMinimo})
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
+                            {p.ubicacion || 'Depósito Principal'}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="badge badge-blue">{p.tiposCompatibles || 'TODOS'}</span>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                            {formatMoney(p.precioUnitario)}
+                          </td>
+                          <td className="px-4 py-3 text-right space-x-2">
+                            <button
+                              onClick={() => {
+                                setEditSpareData(p);
+                                setShowSpareModal(true);
+                              }}
+                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`¿Eliminar repuesto ${p.sku} (${p.nombre})?`)) {
+                                  deleteSpareMutation.mutate(p.id);
+                                }
+                              }}
+                              className="text-xs font-semibold text-rose-600 hover:underline"
+                            >
+                              Eliminar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
+      {/* Modals */}
       {showModal && (
         <WorkOrderModal
           initialData={editData}
@@ -378,6 +562,23 @@ export default function MaintenancePage() {
               updateMutation.mutate({ id: editData.id, ...data });
             } else {
               createMutation.mutate(data);
+            }
+          }}
+        />
+      )}
+
+      {showSpareModal && (
+        <SparePartModal
+          initialData={editSpareData}
+          onClose={() => {
+            setShowSpareModal(false);
+            setEditSpareData(null);
+          }}
+          onSave={(data) => {
+            if (editSpareData?.id) {
+              updateSpareMutation.mutate({ id: editSpareData.id, ...data });
+            } else {
+              createSpareMutation.mutate(data);
             }
           }}
         />

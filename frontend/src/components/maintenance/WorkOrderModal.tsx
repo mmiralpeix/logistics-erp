@@ -1,12 +1,13 @@
 'use client';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { vehiclesApi } from '@/lib/api';
-import { Wrench, Plus, Trash2, ShieldCheck, DollarSign, Calendar } from 'lucide-react';
+import { vehiclesApi, sparePartsApi } from '@/lib/api';
+import { Wrench, Plus, Trash2, ShieldCheck, DollarSign, Calendar, PackageCheck } from 'lucide-react';
 
 interface Item {
   descripcion: string;
   repuestoCodigo?: string;
+  sparePartId?: string;
   cantidad: number;
   costoUnitario: number;
 }
@@ -23,27 +24,61 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
     queryFn: () => vehiclesApi.getAll({ limit: 100 }).then((r) => r.data.data),
   });
 
+  const { data: spareParts } = useQuery({
+    queryKey: ['spare-parts-select'],
+    queryFn: () => sparePartsApi.getAll().then((r) => r.data),
+  });
+
   const [form, setForm] = useState<any>(
     initialData || {
       tipo: 'PREVENTIVO',
       status: 'PENDIENTE',
       costoManoObra: 0,
-      items: [{ descripcion: '', repuestoCodigo: '', cantidad: 1, costoUnitario: 0 }],
+      items: [{ descripcion: '', repuestoCodigo: '', sparePartId: '', cantidad: 1, costoUnitario: 0 }],
     }
   );
 
   const [items, setItems] = useState<Item[]>(
-    initialData?.items || [{ descripcion: '', repuestoCodigo: '', cantidad: 1, costoUnitario: 0 }]
+    initialData?.items || [{ descripcion: '', repuestoCodigo: '', sparePartId: '', cantidad: 1, costoUnitario: 0 }]
   );
+
+  const selectedVehicle = vehicles?.find((v: any) => v.id === form.vehicleId);
+
+  // Filter compatible spare parts for selected vehicle
+  const compatibleParts = spareParts?.filter((p: any) => {
+    if (!selectedVehicle || !p.tiposCompatibles || p.tiposCompatibles === 'TODOS') return true;
+    const types = p.tiposCompatibles.split(',').map((t: string) => t.trim().toUpperCase());
+    return types.includes(selectedVehicle.tipo.toUpperCase()) || types.includes('TODOS');
+  });
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
   const handleAddItem = () => {
-    setItems([...items, { descripcion: '', repuestoCodigo: '', cantidad: 1, costoUnitario: 0 }]);
+    setItems([...items, { descripcion: '', repuestoCodigo: '', sparePartId: '', cantidad: 1, costoUnitario: 0 }]);
   };
 
   const handleRemoveItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleSelectSparePart = (index: number, sparePartId: string) => {
+    const part = spareParts?.find((p: any) => p.id === sparePartId);
+    const updated = [...items];
+    if (part) {
+      updated[index] = {
+        ...updated[index],
+        sparePartId: part.id,
+        descripcion: part.nombre,
+        repuestoCodigo: part.sku,
+        costoUnitario: part.precioUnitario || 0,
+      };
+    } else {
+      updated[index] = {
+        ...updated[index],
+        sparePartId: '',
+      };
+    }
+    setItems(updated);
   };
 
   const handleItemChange = (index: number, key: keyof Item, val: any) => {
@@ -216,52 +251,76 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
               </button>
             </div>
 
-            <div className="space-y-2">
-              {items.map((item, idx) => (
-                <div key={idx} className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    placeholder="Descripción (ej: Filtro Aceite Scania R450)"
-                    value={item.descripcion}
-                    onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
-                    className="input flex-1 text-xs"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Cód. Repuesto"
-                    value={item.repuestoCodigo || ''}
-                    onChange={(e) => handleItemChange(idx, 'repuestoCodigo', e.target.value)}
-                    className="input w-28 text-xs"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Cant"
-                    value={item.cantidad}
-                    onChange={(e) => handleItemChange(idx, 'cantidad', Number(e.target.value))}
-                    className="input w-16 text-xs text-center"
-                    min={1}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Precio ($)"
-                    value={item.costoUnitario}
-                    onChange={(e) => handleItemChange(idx, 'costoUnitario', Number(e.target.value))}
-                    className="input w-28 text-xs"
-                  />
-                  <div className="w-24 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    ${((item.cantidad || 0) * (item.costoUnitario || 0)).toLocaleString('es-AR')}
+            <div className="space-y-3">
+              {items.map((item, idx) => {
+                const selectedPart = spareParts?.find((p: any) => p.id === item.sparePartId);
+                return (
+                  <div key={idx} className="flex flex-col gap-1 p-2 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-lg">
+                    <div className="flex gap-2 items-center">
+                      <select
+                        value={item.sparePartId || ''}
+                        onChange={(e) => handleSelectSparePart(idx, e.target.value)}
+                        className="input w-48 text-xs font-medium"
+                      >
+                        <option value="">-- Seleccionar de Pañol --</option>
+                        {compatibleParts?.map((p: any) => (
+                          <option key={p.id} value={p.id}>
+                            {p.sku} — {p.nombre} (Stock: {p.stockActual})
+                          </option>
+                        ))}
+                      </select>
+
+                      <input
+                        type="text"
+                        placeholder="Descripción del trabajo / repuesto"
+                        value={item.descripcion}
+                        onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
+                        className="input flex-1 text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Cód. Repuesto"
+                        value={item.repuestoCodigo || ''}
+                        onChange={(e) => handleItemChange(idx, 'repuestoCodigo', e.target.value)}
+                        className="input w-28 text-xs"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Cant"
+                        value={item.cantidad}
+                        onChange={(e) => handleItemChange(idx, 'cantidad', Number(e.target.value))}
+                        className="input w-16 text-xs text-center"
+                        min={1}
+                      />
+                      <input
+                        type="number"
+                        placeholder="Precio ($)"
+                        value={item.costoUnitario}
+                        onChange={(e) => handleItemChange(idx, 'costoUnitario', Number(e.target.value))}
+                        className="input w-24 text-xs"
+                      />
+                      <div className="w-20 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        ${((item.cantidad || 0) * (item.costoUnitario || 0)).toLocaleString('es-AR')}
+                      </div>
+                      {items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(idx)}
+                          className="p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    {selectedPart && (
+                      <div className="flex items-center justify-between text-[11px] px-1 text-slate-500">
+                        <span>Stock disponible: <b className={selectedPart.stockActual < item.cantidad ? 'text-rose-500' : 'text-emerald-500'}>{selectedPart.stockActual} u.</b> (Ubicación: {selectedPart.ubicacion || 'Sin estante'})</span>
+                        <span className="text-blue-500 font-medium">Compatibilidad: {selectedPart.tiposCompatibles || 'TODOS'}</span>
+                      </div>
+                    )}
                   </div>
-                  {items.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveItem(idx)}
-                      className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
