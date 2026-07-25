@@ -6,8 +6,8 @@ if (-not $root) { $root = Split-Path -Parent $MyInvocation.MyCommand.Path }
 
 # 1. Backend
 Write-Host "Iniciando Backend (puerto 3001)..." -ForegroundColor Yellow
-$backendCmd = "Set-Location '$root\backend'; npm.cmd run start:dev"
-$backend = Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", $backendCmd -PassThru -WindowStyle Minimized
+$backendCmd = "cd '$root\backend' && npm run start:dev"
+$backend = Start-Process cmd.exe -ArgumentList "/c", $backendCmd -PassThru -WindowStyle Minimized
 
 # 2. Esperar que el backend este listo
 Write-Host "Esperando Backend..." -ForegroundColor Gray
@@ -29,8 +29,8 @@ Write-Host "Backend listo!" -ForegroundColor Green
 
 # 3. Frontend
 Write-Host "Iniciando Frontend (puerto 3000)..." -ForegroundColor Yellow
-$frontendCmd = "Set-Location '$root\frontend'; npm.cmd run dev"
-$frontend = Start-Process powershell -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", $frontendCmd -PassThru -WindowStyle Minimized
+$frontendCmd = "cd '$root\frontend' && npm run dev"
+$frontend = Start-Process cmd.exe -ArgumentList "/c", $frontendCmd -PassThru -WindowStyle Minimized
 
 # 4. Esperar que el frontend este listo
 Write-Host "Esperando Frontend..." -ForegroundColor Gray
@@ -50,7 +50,10 @@ if (-not $ready) {
 }
 Write-Host "Frontend listo!" -ForegroundColor Green
 
-# 5. Lanzar Electron
+# 5. Lanzar Electron o abrir navegador
 Write-Host "Abriendo LogisticsPro ERP..." -ForegroundColor Cyan
 Set-Location $root
-Start-Process ".\node_modules\electron\dist\electron.exe" -ArgumentList "."
+Start-Process "http://localhost:3000"
+if (Test-Path ".\node_modules\electron\dist\electron.exe") {
+    Start-Process ".\node_modules\electron\dist\electron.exe" -ArgumentList "."
+}
