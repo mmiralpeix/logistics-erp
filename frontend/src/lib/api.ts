@@ -44,6 +44,7 @@ export const dashboardApi = {
   getExpiringAlerts: () => api.get('/dashboard/expiring-alerts'),
   getTripDistribution: () => api.get('/dashboard/trip-distribution'),
   getTripStatusDistribution: () => api.get('/dashboard/trip-distribution'),
+  getVehicleConsumptionChart: () => api.get('/dashboard/vehicle-consumption'),
 };
 
 export const clientsApi = {
@@ -83,6 +84,7 @@ export const tripsApi = {
   getAll: (params?: any) => api.get('/trips', { params }),
   getOne: (id: string) => api.get(`/trips/${id}`),
   create: (data: any) => api.post('/trips', data),
+  createBatch: (data: any) => api.post('/trips/batch', data),
   update: (id: string, data: any) => api.patch(`/trips/${id}`, data),
   updateStatus: (id: string, status: string, notes?: string) => api.patch(`/trips/${id}/status`, { status, notes }),
   addCost: (id: string, data: any) => api.post(`/trips/${id}/costs`, data),
@@ -99,12 +101,14 @@ export const maintenanceApi = {
   getUpcoming: () => api.get('/maintenance/upcoming'),
 };
 
-export const fuelApi = {
-  getAll: (params?: any) => api.get('/fuel', { params }),
-  create: (data: any) => api.post('/fuel', data),
-  getStats: (params?: any) => api.get('/fuel/stats', { params }),
-  getDeviations: () => api.get('/fuel/deviations'),
+export const consumablesApi = {
+  getAll: (params?: any) => api.get('/consumables', { params }),
+  create: (data: any) => api.post('/consumables', data),
+  getStats: (params?: any) => api.get('/consumables/stats', { params }),
+  getDeviations: () => api.get('/consumables/deviations'),
 };
+
+export const fuelApi = consumablesApi;
 
 export const billingApi = {
   getAll: (params?: any) => api.get('/billing/invoices', { params }),
@@ -114,6 +118,15 @@ export const billingApi = {
   getStats: () => api.get('/billing/invoices/stats'),
   getOverdue: () => api.get('/billing/invoices/overdue'),
   createFromTrip: (data: any) => api.post('/billing/invoices/from-trip', data),
+};
+
+export const certificationsApi = {
+  getAll: (params?: any) => api.get('/certifications', { params }),
+  getUncertifiedTrips: (clientId?: string) => api.get('/certifications/uncertified-trips', { params: { clientId } }),
+  getOne: (id: string) => api.get(`/certifications/${id}`),
+  create: (data: any) => api.post('/certifications', data),
+  update: (id: string, data: any) => api.patch(`/certifications/${id}`, data),
+  remove: (id: string) => api.delete(`/certifications/${id}`),
 };
 
 export const reportsApi = {

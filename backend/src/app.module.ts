@@ -12,6 +12,7 @@ import { DriversModule } from './modules/drivers/drivers.module';
 import { TripsModule } from './modules/trips/trips.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { FuelModule } from './modules/fuel/fuel.module';
+import { ConsumablesModule } from './modules/consumables/consumables.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { CostsModule } from './modules/costs/costs.module';
 import { BillingModule } from './modules/billing/billing.module';
@@ -20,6 +21,7 @@ import { GpsModule } from './modules/gps/gps.module';
 import { HealthModule } from './modules/health/health.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.module';
+import { CertificationsModule } from './modules/certifications/certifications.module';
 
 @Module({
   imports: [
@@ -35,8 +37,10 @@ import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.
     VehiclesModule,
     DriversModule,
     TripsModule,
+    CertificationsModule,
     MaintenanceModule,
     FuelModule,
+    ConsumablesModule,
     DocumentsModule,
     CostsModule,
     BillingModule,

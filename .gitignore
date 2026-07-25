@@ -38,3 +38,7 @@ backend/prisma/migrations/*.sql.bak
 # Electron packaged
 dist-app/
 release/
+
+# Graphify Output Cache
+graphify-out/
+
