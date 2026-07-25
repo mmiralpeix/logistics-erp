@@ -436,6 +436,7 @@ model DangerousGoodsDeclaration {
 model Maintenance {
   id        String            @id @default(cuid())
   vehicleId String
+  numeroOT  String?           @unique
   tipo      MaintenanceType
   status    MaintenanceStatus @default(PENDIENTE)
 
@@ -447,22 +448,42 @@ model Maintenance {
   horasActual  Float?
   horasProxima Float?
 
-  taller        String?
-  mecanico      String?
-  costoManoObra Float?
+  taller         String?
+  tallerTelefono String?
+  mecanico       String?
+  costoManoObra  Float?
   costoRepuestos Float?
-  costoTotal    Float?
+  costoTotal     Float?
+  garantiaHasta  DateTime?
+  origen         String    @default("MANUAL")
 
   notas     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  vehicle   Vehicle    @relation(fields: [vehicleId], references: [id])
+  vehicle   Vehicle           @relation(fields: [vehicleId], references: [id])
   documents Document[]
+  items     MaintenanceItem[]
 
   @@index([vehicleId])
   @@index([status])
   @@map("maintenances")
+}
+
+model MaintenanceItem {
+  id             String   @id @default(cuid())
+  maintenanceId  String
+  descripcion    String
+  repuestoCodigo String?
+  cantidad       Float    @default(1)
+  costoUnitario  Float    @default(0)
+  costoTotal     Float    @default(0)
+  createdAt      DateTime @default(now())
+
+  maintenance Maintenance @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+
+  @@index([maintenanceId])
+  @@map("maintenance_items")
 }
 
 enum ConsumableType {

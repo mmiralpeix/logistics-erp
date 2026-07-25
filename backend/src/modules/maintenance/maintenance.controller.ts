@@ -13,6 +13,7 @@ export class MaintenanceController {
     return this.maintenanceService.findAll(v, s, t, p, l);
   }
 
+  @Get('health-stats') getHealthStats() { return this.maintenanceService.getHealthStats(); }
   @Get('upcoming') getUpcoming() { return this.maintenanceService.getUpcoming(); }
   @Get('costs-by-vehicle') getCosts() { return this.maintenanceService.getCostsByVehicle(); }
   @Get(':id') findOne(@Param('id') id: string) { return this.maintenanceService.findOne(id); }

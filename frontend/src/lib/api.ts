@@ -99,6 +99,8 @@ export const maintenanceApi = {
   update: (id: string, data: any) => api.patch(`/maintenance/${id}`, data),
   remove: (id: string) => api.delete(`/maintenance/${id}`),
   getUpcoming: () => api.get('/maintenance/upcoming'),
+  getHealthStats: () => api.get('/maintenance/health-stats'),
+  getCosts: () => api.get('/maintenance/costs-by-vehicle'),
 };
 
 export const consumablesApi = {
