@@ -512,7 +512,16 @@ export default function MaintenancePage() {
                             {p.ubicacion || 'Depósito Principal'}
                           </td>
                           <td className="px-4 py-3">
-                            <span className="badge badge-blue">{p.tiposCompatibles || 'TODOS'}</span>
+                            <div className="flex flex-col gap-1">
+                              <span className="badge badge-blue text-[11px] font-mono">
+                                {p.marcasCompatibles || 'TODAS LAS MARCAS'}
+                              </span>
+                              {p.tipoEnganche && p.tipoEnganche !== 'TODOS' && (
+                                <span className="text-[10px] text-slate-500 font-semibold">
+                                  Enganche: {p.tipoEnganche}
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
                             {formatMoney(p.precioUnitario)}

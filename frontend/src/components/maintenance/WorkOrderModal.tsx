@@ -46,9 +46,24 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
 
   // Filter compatible spare parts for selected vehicle
   const compatibleParts = spareParts?.filter((p: any) => {
-    if (!selectedVehicle || !p.tiposCompatibles || p.tiposCompatibles === 'TODOS') return true;
-    const types = p.tiposCompatibles.split(',').map((t: string) => t.trim().toUpperCase());
-    return types.includes(selectedVehicle.tipo.toUpperCase()) || types.includes('TODOS');
+    if (!selectedVehicle) return true;
+    
+    // Check type compatibility
+    let typeMatch = true;
+    if (p.tiposCompatibles && p.tiposCompatibles !== 'TODOS') {
+      const types = p.tiposCompatibles.split(',').map((t: string) => t.trim().toUpperCase());
+      typeMatch = types.includes(selectedVehicle.tipo?.toUpperCase()) || types.includes('TODOS');
+    }
+
+    // Check brand compatibility
+    let brandMatch = true;
+    if (p.marcasCompatibles && p.marcasCompatibles !== 'TODAS') {
+      const brands = p.marcasCompatibles.split(',').map((b: string) => b.trim().toLowerCase());
+      const vBrand = (selectedVehicle.marca || '').toLowerCase();
+      brandMatch = brands.some((b) => vBrand.includes(b) || b.includes(vBrand)) || brands.includes('todas');
+    }
+
+    return typeMatch && brandMatch;
   });
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
@@ -313,9 +328,11 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
                       )}
                     </div>
                     {selectedPart && (
-                      <div className="flex items-center justify-between text-[11px] px-1 text-slate-500">
-                        <span>Stock disponible: <b className={selectedPart.stockActual < item.cantidad ? 'text-rose-500' : 'text-emerald-500'}>{selectedPart.stockActual} u.</b> (Ubicación: {selectedPart.ubicacion || 'Sin estante'})</span>
-                        <span className="text-blue-500 font-medium">Compatibilidad: {selectedPart.tiposCompatibles || 'TODOS'}</span>
+                      <div className="flex flex-wrap items-center justify-between text-[11px] px-1 text-slate-500 gap-2">
+                        <span>Stock disponible: <b className={selectedPart.stockActual < item.cantidad ? 'text-rose-500' : 'text-emerald-500'}>{selectedPart.stockActual} u.</b> (Ubicación: {selectedPart.ubicacion || 'Depósito Main'})</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/20">
+                          ✓ Compatible con {selectedPart.marcasCompatibles || 'Flota'} {selectedPart.tipoEnganche !== 'TODOS' ? `(${selectedPart.tipoEnganche})` : ''}
+                        </span>
                       </div>
                     )}
                   </div>

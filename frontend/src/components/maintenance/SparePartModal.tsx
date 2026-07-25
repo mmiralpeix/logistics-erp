@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Package, Tag, Layers, MapPin, DollarSign, AlertCircle } from 'lucide-react';
+import { Package, Truck, ShieldCheck, Tag, Layers, MapPin, DollarSign } from 'lucide-react';
 
 interface SparePartModalProps {
   initialData?: any;
@@ -32,14 +32,41 @@ const VEHICLE_TYPES = [
   'CAMIONETA',
 ];
 
+const POPULAR_BRANDS = [
+  'TODAS',
+  'Randon',
+  'Indecar',
+  'Salto',
+  'Sola y Brusa',
+  'Cormetal',
+  'Vulcano',
+  'Scania',
+  'Volvo',
+  'Mercedes-Benz',
+  'Iveco',
+  'Ford',
+];
+
+const HITCH_TYPES = [
+  'TODOS',
+  'Perno Rey 2"',
+  'Perno Rey 3.5"',
+  'Lanza / Ojo de Buey',
+  'Acople Rápido Cisterna',
+  'N/A',
+];
+
 export function SparePartModal({ initialData, onClose, onSave }: SparePartModalProps) {
   const [form, setForm] = useState<any>(
     initialData || {
       categoria: 'FILTROS',
+      ambito: 'UNIVERSAL',
       stockActual: 1,
       stockMinimo: 1,
       precioUnitario: 0,
       tiposCompatibles: 'TODOS',
+      marcasCompatibles: 'TODAS',
+      tipoEnganche: 'TODOS',
     }
   );
 
@@ -57,21 +84,21 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal max-w-xl animate-fade-in">
+      <div className="modal max-w-2xl animate-fade-in max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
               <Package className="w-5 h-5" />
             </div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              {initialData ? 'Editar Repuesto en Pañol' : 'Nuevo Repuesto / Insumo'}
+              {initialData ? 'Editar Repuesto en Pañol' : 'Nuevo Repuesto / Insumo en Pañol'}
             </h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">✕</button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="label">Código SKU / Parte *</label>
               <input
@@ -83,6 +110,7 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
                 placeholder="Ej: REP-FIL-001"
               />
             </div>
+
             <div>
               <label className="label">Categoría *</label>
               <select
@@ -97,6 +125,19 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
                 ))}
               </select>
             </div>
+
+            <div>
+              <label className="label">Ámbito / Aplicación</label>
+              <select
+                value={form.ambito || 'UNIVERSAL'}
+                onChange={(e) => set('ambito', e.target.value)}
+                className="input"
+              >
+                <option value="UNIVERSAL">Universal / Toda la Flota</option>
+                <option value="ARRASTRE">Acoplados / Semis / Cisternas</option>
+                <option value="TRACCION">Tractores / Camiones (Chasis)</option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -107,7 +148,7 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
               value={form.nombre || ''}
               onChange={(e) => set('nombre', e.target.value)}
               className="input"
-              placeholder="Ej: Filtro de Aceite Scania R450 / P360"
+              placeholder="Ej: Perno Rey 2' Forjado Heavy Duty Jost o Válvula API 4'"
             />
           </div>
 
@@ -145,6 +186,57 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
             </div>
           </div>
 
+          {/* MATRIZ DE COMPATIBILIDAD FLOTA */}
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+              <Truck className="w-4 h-4" /> Matriz de Compatibilidad con la Flota
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="label">Tipo de Vehículo</label>
+                <select
+                  value={form.tiposCompatibles || 'TODOS'}
+                  onChange={(e) => set('tiposCompatibles', e.target.value)}
+                  className="input text-xs"
+                >
+                  {VEHICLE_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t === 'TODOS' ? 'Todos los tipos' : t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label">Marcas Compatibles (ej: Randon, Indecar...)</label>
+                <input
+                  type="text"
+                  value={form.marcasCompatibles || 'TODAS'}
+                  onChange={(e) => set('marcasCompatibles', e.target.value)}
+                  className="input text-xs"
+                  placeholder="Ej: Randon, Indecar, Salto, Cormetal o TODAS"
+                />
+                <span className="text-[10px] text-slate-400">Separa marcas con coma</span>
+              </div>
+
+              <div>
+                <label className="label">Tipo de Enganche</label>
+                <select
+                  value={form.tipoEnganche || 'TODOS'}
+                  onChange={(e) => set('tipoEnganche', e.target.value)}
+                  className="input text-xs"
+                >
+                  {HITCH_TYPES.map((h) => (
+                    <option key={h} value={h}>
+                      {h}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Ubicación en Estantería / Depósito</label>
@@ -153,33 +245,29 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
                 value={form.ubicacion || ''}
                 onChange={(e) => set('ubicacion', e.target.value)}
                 className="input"
-                placeholder="Ej: Estante A-3, Nivel 2"
+                placeholder="Ej: Estante B-4, Nivel 1"
               />
             </div>
             <div>
-              <label className="label">Compatibilidad con Flota</label>
-              <select
-                value={form.tiposCompatibles || 'TODOS'}
-                onChange={(e) => set('tiposCompatibles', e.target.value)}
+              <label className="label">Modelos Específicos / Observaciones</label>
+              <input
+                type="text"
+                value={form.modelosCompatibles || ''}
+                onChange={(e) => set('modelosCompatibles', e.target.value)}
                 className="input"
-              >
-                {VEHICLE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t === 'TODOS' ? 'Compatible con toda la Flota' : `Solo ${t}`}
-                  </option>
-                ))}
-              </select>
+                placeholder="Ej: Aplicable a Semi Cisterna 35.000 Lts"
+              />
             </div>
           </div>
 
           <div>
-            <label className="label">Notas / Modelos Específicos</label>
+            <label className="label">Notas Adicionales</label>
             <textarea
               rows={2}
               value={form.notas || ''}
               onChange={(e) => set('notas', e.target.value)}
               className="input resize-none"
-              placeholder="Ej: Compatible con motores Scania DC13 de 450cv a 500cv"
+              placeholder="Notas técnicas de garantía o repuesto equivalente..."
             />
           </div>
 
