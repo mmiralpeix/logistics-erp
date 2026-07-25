@@ -904,6 +904,84 @@ async function main() {
   console.log('✅ Dispositivos GPS registrados');
 
   // ============================
+  // REPUESTOS Y PAÑOL
+  // ============================
+  await prisma.sparePart.deleteMany({});
+  await prisma.sparePart.createMany({
+    data: [
+      {
+        sku: 'SKU-FIL-001',
+        nombre: 'Filtro de Aceite Scania DC13 (R450 / R500)',
+        categoria: 'FILTROS',
+        stockActual: 8,
+        stockMinimo: 3,
+        precioUnitario: 34500,
+        ubicacion: 'Estante A-1',
+        tiposCompatibles: 'TRACTOR,CAMION',
+        modelosCompatibles: 'Scania R450, Scania R500',
+        notas: 'Repuesto original Scania con junta de goma',
+      },
+      {
+        sku: 'SKU-LUB-002',
+        nombre: 'Aceite Sintético 15W40 Mobil Delvac (Bidón 20L)',
+        categoria: 'LUBRICANTES',
+        stockActual: 15,
+        stockMinimo: 5,
+        precioUnitario: 89000,
+        ubicacion: 'Depósito Central B-1',
+        tiposCompatibles: 'TODOS',
+        notas: 'Aceite multigrado para flota diésel pesada',
+      },
+      {
+        sku: 'SKU-FRE-003',
+        nombre: 'Juego Pastillas de Freno Delanteras Volvo FH',
+        categoria: 'FRENOS',
+        stockActual: 2,
+        stockMinimo: 4,
+        precioUnitario: 65000,
+        ubicacion: 'Estante B-2',
+        tiposCompatibles: 'CAMION,TRACTOR',
+        modelosCompatibles: 'Volvo FH 540',
+        notas: 'Pastillas de freno cerámicas alto rendimiento',
+      },
+      {
+        sku: 'SKU-NEU-004',
+        nombre: 'Neumático 295/80 R22.5 Michelin X Multi Z',
+        categoria: 'NEUMATICOS',
+        stockActual: 12,
+        stockMinimo: 4,
+        precioUnitario: 420000,
+        ubicacion: 'Rack Neumáticos N-1',
+        tiposCompatibles: 'TODOS',
+        notas: 'Cubierta direccional para ruta y larga distancia',
+      },
+      {
+        sku: 'SKU-VAL-005',
+        nombre: 'Válvula de Fondo API 4" para Cisterna de Combustible',
+        categoria: 'VALVULAS_CISTERNA',
+        stockActual: 1,
+        stockMinimo: 2,
+        precioUnitario: 175000,
+        ubicacion: 'Estante C-4',
+        tiposCompatibles: 'SEMI_CISTERNA,CISTERNA',
+        notas: 'Válvula de seguridad en aluminio homologada YPF/Shell',
+      },
+      {
+        sku: 'SKU-COR-006',
+        nombre: 'Correa Poly-V Alternador/Bomba de Agua Scania',
+        categoria: 'CORREAS',
+        stockActual: 6,
+        stockMinimo: 2,
+        precioUnitario: 28000,
+        ubicacion: 'Estante A-3',
+        tiposCompatibles: 'TRACTOR,CAMION',
+      },
+    ],
+  });
+
+  console.log('✅ Repuestos de Pañol creados');
+
+  // ============================
   // INCIDENTES
   // ============================
   await prisma.incident.createMany({

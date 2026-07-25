@@ -218,7 +218,7 @@ export default function MaintenancePage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Activity className="w-4 h-4" /> Semáforo de Salud de Flota
+            <Activity className="w-4 h-4" /> Estado de Flota
           </button>
 
           <button
