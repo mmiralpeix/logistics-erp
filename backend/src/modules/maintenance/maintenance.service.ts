@@ -46,6 +46,13 @@ export class MaintenanceService {
       data.numeroOT = `OT-${Date.now().toString().slice(-6)}`;
     }
 
+    if (data.fecha) data.fecha = new Date(data.fecha);
+    if (data.fechaProxima) data.fechaProxima = new Date(data.fechaProxima);
+    if (data.garantiaHasta) data.garantiaHasta = new Date(data.garantiaHasta);
+    if (data.kmActual !== undefined && data.kmActual !== null && data.kmActual !== '') data.kmActual = Number(data.kmActual);
+    if (data.kmProximo !== undefined && data.kmProximo !== null && data.kmProximo !== '') data.kmProximo = Number(data.kmProximo);
+    if (data.costoManoObra !== undefined && data.costoManoObra !== null && data.costoManoObra !== '') data.costoManoObra = Number(data.costoManoObra);
+
     let itemsCreate = undefined;
     if (items && Array.isArray(items) && items.length > 0) {
       itemsCreate = {
@@ -96,6 +103,13 @@ export class MaintenanceService {
     const m = await this.findOne(id);
     const { items, ...data } = dto;
 
+    if (data.fecha) data.fecha = new Date(data.fecha);
+    if (data.fechaProxima) data.fechaProxima = new Date(data.fechaProxima);
+    if (data.garantiaHasta) data.garantiaHasta = new Date(data.garantiaHasta);
+    if (data.kmActual !== undefined && data.kmActual !== null && data.kmActual !== '') data.kmActual = Number(data.kmActual);
+    if (data.kmProximo !== undefined && data.kmProximo !== null && data.kmProximo !== '') data.kmProximo = Number(data.kmProximo);
+    if (data.costoManoObra !== undefined && data.costoManoObra !== null && data.costoManoObra !== '') data.costoManoObra = Number(data.costoManoObra);
+
     if (items && Array.isArray(items)) {
       // Recreate items if provided
       await this.prisma.maintenanceItem.deleteMany({ where: { maintenanceId: id } });
@@ -134,8 +148,13 @@ export class MaintenanceService {
       include: { vehicle: true, items: true },
     });
 
-    // If completed, free the vehicle
-    if (dto.status === MaintenanceStatus.COMPLETADO && m.status !== MaintenanceStatus.COMPLETADO) {
+    // Handle vehicle status transitions
+    if (dto.status === MaintenanceStatus.EN_CURSO && m.status !== MaintenanceStatus.EN_CURSO) {
+      await this.prisma.vehicle.update({ where: { id: m.vehicleId }, data: { status: 'EN_MANTENIMIENTO' as any } });
+    } else if (
+      (dto.status === MaintenanceStatus.COMPLETADO || dto.status === MaintenanceStatus.CANCELADO) &&
+      m.status === MaintenanceStatus.EN_CURSO
+    ) {
       const vehicle = await this.prisma.vehicle.findUnique({ where: { id: m.vehicleId } });
       if (vehicle?.status === 'EN_MANTENIMIENTO') {
         await this.prisma.vehicle.update({ where: { id: m.vehicleId }, data: { status: 'DISPONIBLE' as any } });

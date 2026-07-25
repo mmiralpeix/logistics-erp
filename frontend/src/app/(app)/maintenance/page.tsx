@@ -98,6 +98,16 @@ export default function MaintenancePage() {
     },
   });
 
+  const deleteOTMutation = useMutation({
+    mutationFn: (id: string) => maintenanceApi.remove(id),
+    onSuccess: () => {
+      toast.success('Orden de Trabajo eliminada');
+      qc.invalidateQueries({ queryKey: ['maintenance'] });
+      qc.invalidateQueries({ queryKey: ['maintenance-health-stats'] });
+      qc.invalidateQueries({ queryKey: ['vehicles-fleet-health'] });
+    },
+  });
+
   const deleteSpareMutation = useMutation({
     mutationFn: (id: string) => sparePartsApi.remove(id),
     onSuccess: () => {
@@ -335,7 +345,17 @@ export default function MaintenancePage() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <span className={st.cls}>{st.label}</span>
+                            <select
+                              value={m.status}
+                              onChange={(e) => updateMutation.mutate({ id: m.id, status: e.target.value })}
+                              className="text-xs bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded px-2 py-1 font-medium text-slate-800 dark:text-slate-200"
+                            >
+                              {Object.entries(MAINTENANCE_STATUS_MAP).map(([k, v]) => (
+                                <option key={k} value={k}>
+                                  {v.label}
+                                </option>
+                              ))}
+                            </select>
                           </td>
                           <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
                             {m.taller || 'Taller Central'}
@@ -343,12 +363,22 @@ export default function MaintenancePage() {
                           <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
                             {formatMoney(m.costoTotal)}
                           </td>
-                          <td className="px-4 py-3 text-right">
+                          <td className="px-4 py-3 text-right space-x-2">
                             <button
                               onClick={() => handleEdit(m)}
                               className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                             >
-                              Editar OT
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`¿Eliminar Orden de Trabajo ${m.numeroOT || ''}?`)) {
+                                  deleteOTMutation.mutate(m.id);
+                                }
+                              }}
+                              className="text-xs font-semibold text-rose-600 hover:underline"
+                            >
+                              Eliminar
                             </button>
                           </td>
                         </tr>
