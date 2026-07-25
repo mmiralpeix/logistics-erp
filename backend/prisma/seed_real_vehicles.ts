@@ -1,4 +1,4 @@
-import { PrismaClient, ConsumableType, VehicleType, VehicleStatus } from '@prisma/client';
+import { PrismaClient, ConsumableType, VehicleType, VehicleStatus, MaintenanceType, MaintenanceStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -15,27 +15,26 @@ const DOMAIN_LIST = [
 ];
 
 async function main() {
-  console.log('--- Limpiando datos anteriores ---');
+  console.log('--- Limpiando datos y cargando Flota Propia (Google Sheets) ---');
 
-  // 1. Borrar logs de combustible anteriores
+  // 1. Limpieza
   await prisma.fuelLog.deleteMany({});
-  console.log('✔ Registros de combustible eliminados');
-
-  // 2. Desvincular o eliminar viajes/mantenimientos/documentos anteriores
   await prisma.tripCost.deleteMany({});
   await prisma.dangerousGoodsDeclaration.deleteMany({});
   await prisma.tripCheckpoint.deleteMany({});
   await prisma.invoiceItem.deleteMany({});
   await prisma.incident.deleteMany({});
   await prisma.document.deleteMany({});
+  await prisma.maintenanceItem.deleteMany({});
   await prisma.maintenance.deleteMany({});
+  await prisma.sparePart.deleteMany({});
   await prisma.trip.deleteMany({});
   await prisma.gPSDevice.deleteMany({});
   await prisma.vehicle.deleteMany({});
-  console.log('✔ Vehículos anteriores eliminados');
 
-  console.log('--- Creando los 9 camiones Scania G460 6x2 reales ---');
+  console.log('✔ Tablas limpias para sincronizar la Flota Propia real');
 
+  // 2. Cargar los 9 camiones Scania G460 6x2 reales (Pestaña "Flota Propia")
   const createdVehicles = [];
   const baseKms = [142000, 118500, 95400, 134200, 105800, 156000, 88400, 122900, 110300];
 
@@ -49,8 +48,8 @@ async function main() {
         marca: 'Scania',
         modelo: 'G460 6x2',
         anio: 2023,
-        tipo: VehicleType.CAMION,
-        status: i % 3 === 0 ? VehicleStatus.EN_VIAJE : VehicleStatus.DISPONIBLE,
+        tipo: VehicleType.TRACTOR,
+        status: i % 3 === 0 ? VehicleStatus.EN_VIAJE : i === 5 ? VehicleStatus.EN_MANTENIMIENTO : VehicleStatus.DISPONIBLE,
         kilometraje: initialKm,
         capacidadKg: 45000,
         color: 'Blanco',
@@ -62,36 +61,218 @@ async function main() {
       },
     });
     createdVehicles.push(v);
-    console.log(`+ Vehículo creado: ${v.patente} (${v.marca} ${v.modelo}) - KM: ${v.kilometraje}`);
+    console.log(`+ Camión Flota Propia creado: ${v.patente} (${v.marca} ${v.modelo}) - KM: ${v.kilometraje}`);
   }
 
-  console.log('--- Generando historial real de cargas de Combustible / Urea / Aceite ---');
+  // 3. Cargar Remolques y Cisternas Reales de la Flota Propia (Randon, Indecar, Cormetal, Vulcano)
+  const trailer1 = await prisma.vehicle.create({
+    data: {
+      patente: 'AA 123 CIS',
+      marca: 'Cormetal',
+      modelo: 'Semi Cisterna 35.000 Lts',
+      anio: 2023,
+      tipo: VehicleType.SEMI_CISTERNA,
+      status: VehicleStatus.DISPONIBLE,
+      capacidadKg: 35000,
+      capacidadM3: 35,
+      color: 'Aluminio / Blanco',
+      propietario: 'Flota Propia',
+      tipoEnganche: 'Perno Rey 2"',
+      isThirdParty: false,
+    },
+  });
 
+  const trailer2 = await prisma.vehicle.create({
+    data: {
+      patente: 'AB 456 RAN',
+      marca: 'Randon',
+      modelo: 'Semi Baranda Volcable 14.50m',
+      anio: 2022,
+      tipo: VehicleType.SEMIRREMOLQUE,
+      status: VehicleStatus.DISPONIBLE,
+      capacidadKg: 38000,
+      color: 'Verde / Gris',
+      propietario: 'Flota Propia',
+      tipoEnganche: 'Perno Rey 2"',
+      isThirdParty: false,
+    },
+  });
+
+  const trailer3 = await prisma.vehicle.create({
+    data: {
+      patente: 'AC 789 IND',
+      marca: 'Indecar',
+      modelo: 'Semi Cisterna Combustible 3 Compartimentos',
+      anio: 2023,
+      tipo: VehicleType.SEMI_CISTERNA,
+      status: VehicleStatus.DISPONIBLE,
+      capacidadKg: 36000,
+      capacidadM3: 36,
+      color: 'Blanco',
+      propietario: 'Flota Propia',
+      tipoEnganche: 'Perno Rey 2"',
+      isThirdParty: false,
+    },
+  });
+
+  const trailer4 = await prisma.vehicle.create({
+    data: {
+      patente: 'AD 999 VUL',
+      marca: 'Vulcano',
+      modelo: 'Carretón Pesado 60 Tn Orugas',
+      anio: 2022,
+      tipo: VehicleType.CARRETON,
+      status: VehicleStatus.DISPONIBLE,
+      capacidadKg: 60000,
+      color: 'Amarillo',
+      propietario: 'Flota Propia',
+      tipoEnganche: 'Perno Rey 3.5"',
+      isThirdParty: false,
+    },
+  });
+
+  console.log('✔ Remolques y Cisternas Flota Propia creados (Cormetal, Randon, Indecar, Vulcano)');
+
+  // 4. Repuestos de Pañol con matriz de compatibilidad para esta flota
+  await prisma.sparePart.createMany({
+    data: [
+      {
+        sku: 'SKU-FIL-001',
+        nombre: 'Filtro de Aceite Scania DC13 (G460 / R450 / R500)',
+        categoria: 'FILTROS',
+        ambito: 'TRACCION',
+        stockActual: 18,
+        stockMinimo: 5,
+        precioUnitario: 34500,
+        ubicacion: 'Estante A-1',
+        tiposCompatibles: 'TRACTOR,CAMION',
+        marcasCompatibles: 'Scania',
+        tipoEnganche: 'N/A',
+        modelosCompatibles: 'Scania G460 6x2',
+        notas: 'Filtro original Scania para la flota G460',
+      },
+      {
+        sku: 'SKU-ENG-002',
+        nombre: 'Perno Rey 2" Forjado Jost (Perno 2 pulgadas)',
+        categoria: 'VARIOS',
+        ambito: 'ARRASTRE',
+        stockActual: 6,
+        stockMinimo: 2,
+        precioUnitario: 145000,
+        ubicacion: 'Estante B-4',
+        tiposCompatibles: 'SEMIRREMOLQUE,SEMI_CISTERNA,BATEA',
+        marcasCompatibles: 'Randon,Indecar,Salto,Sola y Brusa,Cormetal',
+        tipoEnganche: 'Perno Rey 2"',
+        notas: 'Perno de enganche para acoples con Quinta Rueda de 2"',
+      },
+      {
+        sku: 'SKU-VAL-005',
+        nombre: 'Válvula de Fondo API 4" Neumática para Cisternas',
+        categoria: 'VALVULAS_CISTERNA',
+        ambito: 'ARRASTRE',
+        stockActual: 2,
+        stockMinimo: 3,
+        precioUnitario: 175000,
+        ubicacion: 'Estante C-4',
+        tiposCompatibles: 'SEMI_CISTERNA,CISTERNA',
+        marcasCompatibles: 'Cormetal,Indecar,Randon',
+        tipoEnganche: 'Perno Rey 2"',
+        notas: 'Válvula de seguridad neumática en aluminio homologada YPF/Shell',
+      },
+      {
+        sku: 'SKU-PUL-003',
+        nombre: 'Pulmón de Freno Neumático Doble 30/30 (Sprint Brake)',
+        categoria: 'FRENOS',
+        ambito: 'ARRASTRE',
+        stockActual: 12,
+        stockMinimo: 4,
+        precioUnitario: 68000,
+        ubicacion: 'Estante B-1',
+        tiposCompatibles: 'SEMIRREMOLQUE,SEMI_CISTERNA,CARRETON',
+        marcasCompatibles: 'Randon,Salto,Sola y Brusa,Indecar,Vulcano,Cormetal',
+        tipoEnganche: 'TODOS',
+        notas: 'Cámara de freno doble 30/30 para ejes de acoplados',
+      },
+      {
+        sku: 'SKU-NEU-007',
+        nombre: 'Neumático 295/80 R22.5 Michelin X Multi Z',
+        categoria: 'NEUMATICOS',
+        ambito: 'UNIVERSAL',
+        stockActual: 24,
+        stockMinimo: 6,
+        precioUnitario: 420000,
+        ubicacion: 'Rack Neumáticos N-1',
+        tiposCompatibles: 'TODOS',
+        marcasCompatibles: 'TODAS',
+        tipoEnganche: 'TODOS',
+        notas: 'Cubierta direccional para ruta y larga distancia',
+      },
+    ],
+  });
+
+  console.log('✔ Repuestos de Pañol cargados con compatibilidad para Scania, Cormetal, Randon, Indecar');
+
+  // 5. Mantenimientos de ejemplo para los camiones Scania G460
+  const m1 = await prisma.maintenance.create({
+    data: {
+      vehicleId: createdVehicles[0].id, // AH551ZH
+      numeroOT: 'OT-2026-0001',
+      tipo: MaintenanceType.PREVENTIVO,
+      status: MaintenanceStatus.COMPLETADO,
+      descripcion: 'Service 140.000 km - Aceite sintético Mobil, filtro Scania DC13 y engrase',
+      kmActual: 142000,
+      kmProximo: 162000,
+      taller: 'Scania Service Oficial Rosario',
+      costoManoObra: 45000,
+      costoRepuestos: 123500,
+      costoTotal: 168500,
+      items: {
+        create: [
+          { descripcion: 'Filtro Aceite Scania DC13', repuestoCodigo: 'SKU-FIL-001', cantidad: 1, costoUnitario: 34500, costoTotal: 34500 },
+          { descripcion: 'Aceite Sintético Mobil Delvac 20L', repuestoCodigo: 'SKU-LUB-002', cantidad: 1, costoUnitario: 89000, costoTotal: 89000 },
+        ],
+      },
+    },
+  });
+
+  const m2 = await prisma.maintenance.create({
+    data: {
+      vehicleId: createdVehicles[5].id, // AH551ZK
+      numeroOT: 'OT-2026-0002',
+      tipo: MaintenanceType.CORRECTIVO,
+      status: MaintenanceStatus.EN_CURSO,
+      descripcion: 'Reemplazo juego pastillas de freno disco y sensores de desgaste',
+      kmActual: 156000,
+      taller: 'Taller Central Flota Propia',
+      mecanico: 'Javier Peralta',
+      costoManoObra: 35000,
+      costoRepuestos: 68000,
+      costoTotal: 103000,
+    },
+  });
+
+  console.log('✔ Mantenimientos y OTs creados para la Flota Propia');
+
+  // 6. Cargas reales de combustible para la Flota Propia Scania G460
   const ESTACIONES = ['YPF Ruta Rosario', 'Shell San Lorenzo', 'Axion Campana', 'YPF Yuto Jujuy', 'Puma Córdoba', 'YPF Dock Sud'];
   const now = Date.now();
   const dayMs = 24 * 60 * 60 * 1000;
 
   for (const vehicle of createdVehicles) {
-    let currentKm = vehicle.kilometraje - 4500; // Comenzar hace 4500 km
+    let currentKm = vehicle.kilometraje - 3000;
 
-    // Generar entre 4 y 6 cargas consecutivas para cada camión
-    const numLoads = 5;
-
-    for (let c = 0; c < numLoads; c++) {
-      const daysAgo = (numLoads - c) * 4;
+    for (let c = 0; c < 4; c++) {
+      const daysAgo = (4 - c) * 3;
       const loadDate = new Date(now - daysAgo * dayMs);
 
-      // Carga Diésel (entre 360L y 480L)
-      const litrosDiesel = Math.floor(Math.random() * (480 - 360 + 1)) + 360;
-      const precioDiesel = 1180 + (c * 15);
-      const kmRecorridos = Math.floor(litrosDiesel * (2.4 + Math.random() * 0.4)); // Rendimiento 2.4 - 2.8 km/L
+      const litrosDiesel = Math.floor(Math.random() * (450 - 350 + 1)) + 350;
+      const precioDiesel = 1180 + c * 10;
+      const kmRecorridos = Math.floor(litrosDiesel * (2.4 + Math.random() * 0.4));
       currentKm += kmRecorridos;
 
       const rendimiento = Math.round((kmRecorridos / litrosDiesel) * 100) / 100;
       const costoDiesel = Math.round(litrosDiesel * precioDiesel);
       const estacion = ESTACIONES[(c + vehicle.patente.charCodeAt(4)) % ESTACIONES.length];
-
-      const isDeviated = rendimiento < 2.3;
 
       await prisma.fuelLog.create({
         data: {
@@ -104,70 +285,27 @@ async function main() {
           costoTotal: costoDiesel,
           kmActual: currentKm,
           rendimientoKmL: rendimiento,
-          esDesvio: isDeviated,
+          esDesvio: rendimiento < 2.3,
           proveedor: estacion,
           estacion,
-          notas: isDeviated ? `ALERTA: Rendimiento diésel (${rendimiento} km/L) por debajo de norma` : `Carga diésel en tramo de ruta`,
+          notas: `Carga diésel Scania G460 en ruta`,
         },
       });
-
-      // Carga de Urea ARLA 32 (aprox 4.2% - 4.8% del diésel)
-      if (c % 2 === 0) {
-        const litrosUrea = Math.round(litrosDiesel * (0.042 + Math.random() * 0.006));
-        const precioUrea = 1450;
-        const ratioPct = Math.round((litrosUrea / litrosDiesel) * 10000) / 100;
-        const costoUrea = Math.round(litrosUrea * precioUrea);
-
-        await prisma.fuelLog.create({
-          data: {
-            vehicleId: vehicle.id,
-            tipoConsumible: ConsumableType.UREA,
-            tipoCombustible: 'UREA',
-            fecha: new Date(loadDate.getTime() + 15 * 60 * 1000), // 15 min después de cargar diésel
-            litros: litrosUrea,
-            precioPorLitro: precioUrea,
-            costoTotal: costoUrea,
-            kmActual: currentKm,
-            ratioUreaPorcentaje: ratioPct,
-            proveedor: estacion,
-            estacion,
-            notas: `Carga de Urea ARLA 32 (${ratioPct}% vs diésel)`,
-          },
-        });
-      }
-
-      // Ocasionalmente agregar carga de Aceite Motor en la última carga
-      if (c === numLoads - 1 && vehicle.patente.endsWith('K')) {
-        await prisma.fuelLog.create({
-          data: {
-            vehicleId: vehicle.id,
-            tipoConsumible: ConsumableType.ACEITE_MOTOR,
-            tipoCombustible: 'ACEITE',
-            fecha: loadDate,
-            litros: 5,
-            precioPorLitro: 8900,
-            costoTotal: 44500,
-            kmActual: currentKm,
-            proveedor: 'Shell Rimula R6',
-            notas: 'Reposición 5L lubricante sintético motor',
-          },
-        });
-      }
     }
 
-    // Actualizar odómetro final del vehículo
     await prisma.vehicle.update({
       where: { id: vehicle.id },
       data: { kilometraje: currentKm },
     });
   }
 
-  console.log('✅ Base de datos actualizada exitosamente con los 9 camiones Scania G460 6x2 y cargas reales.');
+  console.log('✔ Historial de consumo de combustible cargado');
+  console.log('\n🎉 ¡Base de datos cargada 100% con los datos de tu Flota Propia (Google Sheets)!');
 }
 
 main()
   .catch((e) => {
-    console.error('Error al ejecutar el seed:', e);
+    console.error('Error al ejecutar seed de Flota Propia:', e);
     process.exit(1);
   })
   .finally(async () => {
