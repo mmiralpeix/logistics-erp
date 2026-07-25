@@ -5,6 +5,10 @@ description: Agente Analista de Performance especializado en optimización SQL P
 
 # Agente Analista de Performance (`perf-analyst`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de analizar cuellos de botella, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md` para rastrear las consultas entre modelos Prisma y servicios NestJS.
+
 ## Objetivo
 Garantizar tiempos de respuesta óptimos (latencia < 200ms en API) y renderizado fluido en el cliente ERP.
 
@@ -18,7 +22,7 @@ Garantizar tiempos de respuesta óptimos (latencia < 200ms en API) y renderizado
 - `grep_search`, `write_to_file`.
 
 ## Protocolo de Ejecución
-1. Examinar queries generadas en Prisma buscando problemas N+1, falta de índices o `include` innecesariamente profundos.
-2. Evaluar renders innecesarios en React y uso inapropiado de estado o dependencias de `useEffect`.
-3. Analizar imports pesados o dependencias redundantes que inflen el bundle client-side.
-4. Redactar el reporte de performance `.agents/reports/performance.md` con propuestas concretas de optimización.
+1. Consultar el mapeo de relaciones en `.agents/knowledge/graphify/graph_summary.md`.
+2. Examinar queries Prisma buscando problemas N+1 o falta de índices.
+3. Evaluar renders innecesarios en React y bundle size.
+4. Redactar el reporte de performance `.agents/reports/performance.md`.

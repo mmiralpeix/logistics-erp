@@ -1,0 +1,25 @@
+{
+  "project": "LogisticsPro ERP",
+  "generatedAt": "2026-07-25T10:22:00-03:00",
+  "nodes": [
+    { "id": "model:Trip", "type": "prisma-model", "path": "backend/prisma/schema.prisma" },
+    { "id": "model:Vehicle", "type": "prisma-model", "path": "backend/prisma/schema.prisma" },
+    { "id": "model:Driver", "type": "prisma-model", "path": "backend/prisma/schema.prisma" },
+    { "id": "model:Client", "type": "prisma-model", "path": "backend/prisma/schema.prisma" },
+    { "id": "model:Contract", "type": "prisma-model", "path": "backend/prisma/schema.prisma" },
+    { "id": "model:Certification", "type": "prisma-model", "path": "backend/prisma/schema.prisma" },
+    { "id": "module:trips:service", "type": "nestjs-service", "path": "backend/src/modules/trips/trips.service.ts" },
+    { "id": "module:trips:controller", "type": "nestjs-controller", "path": "backend/src/modules/trips/trips.controller.ts" },
+    { "id": "module:trips:dto:create", "type": "dto", "path": "backend/src/modules/trips/dto/create-trip.dto.ts" },
+    { "id": "frontend:trips:page", "type": "nextjs-page", "path": "frontend/src/app/(app)/trips/page.tsx" },
+    { "id": "frontend:trips:modal", "type": "react-component", "path": "frontend/src/components/trips/TripModal.tsx" }
+  ],
+  "edges": [
+    { "source": "module:trips:service", "target": "model:Trip", "relationship": "queries" },
+    { "source": "module:trips:service", "target": "model:Contract", "relationship": "queries" },
+    { "source": "module:trips:controller", "target": "module:trips:service", "relationship": "invokes" },
+    { "source": "module:trips:controller", "target": "module:trips:dto:create", "relationship": "validates" },
+    { "source": "frontend:trips:page", "target": "frontend:trips:modal", "relationship": "renders" },
+    { "source": "frontend:trips:modal", "target": "module:trips:controller", "relationship": "calls-api" }
+  ]
+}

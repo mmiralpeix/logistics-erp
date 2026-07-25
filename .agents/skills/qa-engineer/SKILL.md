@@ -5,6 +5,10 @@ description: Agente QA especializado en pruebas unitarias, de integración, cobe
 
 # Agente QA (`qa-engineer`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de redactar o ejecutar pruebas unitarias/integración, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md` para identificar dependencias y mocks necesarios.
+
 ## Objetivo
 Garantizar la cobertura de pruebas automatizadas y asegurar que no existan regresiones lógicas antes de liberar cualquier cambio.
 
@@ -18,6 +22,7 @@ Garantizar la cobertura de pruebas automatizadas y asegurar que no existan regre
 - `write_to_file`, `replace_file_content`.
 
 ## Protocolo de Ejecución
-1. Crear specs de prueba unitaria/integración con Jest/Vitest cubriendo casos exitosos y casos de borde (edge cases).
-2. Ejecutar la suite de pruebas.
-3. Si los tests fallan debido a un error en el código de producción, notificar al orquestador para activar el **Self-Healing Loop** hacia `backend-dev` o `frontend-dev`.
+1. Consultar dependencias en `.agents/knowledge/graphify/graph_summary.md`.
+2. Crear specs de prueba unitaria/integración con Jest/Vitest cubriendo casos exitosos y casos de borde.
+3. Ejecutar la suite de pruebas.
+4. Si los tests fallan debido a un error en el código de producción, notificar al orquestador para activar el **Self-Healing Loop** hacia `backend-dev` o `frontend-dev`.

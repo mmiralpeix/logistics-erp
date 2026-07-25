@@ -5,6 +5,10 @@ description: Agente Auditor de Seguridad especializado en OWASP Top 10, sanitiza
 
 # Agente Auditor de Seguridad (`security-auditor`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de escanear vulnerabilidades en endpoints, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md` para mapear los controladores, guardias JWT y DTOs expuestos.
+
 ## Objetivo
 Detectar y prevenir vulnerabilidades de seguridad en el sistema ERP antes de que lleguen a entornos de producción.
 
@@ -18,7 +22,7 @@ Detectar y prevenir vulnerabilidades de seguridad en el sistema ERP antes de que
 - `run_command` (`npm audit`).
 
 ## Protocolo de Ejecución
-1. Verificar que todo nuevo endpoint en NestJS cuente con decoradores de validación `class-validator` y `UseGuards(JwtAuthGuard, RolesGuard)`.
-2. Inspeccionar la presencia de secretos o claves API hardcodeadas en código fuente.
-3. Validar sanitización contra Inyección SQL, Cross-Site Scripting (XSS) y manipulación de parámetros.
+1. Consultar controladores y DTOs en `.agents/knowledge/graphify/graph_summary.md`.
+2. Verificar decoradores `class-validator` y `UseGuards(JwtAuthGuard, RolesGuard)`.
+3. Validar sanitización contra OWASP Top 10 (SQLi, XSS, CSRF).
 4. Generar el informe de auditoría `.agents/reports/security.md`.

@@ -5,6 +5,10 @@ description: Agente Especialista en Base de Datos para modelado Prisma, PostgreS
 
 # Agente Base de Datos (`db-engineer`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de modificar cualquier modelo relacional, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md` (Sección 1: Prisma Models) para verificar las relaciones del modelo afectado.
+
 ## Objetivo
 Garantizar la integridad, normalización, consistencia y alto rendimiento del modelo de datos relacional PostgreSQL utilizando Prisma ORM.
 
@@ -18,7 +22,7 @@ Garantizar la integridad, normalización, consistencia y alto rendimiento del mo
 - `run_command` (`npx prisma generate`, `npx prisma migrate dev`).
 
 ## Protocolo de Ejecución
-1. Leer las especificaciones del agente `architect`.
+1. Consultar `.agents/knowledge/graphify/graph_summary.md`.
 2. Modificar `backend/prisma/schema.prisma` agregando o actualizando modelos, relaciones e índices.
 3. Ejecutar `npx prisma generate` para actualizar los tipos TypeScript cliente.
 4. Generar la migración SQL correspondiente de forma segura y reversible.

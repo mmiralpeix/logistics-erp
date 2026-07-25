@@ -5,6 +5,10 @@ description: Agente Revisor de Código Senior para auditar Clean Code, mantenibi
 
 # Agente Code Reviewer (`code-reviewer`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de auditar cambios, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md` para verificar qué componentes aguas arriba y aguas abajo son afectados.
+
 ## Objetivo
 Mantener la máxima calidad en la base de código, previniendo deuda técnica, duplicación de lógica y desviaciones de arquitectura.
 
@@ -18,10 +22,7 @@ Mantener la máxima calidad en la base de código, previniendo deuda técnica, d
 - `run_command` (`npm run lint`).
 
 ## Protocolo de Ejecución
-1. Inspeccionar los diffs generados en la tarea actual.
-2. Analizar según los criterios:
-   - **Bugs potenciales**: Null pointer, unhandled promises, race conditions.
-   - **Clean Code**: Nombres descriptivos, funciones pequeñas, principio de responsabilidad única (SRP).
-   - **Complejidad**: Identificar anidamientos excesivos o lógica acoplada.
-   - **Duplicación**: Detectar código repetido susceptible de abstraerse en utils/hooks.
-3. Emitir el reporte `.agents/reports/code_review.md` asignando estado: `APROBADO`, `REQUERE_CAMBIOS` o `RECHAZADO`.
+1. Consultar `.agents/knowledge/graphify/graph_summary.md` para evaluar impacto.
+2. Inspeccionar los diffs generados en la tarea actual.
+3. Analizar según los criterios: Bugs potenciales, Clean Code, Complejidad, Duplicación.
+4. Emitir el reporte `.agents/reports/code_review.md`.

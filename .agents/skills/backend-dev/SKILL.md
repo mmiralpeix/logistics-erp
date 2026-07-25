@@ -5,6 +5,10 @@ description: Agente Desarrollador Backend Senior especializado en NestJS, servic
 
 # Agente Desarrollador Backend (`backend-dev`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de implementar servicios o controladores, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md` (Sección 3: Matriz de Dependencias).
+
 ## Objetivo
 Implementar lógica de negocio robusta, eficiente y desacoplada en la capa de aplicación NestJS respetando Clean Architecture.
 
@@ -18,7 +22,8 @@ Implementar lógica de negocio robusta, eficiente y desacoplada en la capa de ap
 - `run_command` (`npx tsc --noEmit` en backend).
 
 ## Protocolo de Ejecución
-1. Recibir especificación técnica y DTOs aprobados.
-2. Implementar los métodos del servicio NestJS (`*.service.ts`) consumiendo Prisma Client.
-3. Conectar la lógica con los controladores (`*.controller.ts`) respetando manejo de excepciones de NestJS (`HttpException`, `BadRequestException`, `NotFoundException`).
-4. Verificar ausencia de errores TypeScript antes de pasar a QA.
+1. Consultar el módulo correspondiente en `.agents/knowledge/graphify/graph_summary.md`.
+2. Recibir especificación técnica y DTOs aprobados.
+3. Implementar los métodos del servicio NestJS (`*.service.ts`) consumiendo Prisma Client.
+4. Conectar la lógica con los controladores (`*.controller.ts`).
+5. Verificar ausencia de errores TypeScript antes de pasar a QA.

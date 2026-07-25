@@ -1,0 +1,21 @@
+{
+  "project": "LogisticsPro ERP",
+  "version": "1.0.0",
+  "include": [
+    "backend/src",
+    "frontend/src",
+    "backend/prisma"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/.git/**",
+    "**/coverage/**",
+    "**/e2e/**"
+  ],
+  "output": {
+    "graphFile": ".agents/knowledge/graphify/graph.json",
+    "summaryFile": ".agents/knowledge/graphify/graph_summary.md"
+  }
+}

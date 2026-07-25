@@ -4,11 +4,21 @@ Este archivo define las reglas de ruteo dinámico para clasificar cualquier tare
 
 ---
 
+## 0. Protocolo de Consulta de Conocimiento Previo (Graphify)
+
+Antes de iniciar cualquier pipeline, todos los agentes consultan la capa de conocimiento desacoplada en:
+👉 `.agents/knowledge/graphify/graph_summary.md`
+
+**Objetivo**: Identificar los archivos exactos afectados por la tarea (Modelos Prisma → Servicios/Controladores NestJS → DTOs → Componentes React) sin necesidad de realizar búsquedas masivas de texto.
+
+---
+
 ## 1. Clasificación de Tareas y Pipelines
 
 ### Pipeline: `feature` (Nueva funcionalidad / Módulo)
 **Disparadores**: Palabras clave como "nueva funcionalidad", "nuevo módulo", "agregar pantalla", "crear entidad", "feature", "endpoint nuevo".
 **Secuencia de Agentes**:
+0. **Consulta Graphify** → El agente revisa `.agents/knowledge/graphify/graph_summary.md` para identificar dependencias del módulo.
 1. `architect` → Define especificación técnica, diagrama de datos y contratos.
 2. `db-engineer` → Modifica `schema.prisma`, genera y aplica migración PostgreSQL.
 3. `api-engineer` → Crea/actualiza DTOs NestJS (class-validator) y tipos API en frontend.
@@ -27,6 +37,7 @@ Este archivo define las reglas de ruteo dinámico para clasificar cualquier tare
 ### Pipeline: `bugfix` (Corrección de errores)
 **Disparadores**: "bug", "error", "fallo", "fix", "excepción", "crash", "500", "404", "issue".
 **Secuencia de Agentes**:
+0. **Consulta Graphify** → Ubicar componentes y servicios vinculados al fallo en `graph_summary.md`.
 1. `qa-engineer` → Reproduce el fallo escribiendo un unit/integration test que falle (Red).
 2. `backend-dev` o `frontend-dev` → Aplica la corrección mínima requerida (Green).
 3. `qa-engineer` → Vuelve a ejecutar la suite para confirmar solución (Pass).
@@ -38,6 +49,7 @@ Este archivo define las reglas de ruteo dinámico para clasificar cualquier tare
 ### Pipeline: `ui-polish` (Mejora visual o UX)
 **Disparadores**: "diseño", "ui", "ux", "estilos", "responsive", "color", "modal", "layout", "css", "tailwind".
 **Secuencia de Agentes**:
+0. **Consulta Graphify** → Identificar la página y componente en `graph_summary.md`.
 1. `frontend-dev` → Aplica los cambios estéticos y de experiencia de usuario.
 2. `playwright-tester` → Verifica que no se rompan interacciones visuales ni componentes E2E.
 3. `code-reviewer` → Revisa reutilización de tokens CSS y utilidades Tailwind.
@@ -48,6 +60,7 @@ Este archivo define las reglas de ruteo dinámico para clasificar cualquier tare
 ### Pipeline: `security-hardening` (Auditoría y Parches de Seguridad)
 **Disparadores**: "seguridad", "vulnerabilidad", "jwt", "auth", "cors", "csrf", "sqli", "xss", "audit".
 **Secuencia de Agentes**:
+0. **Consulta Graphify** → Identificar controladores, guardias y autenticación en `graph_summary.md`.
 1. `security-auditor` → Diagnostica brechas de seguridad o dependencias vulnerables.
 2. `backend-dev` o `devops-engineer` → Aplica parches de seguridad y saneamiento.
 3. `qa-engineer` → Valida que las restricciones de seguridad no rompan casos de uso.
@@ -59,6 +72,7 @@ Este archivo define las reglas de ruteo dinámico para clasificar cualquier tare
 ### Pipeline: `performance-optimization` (Optimización)
 **Disparadores**: "lento", "performance", "rendimiento", "memoria", "query", "optimizar", "latencia", "bundle".
 **Secuencia de Agentes**:
+0. **Consulta Graphify** → Mapear consultas Prisma e includes en `graph_summary.md`.
 1. `perf-analyst` → Identifica el cuello de botella (N+1 SQL, re-renders, memory leaks).
 2. `db-engineer` o `backend-dev` o `frontend-dev` → Implementa la optimización (índices, caché Redis, memoización).
 3. `qa-engineer` → Confirma que el comportamiento lógico sigue intacto.
@@ -75,7 +89,7 @@ Si durante cualquier etapa de desarrollo los comandos de verificación (`npm run
 Error detectado por QA / Test Script
            │
            ▼
-[Orquestador analiza stack trace]
+[Orquestador analiza stack trace + Graphify Map]
            │
            ▼
 ¿El error es de Backend/DB o Frontend?
@@ -85,5 +99,3 @@ Error detectado por QA / Test Script
            ▼
 Re-ejecutar Verificación (Máximo 3 reintentos)
 ```
-
-Si tras 3 reintentos el test no pasa, se suspende la ejecución y se requiere intervención del Arquitecto.

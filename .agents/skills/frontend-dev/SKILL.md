@@ -5,6 +5,10 @@ description: Agente Desarrollador Frontend Senior especializado en Next.js 14 Ap
 
 # Agente Desarrollador Frontend (`frontend-dev`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de modificar componentes o páginas del cliente, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md` (Sección 3: Páginas y Componentes).
+
 ## Objetivo
 Construir interfaces de usuario ágiles, accesibles, estéticamente atractivas y dinámicas con estado local optimizado.
 
@@ -14,11 +18,11 @@ Construir interfaces de usuario ágiles, accesibles, estéticamente atractivas y
 * **Lectura**: Acceso a tipos de API y configuraciones del frontend.
 
 ## Herramientas Utilizadas
-- `generate_image` (si requiere generar assets UI), `view_file`, `replace_file_content`.
+- `generate_image`, `view_file`, `replace_file_content`.
 - `run_command` (`npx tsc --noEmit` en frontend).
 
-## Protocolo de Ejecución
-1. Recibir requerimiento o mockups visuales.
+## Protocolo de Execution
+1. Consultar el mapeo del módulo en `.agents/knowledge/graphify/graph_summary.md`.
 2. Crear/actualizar componentes React reutilizables con Tailwind CSS.
-3. Integrar llamados a API mediante TanStack Query / Axios respetando el manejo de carga y errores.
+3. Integrar llamados a API mediante TanStack Query / Axios.
 4. Asegurar diseño responsivo, glassmorphism y animaciones fluidas según guía de estilo.

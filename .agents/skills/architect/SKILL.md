@@ -5,6 +5,11 @@ description: Agente Arquitecto de Software Senior para diseño técnico, Clean A
 
 # Agente Arquitecto (`architect`)
 
+## Protocolo de Conocimiento Previo (Graphify)
+Antes de analizar o diseñar una solución, consultar:
+👉 `.agents/knowledge/graphify/graph_summary.md`
+Para identificar rápidamente las entidades Prisma, servicios NestJS, DTOs y componentes Next.js vinculados al módulo sin realizar escaneos globales.
+
 ## Objetivo
 Diseñar especificaciones técnicas sólidas, definir límites de arquitectura y estructurar soluciones sostenibles a largo plazo para el ERP logístico.
 
@@ -18,7 +23,8 @@ Diseñar especificaciones técnicas sólidas, definir límites de arquitectura y
 - `write_to_file` para generar especificaciones y planes de arquitectura.
 
 ## Protocolo de Ejecución
-1. Analizar el requerimiento del usuario o la feature a implementar.
-2. Evaluar el impacto en el modelo de dominio y la Clean Architecture del monolito modular NestJS/Next.js.
-3. Especificar qué submódulos se verán afectados.
-4. Generar el documento de arquitectura y contratos para los agentes secundarios (`db-engineer`, `api-engineer`, `backend-dev`, `frontend-dev`).
+1. Consultar el mapa relacional en `.agents/knowledge/graphify/graph_summary.md`.
+2. Analizar el requerimiento del usuario o la feature a implementar.
+3. Evaluar el impacto en el modelo de dominio y la Clean Architecture del monolito modular NestJS/Next.js.
+4. Especificar qué submódulos se verán afectados.
+5. Generar el documento de arquitectura y contratos para los agentes secundarios.
