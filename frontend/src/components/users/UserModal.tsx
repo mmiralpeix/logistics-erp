@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Shield, User, Mail, Lock, Phone, X, Check } from 'lucide-react';
-import { ROLE_LABELS } from '@/lib/auth';
+import { User, Mail, Lock, Phone, X, Check } from 'lucide-react';
 
 interface UserModalProps {
   initialData?: any;
@@ -42,7 +41,7 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
 
     const payload: any = { ...form };
     if (initialData && !payload.password) {
-      delete payload.password; // Don't send empty password when editing
+      delete payload.password;
     }
 
     onSave(payload);
@@ -54,11 +53,11 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 rounded-xl">
+            <div className="p-2.5 bg-blue-600/10 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
                 {initialData ? 'Editar Usuario / Permisos' : 'Dar de Alta Nuevo Usuario'}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -68,7 +67,7 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -76,6 +75,7 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
 
         {/* Body Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+          {/* Nombre y Apellido */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
@@ -106,74 +106,75 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
             </div>
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Correo Electrónico Corporativo *
             </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative flex items-center">
+              <Mail className="w-4 h-4 absolute left-3 text-slate-400 pointer-events-none z-10" />
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="cgomez@logistics.com"
-                className="input w-full text-sm pl-9"
+                className="input w-full text-sm !pl-10"
               />
             </div>
             {errors.email && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.email}</p>}
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               {initialData ? 'Nueva Contraseña (dejar en blanco para mantener actual)' : 'Contraseña Inicial *'}
             </label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative flex items-center">
+              <Lock className="w-4 h-4 absolute left-3 text-slate-400 pointer-events-none z-10" />
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => handleChange('password', e.target.value)}
                 placeholder="••••••••"
-                className="input w-full text-sm pl-9"
+                className="input w-full text-sm !pl-10"
               />
             </div>
             {errors.password && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.password}</p>}
           </div>
 
+          {/* Role */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Rol y Permisos en el ERP *
             </label>
-            <div className="relative">
-              <Shield className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <select
-                value={form.role}
-                onChange={(e) => handleChange('role', e.target.value)}
-                className="input w-full text-sm pl-9 font-medium"
-              >
-                <option value="SUPER_ADMIN">Super Administrador — Acceso Total</option>
-                <option value="ADMIN">Administrador — Gestión Global</option>
-                <option value="OPERATIONS_MANAGER">Gerente de Operaciones — Flota & Viajes</option>
-                <option value="DISPATCHER">Despachante — Planificación Logística</option>
-                <option value="DRIVER">Chofer / Conductor — Hoja de Ruta</option>
-                <option value="ACCOUNTANT">Contabilidad — Facturación & Cobros</option>
-                <option value="VIEWER">Solo Lectura — Auditoría</option>
-              </select>
-            </div>
+            <select
+              value={form.role}
+              onChange={(e) => handleChange('role', e.target.value)}
+              className="input w-full text-sm font-medium"
+            >
+              <option value="SUPER_ADMIN">Super Administrador — Acceso Total</option>
+              <option value="ADMIN">Administrador — Gestión Global</option>
+              <option value="OPERATIONS_MANAGER">Gerente de Operaciones — Flota & Viajes</option>
+              <option value="DISPATCHER">Despachante — Planificación Logística</option>
+              <option value="DRIVER">Chofer / Conductor — Hoja de Ruta</option>
+              <option value="ACCOUNTANT">Contabilidad — Facturación & Cobros</option>
+              <option value="VIEWER">Solo Lectura — Auditoría</option>
+            </select>
           </div>
 
+          {/* Phone */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Teléfono de Contacto (Opcional)
             </label>
-            <div className="relative">
-              <Phone className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative flex items-center">
+              <Phone className="w-4 h-4 absolute left-3 text-slate-400 pointer-events-none z-10" />
               <input
                 type="text"
                 value={form.phone}
                 onChange={(e) => handleChange('phone', e.target.value)}
                 placeholder="+54 9 11 4567-8901"
-                className="input w-full text-sm pl-9"
+                className="input w-full text-sm !pl-10"
               />
             </div>
           </div>
