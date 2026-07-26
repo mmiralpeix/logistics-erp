@@ -654,7 +654,7 @@ const htmlTemplate = `<!DOCTYPE html>
       return { nodes: nodes, links: linksArr };
     }
 
-    // 1. NEURAL MAP INITIALIZATION (ForceGraph2D)
+    // 1. NEURAL MAP INITIALIZATION (ForceGraph2D with automatic fallback)
     function initNeuralView() {
       const container = document.getElementById('neural-container');
       container.innerHTML = '';
@@ -662,71 +662,80 @@ const htmlTemplate = `<!DOCTYPE html>
       rawNodesList = data.nodes;
 
       const elem = container;
-      neuralGraph = ForceGraph()(elem)
-        .graphData(data)
-        .backgroundColor('#050811')
-        .nodeRelSize(5)
-        .nodeVal(d => d.val)
-        .nodeColor(d => highlightNodes.has(d) ? (d === hoverNode ? '#ffffff' : '#00e5ff') : d.color)
-        .nodeLabel(d => '<div style="background:rgba(13,19,36,0.95); padding:6px 12px; border-radius:8px; border:1px solid rgba(56,189,248,0.4); color:#fff; font-family:Inter; font-size:12px;"><b>' + d.name + '</b><br><span style="color:#38bdf8;">' + (d.count || 1) + ' elementos</span></div>')
-        .linkWidth(link => highlightLinks.has(link) ? 3 : 1)
-        .linkColor(link => highlightLinks.has(link) ? '#00e5ff' : 'rgba(56, 189, 248, 0.2)')
-        .linkDirectionalParticles(link => isParticlesOn ? (highlightLinks.has(link) ? 4 : 2) : 0)
-        .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 4 : 2)
-        .linkDirectionalParticleSpeed(0.006)
-        .linkDirectionalParticleColor(() => '#38bdf8')
-        .nodeCanvasObject((node, ctx, globalScale) => {
-          const label = node.name;
-          const fontSize = Math.max(10 / globalScale, 3);
-          const radius = Math.sqrt(node.val) * 2;
+      try {
+        if (typeof ForceGraph !== 'undefined') {
+          neuralGraph = ForceGraph()(elem)
+            .graphData(data)
+            .backgroundColor('#050811')
+            .nodeRelSize(5)
+            .nodeVal(d => d.val)
+            .nodeColor(d => highlightNodes.has(d) ? (d === hoverNode ? '#ffffff' : '#00e5ff') : d.color)
+            .nodeLabel(d => '<div style="background:rgba(13,19,36,0.95); padding:6px 12px; border-radius:8px; border:1px solid rgba(56,189,248,0.4); color:#fff; font-family:Inter; font-size:12px;"><b>' + d.name + '</b><br><span style="color:#38bdf8;">' + (d.count || 1) + ' elementos</span></div>')
+            .linkWidth(link => highlightLinks.has(link) ? 3 : 1)
+            .linkColor(link => highlightLinks.has(link) ? '#00e5ff' : 'rgba(56, 189, 248, 0.2)')
+            .linkDirectionalParticles(link => isParticlesOn ? (highlightLinks.has(link) ? 4 : 2) : 0)
+            .linkDirectionalParticleWidth(link => highlightLinks.has(link) ? 4 : 2)
+            .linkDirectionalParticleSpeed(0.006)
+            .linkDirectionalParticleColor(() => '#38bdf8')
+            .nodeCanvasObject((node, ctx, globalScale) => {
+              const label = node.name;
+              const fontSize = Math.max(10 / globalScale, 3);
+              const radius = Math.sqrt(node.val) * 2;
 
-          // Glowing Halo Effect
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, radius + (highlightNodes.has(node) ? 4 : 2), 0, 2 * Math.PI, false);
-          ctx.fillStyle = highlightNodes.has(node) ? 'rgba(0, 229, 255, 0.4)' : (node.color + '44');
-          ctx.fill();
+              // Glowing Halo Effect
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, radius + (highlightNodes.has(node) ? 4 : 2), 0, 2 * Math.PI, false);
+              ctx.fillStyle = highlightNodes.has(node) ? 'rgba(0, 229, 255, 0.4)' : (node.color + '44');
+              ctx.fill();
 
-          // Core Node Circle
-          ctx.beginPath();
-          ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-          ctx.fillStyle = node === hoverNode ? '#ffffff' : node.color;
-          ctx.shadowColor = node.color;
-          ctx.shadowBlur = highlightNodes.has(node) ? 16 : 8;
-          ctx.fill();
-          ctx.shadowBlur = 0;
+              // Core Node Circle
+              ctx.beginPath();
+              ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+              ctx.fillStyle = node === hoverNode ? '#ffffff' : node.color;
+              ctx.shadowColor = node.color;
+              ctx.shadowBlur = highlightNodes.has(node) ? 16 : 8;
+              ctx.fill();
+              ctx.shadowBlur = 0;
 
-          // Label
-          if (globalScale > 0.8 || node.val > 25 || highlightNodes.has(node)) {
-            ctx.font = (highlightNodes.has(node) ? 'bold ' : '') + fontSize + 'px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = highlightNodes.has(node) ? '#ffffff' : '#cbd5e1';
-            ctx.fillText(label, node.x, node.y + radius + fontSize + 1);
-          }
-        })
-        .onNodeHover(node => {
-          highlightNodes.clear();
-          highlightLinks.clear();
-          if (node) {
-            highlightNodes.add(node);
-            node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
-            node.links.forEach(link => highlightLinks.add(link));
-          }
-          hoverNode = node || null;
-          elem.style.cursor = node ? 'pointer' : 'default';
-        })
-        .onNodeClick(node => {
-          neuralGraph.centerAt(node.x, node.y, 800);
-          neuralGraph.zoom(2.2, 800);
-          openDrawer({
-            label: node.name,
-            path: node.path,
-            value: node.count,
-            rawData: node.rawData
-          });
-        });
+              // Label
+              if (globalScale > 0.8 || node.val > 25 || highlightNodes.has(node)) {
+                ctx.font = (highlightNodes.has(node) ? 'bold ' : '') + fontSize + 'px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = highlightNodes.has(node) ? '#ffffff' : '#cbd5e1';
+                ctx.fillText(label, node.x, node.y + radius + fontSize + 1);
+              }
+            })
+            .onNodeHover(node => {
+              highlightNodes.clear();
+              highlightLinks.clear();
+              if (node) {
+                highlightNodes.add(node);
+                node.neighbors.forEach(neighbor => highlightNodes.add(neighbor));
+                node.links.forEach(link => highlightLinks.add(link));
+              }
+              hoverNode = node || null;
+              elem.style.cursor = node ? 'pointer' : 'default';
+            })
+            .onNodeClick(node => {
+              if (neuralGraph.centerAt) neuralGraph.centerAt(node.x, node.y, 800);
+              if (neuralGraph.zoom) neuralGraph.zoom(2.2, 800);
+              openDrawer({
+                label: node.name,
+                path: node.path,
+                value: node.count,
+                rawData: node.rawData
+              });
+            });
 
-      document.getElementById('stats-counter').innerText = data.nodes.length + ' Nodos Sinápticos • LogisticsPro ERP';
+          document.getElementById('stats-counter').innerText = data.nodes.length + ' Nodos Sinápticos • LogisticsPro ERP';
+          return;
+        }
+      } catch (err) {
+        console.warn('ForceGraph library error, rendering VisNetwork fallback:', err);
+      }
+
+      renderVisNetworkInto(container);
     }
 
     function switchView(viewName, evt) {
@@ -798,29 +807,46 @@ const htmlTemplate = `<!DOCTYPE html>
       if (neuralGraph) neuralGraph.linkDirectionalParticles(link => isParticlesOn ? 2 : 0);
     }
 
-    function renderVisNetwork() {
-      const container = document.getElementById('network-container');
-      if (visNetworkObj) return;
+    function renderVisNetworkInto(container) {
+      if (!container) return;
+      container.innerHTML = '';
 
       const nodes = rawNodesList.map(n => ({
         id: n.id,
         label: n.name,
-        color: { background: n.color, border: '#ffffff' },
-        size: Math.min(30, Math.max(10, n.val / 2))
+        color: { background: n.color, border: '#00e5ff' },
+        size: Math.min(35, Math.max(12, n.val / 2)),
+        font: { color: '#ffffff', face: 'Inter', size: 12 }
       }));
 
       const edges = [];
       rawNodesList.forEach(n => {
         n.links.forEach(l => {
-          if (typeof l.source === 'object') {
-            edges.push({ from: l.source.id, to: l.target.id, color: { color: 'rgba(56,189,248,0.2)' } });
+          const fromId = typeof l.source === 'object' ? l.source.id : l.source;
+          const toId = typeof l.target === 'object' ? l.target.id : l.target;
+          if (fromId && toId) {
+            edges.push({ from: fromId, to: toId, color: { color: 'rgba(56,189,248,0.25)' } });
           }
         });
       });
 
-      visNetworkObj = new vis.Network(container, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, {
-        physics: { solver: 'forceAtlas2Based' }
+      const net = new vis.Network(container, { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) }, {
+        physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -40, centralGravity: 0.005, springLength: 90 } },
+        interaction: { hover: true, tooltipDelay: 100 }
       });
+
+      net.on("click", function (params) {
+        if (params.nodes.length > 0) {
+          const match = rawNodesList.find(n => n.id === params.nodes[0]);
+          if (match) openDrawer({ label: match.name, path: match.path, value: match.count, rawData: match.rawData });
+        }
+      });
+      document.getElementById('stats-counter').innerText = nodes.length + ' Nodos de Conocimiento • LogisticsPro ERP';
+    }
+
+    function renderVisNetwork() {
+      const container = document.getElementById('network-container');
+      renderVisNetworkInto(container);
     }
 
     function renderRadialTree() {
