@@ -4,6 +4,7 @@ import { Package, Truck, ShieldCheck, Tag, Layers, MapPin, DollarSign, Image as 
 
 interface SparePartModalProps {
   initialData?: any;
+  vehicles?: any[];
   onClose: () => void;
   onSave: (data: any) => void;
 }
@@ -32,21 +33,6 @@ const VEHICLE_TYPES = [
   'CAMIONETA',
 ];
 
-const POPULAR_BRANDS = [
-  'TODAS',
-  'Randon',
-  'Indecar',
-  'Salto',
-  'Sola y Brusa',
-  'Cormetal',
-  'Vulcano',
-  'Scania',
-  'Volvo',
-  'Mercedes-Benz',
-  'Iveco',
-  'Ford',
-];
-
 const HITCH_TYPES = [
   'TODOS',
   'Perno Rey 2"',
@@ -56,7 +42,16 @@ const HITCH_TYPES = [
   'N/A',
 ];
 
-export function SparePartModal({ initialData, onClose, onSave }: SparePartModalProps) {
+export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: SparePartModalProps) {
+  // Extract unique brands dynamically from the loaded fleet
+  const fleetBrands = Array.from(
+    new Set(
+      (vehicles || [])
+        .map((v: any) => v.marca?.trim())
+        .filter((m: string | undefined): m is string => Boolean(m))
+    )
+  ).sort();
+
   const [form, setForm] = useState<any>(
     initialData || {
       sku: `SKU-${Date.now().toString().slice(-6)}`,
@@ -70,6 +65,13 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
       tipoEnganche: 'TODOS',
     }
   );
+
+  const [isCustomBrand, setIsCustomBrand] = useState<boolean>(() => {
+    if (!initialData?.marcasCompatibles) return false;
+    const current = initialData.marcasCompatibles.trim();
+    if (current === 'TODAS') return false;
+    return !fleetBrands.includes(current);
+  });
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
@@ -220,15 +222,43 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
               </div>
 
               <div>
-                <label className="label">Marcas Compatibles (ej: Randon, Indecar...)</label>
-                <input
-                  type="text"
-                  value={form.marcasCompatibles || 'TODAS'}
-                  onChange={(e) => set('marcasCompatibles', e.target.value)}
-                  className="input text-xs"
-                  placeholder="Ej: Randon, Indecar, Salto, Cormetal o TODAS"
-                />
-                <span className="text-[10px] text-slate-400">Separa marcas con coma</span>
+                <label className="label">Marca Compatible (Flota Propia)</label>
+                <select
+                  value={isCustomBrand ? 'OTRA' : (form.marcasCompatibles || 'TODAS')}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'OTRA') {
+                      setIsCustomBrand(true);
+                      set('marcasCompatibles', '');
+                    } else {
+                      setIsCustomBrand(false);
+                      set('marcasCompatibles', val);
+                    }
+                  }}
+                  className="input text-xs font-medium"
+                >
+                  <option value="TODAS">TODAS (Todas las marcas de la flota)</option>
+                  {fleetBrands.map((brand) => (
+                    <option key={brand} value={brand}>
+                      {brand}
+                    </option>
+                  ))}
+                  <option value="OTRA">+ Especificar otra marca...</option>
+                </select>
+
+                {isCustomBrand && (
+                  <input
+                    type="text"
+                    required
+                    value={form.marcasCompatibles || ''}
+                    onChange={(e) => set('marcasCompatibles', e.target.value)}
+                    className="input text-xs mt-2"
+                    placeholder="Escriba la marca compatible..."
+                  />
+                )}
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  Cargadas desde la flota propia
+                </span>
               </div>
 
               <div>

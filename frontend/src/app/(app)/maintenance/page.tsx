@@ -659,6 +659,7 @@ export default function MaintenancePage() {
       {showSpareModal && (
         <SparePartModal
           initialData={editSpareData}
+          vehicles={vehicles}
           onClose={() => {
             setShowSpareModal(false);
             setEditSpareData(null);
