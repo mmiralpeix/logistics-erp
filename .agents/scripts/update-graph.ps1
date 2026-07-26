@@ -13,8 +13,8 @@ if (Test-Path $GraphifyExe) {
     & $GraphifyExe . --code-only
     Write-Host "  [OK] Extraccion AST completada en: graphify-out/graph.json" -ForegroundColor Green
     
-    Write-Host "  -> Generando arbol visual interactivo D3 HTML..." -ForegroundColor Gray
-    & $GraphifyExe tree --graph graphify-out/graph.json --output .agents/knowledge/graphify/GRAPH_TREE.html
+    Write-Host "  -> Aplicando visualizador predeterminado Mapa Neuronal..." -ForegroundColor Gray
+    node .agents/knowledge/graphify/update_html.js
     Write-Host "  [OK] Arbol generado en: .agents/knowledge/graphify/GRAPH_TREE.html" -ForegroundColor Green
 } else {
     Write-Host "  -> Graphify CLI no encontrado en Path local, manteniendo indices de respaldo." -ForegroundColor Yellow
