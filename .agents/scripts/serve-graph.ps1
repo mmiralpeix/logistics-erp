@@ -13,8 +13,9 @@ if (-not (Test-Path $GraphHtml)) {
     npm run index
 }
 
-Write-Host "  -> Abriendo el navegador en: http://localhost:3333/GRAPH_TREE.html" -ForegroundColor Green
-Start-Process "http://localhost:3333/GRAPH_TREE.html"
+$ts = [DateTimeOffset]::Now.ToUnixTimeSeconds()
+Write-Host "  -> Abriendo el navegador en: http://localhost:3333/GRAPH_TREE.html?v=$ts" -ForegroundColor Green
+Start-Process "http://localhost:3333/GRAPH_TREE.html?v=$ts"
 
 Write-Host "  -> Servidor activo en el puerto 3333. Presione Ctrl+C para detener." -ForegroundColor Gray
 python -m http.server 3333 --directory "$RootPath\.agents\knowledge\graphify"
