@@ -33,15 +33,6 @@ const VEHICLE_TYPES = [
   'CAMIONETA',
 ];
 
-const HITCH_TYPES = [
-  'TODOS',
-  'Perno Rey 2"',
-  'Perno Rey 3.5"',
-  'Lanza / Ojo de Buey',
-  'Acople Rápido Cisterna',
-  'N/A',
-];
-
 export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: SparePartModalProps) {
   // Extract unique brands dynamically from the loaded fleet
   const fleetBrands = Array.from(
@@ -103,7 +94,7 @@ export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4 flex-1">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between">
                 <label className="label">Código SKU / Parte</label>
@@ -136,19 +127,6 @@ export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: 
                     {cat}
                   </option>
                 ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="label">Ámbito / Aplicación</label>
-              <select
-                value={form.ambito || 'UNIVERSAL'}
-                onChange={(e) => set('ambito', e.target.value)}
-                className="input"
-              >
-                <option value="UNIVERSAL">Universal / Toda la Flota</option>
-                <option value="ARRASTRE">Acoplados / Semis / Cisternas</option>
-                <option value="TRACCION">Tractores / Camiones (Chasis)</option>
               </select>
             </div>
           </div>
@@ -205,7 +183,7 @@ export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: 
               <Truck className="w-4 h-4" /> Matriz de Compatibilidad con la Flota
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="label">Tipo de Vehículo</label>
                 <select
@@ -259,21 +237,6 @@ export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: 
                 <span className="text-[10px] text-slate-400 mt-1 block">
                   Cargadas desde la flota propia
                 </span>
-              </div>
-
-              <div>
-                <label className="label">Tipo de Enganche</label>
-                <select
-                  value={form.tipoEnganche || 'TODOS'}
-                  onChange={(e) => set('tipoEnganche', e.target.value)}
-                  className="input text-xs"
-                >
-                  {HITCH_TYPES.map((h) => (
-                    <option key={h} value={h}>
-                      {h}
-                    </option>
-                  ))}
-                </select>
               </div>
             </div>
           </div>
