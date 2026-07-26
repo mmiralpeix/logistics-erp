@@ -9,6 +9,10 @@ node_modules/
 .env.*.local
 *.env.local
 backend/.env
+.mcp.json
+.claude/mcp.json
+.agents/mcp.json
+mcp.json
 
 # Builds
 dist/
