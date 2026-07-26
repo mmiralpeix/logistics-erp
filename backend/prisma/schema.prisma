@@ -503,6 +503,7 @@ model SparePart {
   marcasCompatibles  String?  @default("TODAS")
   tipoEnganche       String?  @default("TODOS")
   modelosCompatibles String?
+  imagenUrl          String?
   notas              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

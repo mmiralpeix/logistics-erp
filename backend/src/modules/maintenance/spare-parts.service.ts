@@ -23,7 +23,7 @@ export class SparePartsService {
 
     const parts = await this.prisma.sparePart.findMany({
       where,
-      orderBy: { nombre: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
 
     if (query?.tipoVehiculo) {
@@ -45,18 +45,19 @@ export class SparePartsService {
   }
 
   async create(dto: any) {
-    if (!dto.sku) {
-      dto.sku = `SKU-${Date.now().toString().slice(-6)}`;
+    let sku = dto.sku?.trim();
+    if (!sku) {
+      sku = `SKU-${Date.now().toString().slice(-6)}`;
     }
 
-    const existing = await this.prisma.sparePart.findUnique({ where: { sku: dto.sku } });
+    const existing = await this.prisma.sparePart.findUnique({ where: { sku } });
     if (existing) {
-      throw new BadRequestException(`El SKU ${dto.sku} ya se encuentra registrado`);
+      sku = `${sku}-${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
     return this.prisma.sparePart.create({
       data: {
-        sku: dto.sku,
+        sku,
         nombre: dto.nombre,
         categoria: dto.categoria || 'FILTROS',
         ambito: dto.ambito || 'UNIVERSAL',
@@ -68,6 +69,7 @@ export class SparePartsService {
         marcasCompatibles: dto.marcasCompatibles || 'TODAS',
         tipoEnganche: dto.tipoEnganche || 'TODOS',
         modelosCompatibles: dto.modelosCompatibles || null,
+        imagenUrl: dto.imagenUrl || null,
         notas: dto.notas || null,
       },
     });
@@ -82,6 +84,7 @@ export class SparePartsService {
         stockActual: dto.stockActual !== undefined ? Number(dto.stockActual) : undefined,
         stockMinimo: dto.stockMinimo !== undefined ? Number(dto.stockMinimo) : undefined,
         precioUnitario: dto.precioUnitario !== undefined ? Number(dto.precioUnitario) : undefined,
+        imagenUrl: dto.imagenUrl !== undefined ? dto.imagenUrl : undefined,
       },
     });
   }

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { maintenanceApi, vehiclesApi, sparePartsApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatDate, formatMoney, MAINTENANCE_STATUS_MAP } from '@/lib/utils';
-import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search, Package, Layers } from 'lucide-react';
+import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search, Package, Layers, Image as ImageIcon } from 'lucide-react';
 import { WorkOrderModal } from '@/components/maintenance/WorkOrderModal';
 import { MaintenanceHealthCard } from '@/components/maintenance/MaintenanceHealthCard';
 import { SparePartModal } from '@/components/maintenance/SparePartModal';
@@ -14,6 +14,7 @@ export default function MaintenancePage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'health' | 'costs' | 'inventory'>('orders');
   const [showModal, setShowModal] = useState(false);
   const [showSpareModal, setShowSpareModal] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
   const [editSpareData, setEditSpareData] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState('');
@@ -80,8 +81,10 @@ export default function MaintenancePage() {
 
   const createSpareMutation = useMutation({
     mutationFn: (data: any) => sparePartsApi.create(data),
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       toast.success('Repuesto guardado en Pañol');
+      setSpareCategory('');
+      setSpareSearch('');
       qc.invalidateQueries({ queryKey: ['spare-parts-inventory'] });
       setShowSpareModal(false);
       setEditSpareData(null);
@@ -507,6 +510,7 @@ export default function MaintenancePage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="table-header">
+                    <th className="px-4 py-3 text-left">Foto</th>
                     <th className="px-4 py-3 text-left">SKU</th>
                     <th className="px-4 py-3 text-left">Repuesto / Insumo</th>
                     <th className="px-4 py-3 text-left">Categoría</th>
@@ -520,13 +524,13 @@ export default function MaintenancePage() {
                 <tbody>
                   {isLoadingSpares ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                      <td colSpan={9} className="text-center py-12 text-slate-500">
                         Cargando inventario de Pañol...
                       </td>
                     </tr>
                   ) : filteredSpareParts?.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="text-center py-12 text-slate-500">
+                      <td colSpan={9} className="text-center py-12 text-slate-500">
                         No se encontraron repuestos en Pañol.
                       </td>
                     </tr>
@@ -535,6 +539,27 @@ export default function MaintenancePage() {
                       const isLowStock = p.stockActual <= p.stockMinimo;
                       return (
                         <tr key={p.id} className="table-row">
+                          <td className="px-4 py-3">
+                            {p.imagenUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewImage(p.imagenUrl)}
+                                className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:scale-105 transition-transform"
+                                title="Haga clic para ampliar foto de referencia"
+                              >
+                                <img
+                                  src={p.imagenUrl}
+                                  alt={p.nombre}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                                />
+                              </button>
+                            ) : (
+                              <div className="w-10 h-10 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800/50">
+                                <ImageIcon className="w-4 h-4 opacity-50" />
+                              </div>
+                            )}
+                          </td>
                           <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900 dark:text-white">
                             {p.sku}
                           </td>
@@ -644,6 +669,25 @@ export default function MaintenancePage() {
             }
           }}
         />
+      )}
+
+      {previewImage && (
+        <div className="modal-overlay z-50" onClick={() => setPreviewImage(null)}>
+          <div className="modal max-w-xl p-4 flex flex-col items-center gap-4 relative animate-fade-in">
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg"
+            >
+              ✕
+            </button>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Foto de Referencia del Repuesto</h3>
+            <img
+              src={previewImage}
+              alt="Repuesto"
+              className="max-h-[70vh] rounded-xl object-contain border border-slate-200 dark:border-slate-700"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

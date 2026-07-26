@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Package, Truck, ShieldCheck, Tag, Layers, MapPin, DollarSign } from 'lucide-react';
+import { Package, Truck, ShieldCheck, Tag, Layers, MapPin, DollarSign, Image as ImageIcon } from 'lucide-react';
 
 interface SparePartModalProps {
   initialData?: any;
@@ -268,6 +268,33 @@ export function SparePartModal({ initialData, onClose, onSave }: SparePartModalP
                 className="input"
                 placeholder="Ej: Aplicable a Semi Cisterna 35.000 Lts"
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="label flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-xs font-semibold">
+                <ImageIcon className="w-3.5 h-3.5 text-blue-500" /> Imagen / Foto de Referencia del Repuesto (URL)
+              </span>
+            </label>
+            <div className="flex gap-3 items-center">
+              <input
+                type="url"
+                value={form.imagenUrl || ''}
+                onChange={(e) => set('imagenUrl', e.target.value)}
+                className="input flex-1 text-xs"
+                placeholder="https://ejemplo.com/fotos/filtro-aceite-scania.jpg"
+              />
+              {form.imagenUrl && (
+                <div className="w-12 h-12 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800">
+                  <img
+                    src={form.imagenUrl}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
