@@ -82,7 +82,7 @@ export default function MaintenancePage() {
   const createSpareMutation = useMutation({
     mutationFn: (data: any) => sparePartsApi.create(data),
     onSuccess: (res: any) => {
-      toast.success('Repuesto guardado en Pañol');
+      toast.success('Artículo guardado en inventario');
       setSpareCategory('');
       setSpareSearch('');
       qc.invalidateQueries({ queryKey: ['spare-parts-inventory'] });
@@ -267,7 +267,7 @@ export default function MaintenancePage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Package className="w-4 h-4" /> Pañol & Stock Repuestos
+            <Package className="w-4 h-4" /> Inventario
             {Array.isArray(spareParts) && spareParts.some((p: any) => p.stockActual <= p.stockMinimo) && (
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
             )}
@@ -504,7 +504,7 @@ export default function MaintenancePage() {
                 }}
                 className="btn-primary"
               >
-                <Plus className="w-4 h-4" /> Nuevo Repuesto en Pañol
+                <Plus className="w-4 h-4" /> Nuevo Artículo
               </button>
             </div>
 
@@ -527,13 +527,13 @@ export default function MaintenancePage() {
                   {isLoadingSpares ? (
                     <tr>
                       <td colSpan={9} className="text-center py-12 text-slate-500">
-                        Cargando inventario de Pañol...
+                        Cargando inventario...
                       </td>
                     </tr>
                   ) : filteredSpareParts?.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="text-center py-12 text-slate-500">
-                        No se encontraron repuestos en Pañol.
+                        No se encontraron artículos en el inventario.
                       </td>
                     </tr>
                   ) : (

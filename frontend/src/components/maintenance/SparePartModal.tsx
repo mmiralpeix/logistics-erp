@@ -87,7 +87,7 @@ export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: 
               <Package className="w-5 h-5" />
             </div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              {initialData ? 'Editar Repuesto en Pañol' : 'Nuevo Repuesto / Insumo en Pañol'}
+              {initialData ? 'Editar Artículo' : 'Nuevo Artículo'}
             </h2>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">✕</button>

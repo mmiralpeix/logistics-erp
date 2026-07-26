@@ -277,7 +277,7 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
                         onChange={(e) => handleSelectSparePart(idx, e.target.value)}
                         className="input w-48 text-xs font-medium"
                       >
-                        <option value="">-- Seleccionar de Pañol --</option>
+                        <option value="">-- Seleccionar del Inventario --</option>
                         {compatibleParts?.map((p: any) => (
                           <option key={p.id} value={p.id}>
                             {p.sku} — {p.nombre} (Stock: {p.stockActual})
