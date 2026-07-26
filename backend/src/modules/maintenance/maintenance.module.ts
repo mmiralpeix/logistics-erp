@@ -5,7 +5,7 @@ import { SparePartsController } from './spare-parts.controller';
 import { SparePartsService } from './spare-parts.service';
 
 @Module({
-  controllers: [MaintenanceController, SparePartsController],
+  controllers: [SparePartsController, MaintenanceController],
   providers: [MaintenanceService, SparePartsService],
   exports: [MaintenanceService, SparePartsService],
 })

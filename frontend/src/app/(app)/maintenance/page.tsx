@@ -141,16 +141,18 @@ export default function MaintenancePage() {
     );
   });
 
-  const filteredSpareParts = spareParts?.filter((p: any) => {
-    if (!spareSearch) return true;
-    const q = spareSearch.toLowerCase();
-    return (
-      p.sku?.toLowerCase().includes(q) ||
-      p.nombre?.toLowerCase().includes(q) ||
-      p.ubicacion?.toLowerCase().includes(q) ||
-      p.marcasCompatibles?.toLowerCase().includes(q)
-    );
-  });
+  const filteredSpareParts = Array.isArray(spareParts)
+    ? spareParts.filter((p: any) => {
+        if (!spareSearch) return true;
+        const q = spareSearch.toLowerCase();
+        return (
+          p.sku?.toLowerCase().includes(q) ||
+          p.nombre?.toLowerCase().includes(q) ||
+          p.ubicacion?.toLowerCase().includes(q) ||
+          p.marcasCompatibles?.toLowerCase().includes(q)
+        );
+      })
+    : [];
 
   return (
     <div>
@@ -266,7 +268,7 @@ export default function MaintenancePage() {
             }`}
           >
             <Package className="w-4 h-4" /> Pañol & Stock Repuestos
-            {spareParts?.some((p: any) => p.stockActual <= p.stockMinimo) && (
+            {Array.isArray(spareParts) && spareParts.some((p: any) => p.stockActual <= p.stockMinimo) && (
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
             )}
           </button>
