@@ -17,6 +17,20 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Public()
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Solicitar recuperación de contraseña por correo' })
+  forgotPassword(@Body('email') email: string) {
+    return this.authService.forgotPassword(email);
+  }
+
+  @Public()
+  @Post('register')
+  @ApiOperation({ summary: 'Registro público de nuevos usuarios' })
+  register(@Body() body: { email: string; password: string; firstName: string; lastName: string; phone?: string }) {
+    return this.authService.register(body);
+  }
+
   @Get('profile')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })

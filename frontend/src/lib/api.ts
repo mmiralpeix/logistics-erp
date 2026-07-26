@@ -32,7 +32,9 @@ export default api;
 
 // Typed API functions
 export const authApi = {
-  login: (email: string, password: string) => api.post('/auth/login', { email, password }),
+  login: (email: string, password: string, totpToken?: string) => api.post('/auth/login', { email, password, totpToken }),
+  register: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) => api.post('/auth/register', data),
+  forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
   getProfile: () => api.get('/auth/profile'),
   changePassword: (currentPassword: string, newPassword: string) => api.patch('/auth/change-password', { currentPassword, newPassword }),
 };

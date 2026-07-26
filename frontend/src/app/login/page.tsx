@@ -7,7 +7,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { authApi } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth';
-import { Truck, Eye, EyeOff, Lock, Mail, Sun, Moon, ShieldCheck, Activity, Award, ArrowRight, UserCheck, Scale, MapPin } from 'lucide-react';
+import { Truck, Eye, EyeOff, Lock, Mail, Sun, Moon, ShieldCheck, Award, ArrowRight, UserCheck, Scale, MapPin, UserPlus, Phone, User } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import Image from 'next/image';
 
@@ -22,7 +22,31 @@ export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
+
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showPass, setShowPass] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Forgot Password Modal State
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  // 2FA / MFA Verification Modal State
+  const [showMfaModal, setShowMfaModal] = useState(false);
+  const [pendingCredentials, setPendingCredentials] = useState<{ email: string; pass: string } | null>(null);
+  const [totpCode, setTotpCode] = useState('');
+  const [mfaLoading, setMfaLoading] = useState(false);
+
+  // Self-Registration State
+  const [regForm, setRegForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    phone: '',
+  });
+  const [regLoading, setRegLoading] = useState(false);
 
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -32,11 +56,82 @@ export default function LoginPage() {
   const onSubmit = async (data: FormData) => {
     try {
       const res = await authApi.login(data.email, data.password);
+      
+      if (res.data.mfaRequired) {
+        setPendingCredentials({ email: data.email, pass: data.password });
+        setShowMfaModal(true);
+        toast('Verificación 2FA requerida para esta cuenta', {
+          icon: '🛡️',
+        });
+        return;
+      }
+
+      const roleLabels: Record<string, string> = {
+        SUPER_ADMIN: 'Super Administrador',
+        ADMIN: 'Administrador',
+        OPERATIONS_MANAGER: 'Gerente de Operaciones',
+        DISPATCHER: 'Despachante',
+        DRIVER: 'Chofer',
+        ACCOUNTANT: 'Contabilidad',
+      };
+
       setAuth(res.data.user, res.data.access_token);
-      toast.success(`¡Bienvenido al sistema, ${res.data.user.firstName}!`);
+      toast.success(`¡Bienvenido, ${res.data.user.firstName}! Conectado como ${roleLabels[res.data.user.role] || res.data.user.role}`);
       router.push('/dashboard');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Credenciales inválidas');
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regForm.firstName || !regForm.lastName || !regForm.email || !regForm.password) {
+      toast.error('Por favor complete todos los campos obligatorios');
+      return;
+    }
+    setRegLoading(true);
+    try {
+      const res = await authApi.register(regForm);
+      setAuth(res.data.user, res.data.access_token);
+      toast.success(`¡Cuenta creada exitosamente! Bienvenido, ${res.data.user.firstName}`);
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al registrar la cuenta');
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingCredentials || !totpCode) return;
+    setMfaLoading(true);
+    try {
+      const res = await authApi.login(pendingCredentials.email, pendingCredentials.pass, totpCode);
+      setAuth(res.data.user, res.data.access_token);
+      toast.success(`¡Verificación de 2FA Exitosa! Bienvenido ${res.data.user.firstName}`);
+      setShowMfaModal(false);
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Código 2FA incorrecto o vencido');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotLoading(true);
+    try {
+      const res = await authApi.forgotPassword(forgotEmail);
+      toast.success(res.data.message || 'Instrucciones enviadas a tu correo electrónico.');
+      setShowForgotModal(false);
+      setForgotEmail('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Error al procesar la solicitud');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -143,7 +238,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT LOGIN FORM SECTION */}
+      {/* RIGHT AUTH FORM SECTION */}
       <div className="w-full lg:w-2/5 flex flex-col justify-between p-6 sm:p-12 bg-slate-950 dark:bg-slate-950 relative z-10 overflow-y-auto">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between w-full">
@@ -163,111 +258,375 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Login Card Form */}
-        <div className="max-w-md w-full mx-auto my-auto space-y-8 py-8">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-bold border border-blue-500/20">
-              <UserCheck className="w-3.5 h-3.5" /> Acceso al Sistema
-            </div>
-            <h2 className="text-3xl font-black text-white tracking-tight">Iniciar Sesión</h2>
-            <p className="text-slate-400 text-sm">Ingresá tus credenciales corporativas para gestionar la logística.</p>
-          </div>
-
-          {/* Quick Login Profiles */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Perfiles Rápidos Demo:</p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => fillQuickLogin('admin@logistics.com', 'Admin123!')}
-                className="p-2.5 bg-slate-900 hover:bg-blue-600/20 border border-slate-800 hover:border-blue-500/50 rounded-xl text-left transition-all group"
-              >
-                <p className="text-xs font-bold text-white group-hover:text-blue-400">Admin</p>
-                <p className="text-[10px] text-slate-500">Acceso Total</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillQuickLogin('ops@logistics.com', 'Ops123!')}
-                className="p-2.5 bg-slate-900 hover:bg-emerald-600/20 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-left transition-all group"
-              >
-                <p className="text-xs font-bold text-white group-hover:text-emerald-400">Operaciones</p>
-                <p className="text-[10px] text-slate-500">Gestor de Flota</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillQuickLogin('chofer@logistics.com', 'Driver123!')}
-                className="p-2.5 bg-slate-900 hover:bg-amber-600/20 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition-all group"
-              >
-                <p className="text-xs font-bold text-white group-hover:text-amber-400">Chofer</p>
-                <p className="text-[10px] text-slate-500">Despacho</p>
-              </button>
-            </div>
-          </div>
-
-          {/* Main Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Correo Electrónico</label>
-              <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  {...register('email')}
-                  type="email"
-                  placeholder="admin@logistics.com"
-                  className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-3 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                  autoComplete="email"
-                />
-              </div>
-              {errors.email && <p className="text-red-400 text-xs mt-1 font-medium">{errors.email.message}</p>}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Contraseña</label>
-                <span className="text-xs text-blue-400 hover:underline cursor-pointer">¿Olvidaste tu clave?</span>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  {...register('password')}
-                  type={showPass ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-3 pl-10 pr-10 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
-                >
-                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password && <p className="text-red-400 text-xs mt-1 font-medium">{errors.password.message}</p>}
-            </div>
-
+        {/* Auth Card Container */}
+        <div className="max-w-md w-full mx-auto my-auto space-y-6 py-6">
+          {/* Mode Switcher Tabs */}
+          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
             <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-3.5 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50"
+              type="button"
+              onClick={() => setAuthMode('login')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                authMode === 'login'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
             >
-              {isSubmitting ? (
-                <span>Ingresando al sistema...</span>
-              ) : (
-                <>
-                  <span>Ingresar a LogisticsPro</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
+              <UserCheck className="w-4 h-4" />
+              <span>Iniciar Sesión</span>
             </button>
-          </form>
+            <button
+              type="button"
+              onClick={() => setAuthMode('register')}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                authMode === 'register'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Crear Cuenta</span>
+            </button>
+          </div>
+
+          {authMode === 'login' ? (
+            /* MODE 1: LOGIN FORM */
+            <div className="space-y-6">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-white tracking-tight">Iniciar Sesión</h2>
+                <p className="text-slate-400 text-xs">Ingresá tus credenciales corporativas para acceder al sistema.</p>
+              </div>
+
+              {/* Quick Login Profiles */}
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Perfiles Rápidos Demo:</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fillQuickLogin('admin@logistics.com', 'Admin123!')}
+                    className="p-2 bg-slate-900 hover:bg-blue-600/20 border border-slate-800 hover:border-blue-500/50 rounded-xl text-left transition-all group"
+                  >
+                    <p className="text-xs font-bold text-white group-hover:text-blue-400">Admin</p>
+                    <p className="text-[10px] text-slate-500">Acceso Total</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillQuickLogin('ops@logistics.com', 'Ops123!')}
+                    className="p-2 bg-slate-900 hover:bg-emerald-600/20 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-left transition-all group"
+                  >
+                    <p className="text-xs font-bold text-white group-hover:text-emerald-400">Operaciones</p>
+                    <p className="text-[10px] text-slate-500">Gestor Flota</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fillQuickLogin('chofer@logistics.com', 'Driver123!')}
+                    className="p-2 bg-slate-900 hover:bg-amber-600/20 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition-all group"
+                  >
+                    <p className="text-xs font-bold text-white group-hover:text-amber-400">Chofer</p>
+                    <p className="text-[10px] text-slate-500">Despacho</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Main Login Form */}
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      {...register('email')}
+                      type="email"
+                      placeholder="admin@logistics.com"
+                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      autoComplete="email"
+                    />
+                  </div>
+                  {errors.email && <p className="text-red-400 text-xs mt-1 font-medium">{errors.email.message}</p>}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Contraseña</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotModal(true)}
+                      className="text-xs text-blue-400 hover:underline font-semibold"
+                    >
+                      ¿Olvidaste tu clave?
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      {...register('password')}
+                      type={showPass ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
+                    >
+                      {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-red-400 text-xs mt-1 font-medium">{errors.password.message}</p>}
+                </div>
+
+                {/* Remember Me Checkbox */}
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>Recordarme en este dispositivo</span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <span>Ingresando al sistema...</span>
+                  ) : (
+                    <>
+                      <span>Ingresar a LogisticsPro</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          ) : (
+            /* MODE 2: SELF-REGISTRATION FORM */
+            <div className="space-y-5">
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-white tracking-tight">Crear una Cuenta</h2>
+                <p className="text-slate-400 text-xs">Registrá tus datos corporativos para solicitar acceso al ERP.</p>
+              </div>
+
+              <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Nombre *</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="text"
+                        required
+                        value={regForm.firstName}
+                        onChange={(e) => setRegForm({ ...regForm, firstName: e.target.value })}
+                        placeholder="Juan"
+                        className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Apellido *</label>
+                    <input
+                      type="text"
+                      required
+                      value={regForm.lastName}
+                      onChange={(e) => setRegForm({ ...regForm, lastName: e.target.value })}
+                      placeholder="Pérez"
+                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Correo Electrónico *</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="email"
+                      required
+                      value={regForm.email}
+                      onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
+                      placeholder="jperez@empresa.com"
+                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Contraseña *</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={regForm.password}
+                      onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
+                      placeholder="••••••••"
+                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Teléfono (Opcional)</label>
+                  <div className="relative">
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="text"
+                      value={regForm.phone}
+                      onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
+                      placeholder="+54 9 11 1234-5678"
+                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={regLoading}
+                  className="w-full py-3 px-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50 pt-2"
+                >
+                  {regLoading ? (
+                    <span>Registrando cuenta...</span>
+                  ) : (
+                    <>
+                      <span>Registrarme en LogisticsPro</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="pt-6 border-t border-slate-900 text-center text-xs text-slate-500">
+        <div className="pt-4 border-t border-slate-900 text-center text-xs text-slate-500">
           <p>© {new Date().getFullYear()} LogisticsPro ERP Inc. Todos los derechos reservados.</p>
         </div>
       </div>
+
+      {/* MODAL 1: RECUPERACIÓN DE CONTRASEÑA */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
+                <Mail className="w-4 h-4" /> Recuperación de Contraseña
+              </div>
+              <button
+                onClick={() => setShowForgotModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">¿Olvidaste tu contraseña?</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Ingresá tu correo corporativo. Te enviaremos un token seguro con vigencia de 15 minutos para restablecer tu clave.
+              </p>
+            </div>
+
+            <form onSubmit={handleForgotSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Correo Registrado</label>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="ejemplo@logistics.com"
+                  className="w-full bg-slate-950 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white rounded-xl border border-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md transition-all disabled:opacity-50"
+                >
+                  {forgotLoading ? 'Enviando...' : 'Enviar Instrucciones'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: VERIFICACIÓN 2FA / TOTP */}
+      {showMfaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                <ShieldCheck className="w-4 h-4" /> Autenticación de Doble Factor
+              </div>
+              <button
+                onClick={() => setShowMfaModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-white">Ingresá tu Código TOTP</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Abrí la aplicación Google Authenticator o Authy en tu teléfono e ingresá el código dinámico de 6 dígitos.
+              </p>
+            </div>
+
+            <form onSubmit={handleMfaSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Código de 6 Dígitos</label>
+                <input
+                  type="text"
+                  required
+                  maxLength={6}
+                  value={totpCode}
+                  onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="123456"
+                  className="w-full bg-slate-950 text-white text-center tracking-[0.5em] font-mono text-2xl font-bold placeholder-slate-700 border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition-all"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowMfaModal(false)}
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white rounded-xl border border-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={mfaLoading || totpCode.length < 6}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-md transition-all disabled:opacity-50"
+                >
+                  {mfaLoading ? 'Verificando...' : 'Verificar e Ingresar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

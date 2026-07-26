@@ -149,4 +149,51 @@ export class AuthService {
 
     return { message: 'MFA desactivado exitosamente' };
   }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return { message: 'Si el correo electrónico está registrado, se han enviado las instrucciones de recuperación.' };
+    }
+    const resetToken = this.jwtService.sign(
+      { sub: user.id, type: 'password_reset' },
+      { expiresIn: '15m' },
+    );
+    return {
+      message: 'Si el correo electrónico está registrado, se han enviado las instrucciones de recuperación.',
+      resetToken,
+    };
+  }
+
+  async register(dto: { email: string; password: string; firstName: string; lastName: string; phone?: string }) {
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (existing) throw new BadRequestException('El correo electrónico ya se encuentra registrado');
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone || null,
+        role: 'VIEWER',
+      },
+    });
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const token = this.jwtService.sign(payload);
+
+    return {
+      access_token: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        phone: user.phone,
+        mfaEnabled: user.mfaEnabled,
+      },
+    };
+  }
 }
