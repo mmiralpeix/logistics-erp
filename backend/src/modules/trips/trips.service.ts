@@ -134,10 +134,15 @@ export class TripsService {
     }
 
     const { checkpoints, dangerousGoods, ...tripData } = dto;
+    const tarifa = Number(dto.tarifaAcordada) || 0;
+    const costo = Number(dto.costoTotal) || 0;
+    const margen = tarifa - costo;
 
     const trip = await this.prisma.trip.create({
       data: {
         ...tripData,
+        costoTotal: dto.costoTotal !== undefined ? costo : undefined,
+        margenBruto: margen,
         numero: this.generateTripNumber(),
         dispatcherId,
         fechaSalidaProgramada: departure,
@@ -161,7 +166,7 @@ export class TripsService {
   }
 
   async update(id: string, dto: UpdateTripDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
     const { checkpoints, dangerousGoods, ...data } = dto;
 
     const sanitizedData: any = { ...data };
@@ -177,7 +182,7 @@ export class TripsService {
       }
     });
 
-    ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'pesoExcedenteKg', 'montoExcedente'].forEach((numKey) => {
+    ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'costoTotal', 'pesoExcedenteKg', 'montoExcedente'].forEach((numKey) => {
       if (sanitizedData[numKey] !== undefined && sanitizedData[numKey] !== null && sanitizedData[numKey] !== '') {
         sanitizedData[numKey] = Number(sanitizedData[numKey]);
       }
@@ -186,6 +191,10 @@ export class TripsService {
     if (sanitizedData.pesoCarga && (sanitizedData.pesoExcedenteKg === undefined || sanitizedData.pesoExcedenteKg === null)) {
       sanitizedData.pesoExcedenteKg = Math.max(0, Number(sanitizedData.pesoCarga) - 30000);
     }
+
+    const currentTarifa = sanitizedData.tarifaAcordada !== undefined ? sanitizedData.tarifaAcordada : (existing.tarifaAcordada || 0);
+    const currentCosto = sanitizedData.costoTotal !== undefined ? sanitizedData.costoTotal : (existing.costoTotal || 0);
+    sanitizedData.margenBruto = currentTarifa - currentCosto;
 
     return this.prisma.trip.update({ where: { id }, data: sanitizedData, include: { client: true, vehicle: true, driver: true } });
   }

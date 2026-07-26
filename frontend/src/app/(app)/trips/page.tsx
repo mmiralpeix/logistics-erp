@@ -4,10 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsApi, clientsApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatMoney, formatDate, formatDateTime, TRIP_STATUS_MAP } from '@/lib/utils';
-import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers } from 'lucide-react';
+import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TripModal } from '@/components/trips/TripModal';
 import { BatchTripModal } from '@/components/trips/BatchTripModal';
+import { WaybillModal } from '@/components/trips/WaybillModal';
 
 const STATUSES = Object.entries(TRIP_STATUS_MAP);
 
@@ -18,6 +19,7 @@ export default function TripsPage() {
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
+  const [waybillTrip, setWaybillTrip] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const qc = useQueryClient();
 
@@ -48,50 +50,57 @@ export default function TripsPage() {
       const data = res.data;
       toast.success(`¡Convoy #${data.convoyCode} generado exitosamente con ${data.count} viajes!`);
       qc.invalidateQueries({ queryKey: ['trips'] });
-      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      qc.invalidateQueries({ queryKey: ['trip-distribution'] });
       setShowBatchModal(false);
     },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error al emitir el convoy'),
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Error al generar el convoy de viajes');
+    },
   });
 
   return (
-    <div>
+    <div className="space-y-6">
       <Header
-        title="Gestión de Viajes & Operaciones"
-        subtitle={`${data?.total || 0} viajes registrados en sistema`}
+        title="Gestión Operativa de Viajes & Despachos"
+        subtitle="Monitoreo en tiempo real de rutas, cargas salmuera/minería, remitos y finanzas de flota"
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowBatchModal(true)} className="btn-secondary flex items-center gap-1.5 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/30">
-              <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Programar Convoy (Multi-Unidad)</span>
+            <button
+              onClick={() => setShowBatchModal(true)}
+              className="btn-secondary text-xs px-3.5 py-2 flex items-center gap-1.5 font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800"
+            >
+              <Layers className="w-4 h-4" />
+              <span>Generar Convoy (Multi-Unidad)</span>
             </button>
-
-            <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary flex items-center gap-1.5">
+            <button
+              onClick={() => { setEditing(null); setShowModal(true); }}
+              className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5 font-bold shadow-md shadow-blue-600/20"
+            >
               <Plus className="w-4 h-4" />
-              <span>Planificar Viaje Individual</span>
+              <span>Nuevo Viaje</span>
             </button>
           </div>
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="space-y-4">
         {/* Filters */}
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-48 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Buscar por N° viaje, origen, destino, patente..."
+              placeholder="Buscar por N° Viaje, Origen, Destino, Remito..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="input pl-9"
             />
           </div>
 
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input w-48">
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input w-44">
             <option value="">Todos los estados</option>
-            {STATUSES.map(([val, { label }]) => <option key={val} value={val}>{label}</option>)}
+            {STATUSES.map(([val, { label }]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
           </select>
 
           <select value={clientFilter} onChange={(e) => { setClientFilter(e.target.value); setPage(1); }} className="input w-52">
@@ -112,7 +121,7 @@ export default function TripsPage() {
                   <th className="px-4 py-3 text-left">Cliente</th>
                   <th className="px-4 py-3 text-left">Documentación (Remito / OC)</th>
                   <th className="px-4 py-3 text-left">Fechas (Salida / Estimada)</th>
-                  <th className="px-4 py-3 text-left">Tarifa & Costos</th>
+                  <th className="px-4 py-3 text-left">Tarifa, Costo & Rentabilidad</th>
                   <th className="px-4 py-3 text-left">Estado</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
@@ -126,6 +135,11 @@ export default function TripsPage() {
                     <p className="text-slate-500 dark:text-slate-400">No se encontraron viajes para los filtros seleccionados</p>
                   </td></tr>
                 ) : data?.data?.map((trip: any) => {
+                  const tarifa = trip.tarifaAcordada || 0;
+                  const costo = trip.costoTotal || 0;
+                  const margen = tarifa - costo;
+                  const margenPct = tarifa > 0 ? Math.round((margen / tarifa) * 100) : 0;
+
                   return (
                     <tr key={trip.id} className="table-row">
                       <td className="px-4 py-3">
@@ -217,9 +231,35 @@ export default function TripsPage() {
                         <p><span className="text-slate-400">Est. Llegada:</span> {formatDate(trip.fechaLlegadaEstimada)}</p>
                       </td>
 
+                      {/* Tarifa, Costos & Semáforo Rentabilidad % */}
                       <td className="px-4 py-3">
-                        <p className="font-bold text-slate-900 dark:text-white text-xs">{formatMoney(trip.tarifaAcordada)}</p>
-                        {trip.costoTotal && <p className="text-[11px] text-slate-500">Costo: {formatMoney(trip.costoTotal)}</p>}
+                        <div className="space-y-0.5 text-xs">
+                          <p className="font-bold text-blue-600 dark:text-blue-400 flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-slate-400 uppercase font-semibold">Tarifa:</span>
+                            <span>{formatMoney(tarifa)}</span>
+                          </p>
+                          <p className="font-medium text-slate-600 dark:text-slate-400 flex items-center justify-between gap-2">
+                            <span className="text-[10px] text-slate-400 uppercase">Costo:</span>
+                            <span>{formatMoney(costo)}</span>
+                          </p>
+
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200 dark:border-slate-800">
+                            <p className={`font-bold text-[11px] ${margen >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                              {formatMoney(margen)}
+                            </p>
+                            {tarifa > 0 && (
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-black border ${
+                                margenPct >= 30
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700'
+                                  : margenPct >= 15
+                                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300 border-rose-300 dark:border-rose-700'
+                              }`}>
+                                {margenPct}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </td>
 
                       <td className="px-4 py-3">
@@ -235,7 +275,14 @@ export default function TripsPage() {
                       </td>
 
                       <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setWaybillTrip(trip)}
+                            className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors border border-blue-200 dark:border-blue-800"
+                            title="Imprimir Hoja de Ruta / Manifiesto Digital"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => { setEditing(trip); setShowModal(true); }}
                             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors"
@@ -260,12 +307,25 @@ export default function TripsPage() {
           </div>
 
           {/* Pagination */}
-          {data?.totalPages > 1 && (
-            <div className="px-5 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
-              <span className="text-slate-500">Página {page} de {data.totalPages}</span>
-              <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary py-1 text-xs">Anterior</button>
-                <button onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))} disabled={page === data.totalPages} className="btn-secondary py-1 text-xs">Siguiente</button>
+          {data && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+              <span>Mostrando {data.data.length} de {data.total} viajes</span>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="btn-secondary text-xs px-2.5 py-1 disabled:opacity-40"
+                >
+                  Anterior
+                </button>
+                <span>Página {page} de {data.totalPages || 1}</span>
+                <button
+                  disabled={page >= data.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="btn-secondary text-xs px-2.5 py-1 disabled:opacity-40"
+                >
+                  Siguiente
+                </button>
               </div>
             </div>
           )}
@@ -275,16 +335,23 @@ export default function TripsPage() {
       {showModal && (
         <TripModal
           trip={editing}
-          onClose={() => { setShowModal(false); setEditing(null); }}
-          onSave={() => { qc.invalidateQueries({ queryKey: ['trips'] }); setShowModal(false); setEditing(null); }}
+          onClose={() => setShowModal(false)}
+          onSave={() => setShowModal(false)}
         />
       )}
 
       {showBatchModal && (
         <BatchTripModal
           onClose={() => setShowBatchModal(false)}
-          onSave={(dto: any) => createBatchMutation.mutate(dto)}
+          onSave={(data) => createBatchMutation.mutate(data)}
           isLoading={createBatchMutation.isPending}
+        />
+      )}
+
+      {waybillTrip && (
+        <WaybillModal
+          trip={waybillTrip}
+          onClose={() => setWaybillTrip(null)}
         />
       )}
     </div>

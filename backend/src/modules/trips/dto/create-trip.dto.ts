@@ -55,6 +55,8 @@ export class CreateTripDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() esMineria?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() esDistribucion?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsNumber() tarifaAcordada?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() costoTotal?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() margenBruto?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() notas?: string;
   @ApiPropertyOptional({ type: [CreateCheckpointDto] })
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => CreateCheckpointDto)

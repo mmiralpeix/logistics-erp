@@ -101,7 +101,7 @@ export default function LoginPage() {
         toast((t) => (
           <div className="space-y-2">
             <p className="font-bold text-white text-xs">📧 Enlace de Activación Simulado (Dev Mode):</p>
-            <p className="text-[11px] text-blue-300 break-all">{res.data.activationLink}</p>
+            <p className="text-[11px] text-blue-200 break-all">{res.data.activationLink}</p>
             <button
               onClick={() => {
                 toast.dismiss(t.id);
@@ -163,9 +163,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-slate-950 text-slate-100 relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden font-sans">
       {/* LEFT HERO SECTION (IMAGE & BRANDING) */}
-      <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden flex-col justify-between p-12 select-none border-r border-slate-800">
+      <div className="hidden lg:flex lg:w-3/5 relative overflow-hidden flex-col justify-between p-12 select-none border-r border-slate-200 dark:border-slate-800">
         {/* Background Image with Dark Gradient Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -260,22 +260,22 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT AUTH FORM SECTION */}
-      <div className="w-full lg:w-2/5 flex flex-col justify-between p-6 sm:p-12 bg-slate-950 dark:bg-slate-950 relative z-10 overflow-y-auto">
+      {/* RIGHT AUTH FORM SECTION (LIGHT MODE DEFAULT) */}
+      <div className="w-full lg:w-2/5 flex flex-col justify-between p-6 sm:p-12 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative z-10 overflow-y-auto">
         {/* Top Header Bar */}
         <div className="flex items-center justify-between w-full">
           <div className="lg:hidden flex items-center gap-2">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
               <Truck className="w-4 h-4" />
             </div>
-            <span className="font-bold text-white text-base">LogisticsPro</span>
+            <span className="font-bold text-slate-900 dark:text-white text-base">LogisticsPro</span>
           </div>
 
           <button
             onClick={toggleTheme}
-            className="ml-auto p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all border border-slate-800 flex items-center gap-2 text-xs font-semibold"
+            className="ml-auto p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-200 dark:border-slate-800 flex items-center gap-2 text-xs font-semibold"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-blue-400" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-blue-600" />}
             <span>{theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}</span>
           </button>
         </div>
@@ -283,14 +283,14 @@ export default function LoginPage() {
         {/* Auth Card Container */}
         <div className="max-w-md w-full mx-auto my-auto space-y-6 py-6">
           {/* Mode Switcher Tabs */}
-          <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+          <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setAuthMode('login')}
               className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
                 authMode === 'login'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-blue-600 shadow-sm border border-slate-200 dark:bg-blue-600 dark:text-white dark:border-transparent'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               <UserCheck className="w-4 h-4" />
@@ -301,8 +301,8 @@ export default function LoginPage() {
               onClick={() => setAuthMode('register')}
               className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
                 authMode === 'register'
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white text-blue-600 shadow-sm border border-slate-200 dark:bg-blue-600 dark:text-white dark:border-transparent'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               <UserPlus className="w-4 h-4" />
@@ -314,37 +314,40 @@ export default function LoginPage() {
             /* MODE 1: LOGIN FORM */
             <div className="space-y-6">
               <div className="space-y-1">
-                <h2 className="text-2xl font-black text-white tracking-tight">Iniciar Sesión</h2>
-                <p className="text-slate-400 text-xs">Ingresá tus credenciales corporativas para acceder al sistema.</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-500/20">
+                  <UserCheck className="w-3.5 h-3.5" /> Acceso al Sistema
+                </div>
+                <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Iniciar Sesión</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-xs">Ingresá tus credenciales corporativas para acceder al sistema.</p>
               </div>
 
               {/* Quick Login Profiles */}
               <div className="space-y-2">
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Perfiles Rápidos Demo:</p>
+                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Perfiles Rápidos Demo:</p>
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => fillQuickLogin('admin@logistics.com', 'Admin123!')}
-                    className="p-2 bg-slate-900 hover:bg-blue-600/20 border border-slate-800 hover:border-blue-500/50 rounded-xl text-left transition-all group"
+                    className="p-2.5 bg-slate-50 hover:bg-blue-50 dark:bg-slate-900 dark:hover:bg-blue-600/20 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500/50 rounded-xl text-left transition-all group shadow-sm"
                   >
-                    <p className="text-xs font-bold text-white group-hover:text-blue-400">Admin</p>
-                    <p className="text-[10px] text-slate-500">Acceso Total</p>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">Admin</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Acceso Total</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => fillQuickLogin('ops@logistics.com', 'Ops123!')}
-                    className="p-2 bg-slate-900 hover:bg-emerald-600/20 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-left transition-all group"
+                    className="p-2.5 bg-slate-50 hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-600/20 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 rounded-xl text-left transition-all group shadow-sm"
                   >
-                    <p className="text-xs font-bold text-white group-hover:text-emerald-400">Operaciones</p>
-                    <p className="text-[10px] text-slate-500">Gestor Flota</p>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">Operaciones</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Gestor Flota</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => fillQuickLogin('chofer@logistics.com', 'Driver123!')}
-                    className="p-2 bg-slate-900 hover:bg-amber-600/20 border border-slate-800 hover:border-amber-500/50 rounded-xl text-left transition-all group"
+                    className="p-2.5 bg-slate-50 hover:bg-amber-50 dark:bg-slate-900 dark:hover:bg-amber-600/20 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/50 rounded-xl text-left transition-all group shadow-sm"
                   >
-                    <p className="text-xs font-bold text-white group-hover:text-amber-400">Chofer</p>
-                    <p className="text-[10px] text-slate-500">Despacho</p>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400">Chofer</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Despacho</p>
                   </button>
                 </div>
               </div>
@@ -352,59 +355,59 @@ export default function LoginPage() {
               {/* Main Login Form */}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">Correo Electrónico</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       {...register('email')}
                       type="email"
                       placeholder="admin@logistics.com"
-                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
                       autoComplete="email"
                     />
                   </div>
-                  {errors.email && <p className="text-red-400 text-xs mt-1 font-medium">{errors.email.message}</p>}
+                  {errors.email && <p className="text-red-500 text-xs mt-1 font-medium">{errors.email.message}</p>}
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">Contraseña</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Contraseña</label>
                     <button
                       type="button"
                       onClick={() => setShowForgotModal(true)}
-                      className="text-xs text-blue-400 hover:underline font-semibold"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
                     >
                       ¿Olvidaste tu clave?
                     </button>
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       {...register('password')}
                       type={showPass ? 'text' : 'password'}
                       placeholder="••••••••"
-                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
                       autoComplete="current-password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPass(!showPass)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-200"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                     >
                       {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-red-400 text-xs mt-1 font-medium">{errors.password.message}</p>}
+                  {errors.password && <p className="text-red-500 text-xs mt-1 font-medium">{errors.password.message}</p>}
                 </div>
 
                 {/* Remember Me Checkbox */}
                 <div className="flex items-center justify-between text-xs pt-1">
-                  <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+                  <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                     <input
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-blue-500"
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-blue-600 focus:ring-blue-500"
                     />
                     <span>Recordarme en este dispositivo</span>
                   </label>
@@ -413,7 +416,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50"
+                  className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <span>Ingresando al sistema...</span>
@@ -430,60 +433,63 @@ export default function LoginPage() {
             /* MODE 2: SELF-REGISTRATION FORM */
             <div className="space-y-5">
               <div className="space-y-1">
-                <h2 className="text-2xl font-black text-white tracking-tight">Crear una Cuenta</h2>
-                <p className="text-slate-400 text-xs">Registrá tus datos corporativos para solicitar acceso al ERP.</p>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-500/20">
+                  <UserPlus className="w-3.5 h-3.5" /> Alta de Cuenta
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Crear una Cuenta</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-xs">Registrá tus datos corporativos para solicitar acceso al ERP.</p>
               </div>
 
               <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Nombre *</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nombre *</label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
                         type="text"
                         required
                         value={regForm.firstName}
                         onChange={(e) => setRegForm({ ...regForm, firstName: e.target.value })}
                         placeholder="Juan"
-                        className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Apellido *</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Apellido *</label>
                     <input
                       type="text"
                       required
                       value={regForm.lastName}
                       onChange={(e) => setRegForm({ ...regForm, lastName: e.target.value })}
                       placeholder="Pérez"
-                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Correo Electrónico *</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Correo Electrónico *</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="email"
                       required
                       value={regForm.email}
                       onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
                       placeholder="jperez@empresa.com"
-                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Contraseña *</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Contraseña *</label>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
                         type="password"
                         required
@@ -491,15 +497,15 @@ export default function LoginPage() {
                         value={regForm.password}
                         onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
                         placeholder="••••••••"
-                        className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Repetir Clave *</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Repetir Clave *</label>
                     <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
                         type="password"
                         required
@@ -507,22 +513,22 @@ export default function LoginPage() {
                         value={regForm.confirmPassword}
                         onChange={(e) => setRegForm({ ...regForm, confirmPassword: e.target.value })}
                         placeholder="••••••••"
-                        className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
                       />
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Teléfono (Opcional)</label>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Teléfono (Opcional)</label>
                   <div className="relative">
-                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
                       value={regForm.phone}
                       onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
                       placeholder="+54 9 11 1234-5678"
-                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
                     />
                   </div>
                 </div>
@@ -530,7 +536,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={regLoading}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50 pt-2"
+                  className="w-full py-3 px-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50 pt-2"
                 >
                   {regLoading ? (
                     <span>Registrando cuenta...</span>
@@ -547,44 +553,44 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <div className="pt-4 border-t border-slate-900 text-center text-xs text-slate-500">
+        <div className="pt-4 border-t border-slate-200 dark:border-slate-900 text-center text-xs text-slate-500">
           <p>© {new Date().getFullYear()} LogisticsPro ERP Inc. Todos los derechos reservados.</p>
         </div>
       </div>
 
       {/* MODAL 1: RECUPERACIÓN DE CONTRASEÑA */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
                 <Mail className="w-4 h-4" /> Recuperación de Contraseña
               </div>
               <button
                 onClick={() => setShowForgotModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white">¿Olvidaste tu contraseña?</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">¿Olvidaste tu contraseña?</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Ingresá tu correo corporativo. Te enviaremos un token seguro con vigencia de 15 minutos para restablecer tu clave.
               </p>
             </div>
 
             <form onSubmit={handleForgotSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Correo Registrado</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Correo Registrado</label>
                 <input
                   type="email"
                   required
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
                   placeholder="ejemplo@logistics.com"
-                  className="w-full bg-slate-950 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-3 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                  className="input w-full text-sm"
                 />
               </div>
 
@@ -592,14 +598,14 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white rounded-xl border border-slate-800"
+                  className="btn-secondary text-xs"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={forgotLoading}
-                  className="px-5 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-xl shadow-md transition-all disabled:opacity-50"
+                  className="btn-primary text-xs disabled:opacity-50"
                 >
                   {forgotLoading ? 'Enviando...' : 'Enviar Instrucciones'}
                 </button>
@@ -611,30 +617,30 @@ export default function LoginPage() {
 
       {/* MODAL 2: VERIFICACIÓN 2FA / TOTP */}
       {showMfaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                 <ShieldCheck className="w-4 h-4" /> Autenticación de Doble Factor
               </div>
               <button
                 onClick={() => setShowMfaModal(false)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 rounded-lg"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white">Ingresá tu Código TOTP</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Ingresá tu Código TOTP</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                 Abrí la aplicación Google Authenticator o Authy en tu teléfono e ingresá el código dinámico de 6 dígitos.
               </p>
             </div>
 
             <form onSubmit={handleMfaSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Código de 6 Dígitos</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">Código de 6 Dígitos</label>
                 <input
                   type="text"
                   required
@@ -642,7 +648,7 @@ export default function LoginPage() {
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="123456"
-                  className="w-full bg-slate-950 text-white text-center tracking-[0.5em] font-mono text-2xl font-bold placeholder-slate-700 border border-slate-800 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition-all"
+                  className="input w-full text-center tracking-[0.5em] font-mono text-2xl font-bold placeholder-slate-300 dark:placeholder-slate-700 py-3"
                   autoFocus
                 />
               </div>
@@ -651,14 +657,14 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowMfaModal(false)}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-400 hover:text-white rounded-xl border border-slate-800"
+                  className="btn-secondary text-xs"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={mfaLoading || totpCode.length < 6}
-                  className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl shadow-md transition-all disabled:opacity-50"
+                  className="btn-primary text-xs bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50"
                 >
                   {mfaLoading ? 'Verificando...' : 'Verificar e Ingresar'}
                 </button>
