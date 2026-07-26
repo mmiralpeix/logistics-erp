@@ -107,7 +107,12 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const validItems = items.filter((i) => i.descripcion.trim() !== '');
+    const validItems = items
+      .filter((i) => i.sparePartId || i.repuestoCodigo || i.descripcion?.trim() !== '')
+      .map((i) => ({
+        ...i,
+        descripcion: i.descripcion?.trim() || i.repuestoCodigo || 'Artículo de Inventario',
+      }));
     onSave({
       ...form,
       costoRepuestos: itemsTotal,
@@ -118,7 +123,7 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal max-w-3xl animate-fade-in max-h-[90vh] flex flex-col">
+      <div className="modal max-w-5xl animate-fade-in max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-400">
@@ -160,17 +165,17 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
               <label className="label">Tipo de Trabajo</label>
               <select value={form.tipo} onChange={(e) => set('tipo', e.target.value)} className="input">
                 <option value="PREVENTIVO">Mantenimiento Preventivo</option>
-                <option value="CORRECTIVO">Reparación Correctiva</option>
+                <option value="CORRECTIVO">Reparación</option>
               </select>
             </div>
 
             <div>
               <label className="label">Estado OT</label>
               <select value={form.status} onChange={(e) => set('status', e.target.value)} className="input">
-                <option value="PENDIENTE">Pendiente (Programada)</option>
-                <option value="EN_CURSO">En Curso (En Taller)</option>
-                <option value="COMPLETADO">Completada / Entregada</option>
-                <option value="CANCELADO">Cancelada</option>
+                <option value="PENDIENTE">Programada</option>
+                <option value="EN_CURSO">En Curso</option>
+                <option value="COMPLETADO">Finalizado</option>
+                <option value="CANCELADO">Cancelado</option>
               </select>
             </div>
 
@@ -253,91 +258,101 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
 
           {/* Repuestos & Consumibles (Items) */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                Repuestos & Consumibles Utilizados
-              </h3>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-2.5">
+              Repuestos & Consumibles Utilizados
+            </h3>
+
+            {/* Encabezado y Lista de Ítems Dentro del Mismo Contenedor Card */}
+            <div className="p-3.5 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
+              {/* Encabezado de Columnas */}
+              <div className="hidden sm:grid grid-cols-[1fr_130px_75px_110px_32px] gap-3 px-3 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                <div>Artículo del Inventario</div>
+                <div>Cód. SKU</div>
+                <div className="text-center">Cant.</div>
+                <div className="text-right">Subtotal</div>
+                <div></div>
+              </div>
+
+              <div className="space-y-2.5">
+                {items.map((item, idx) => {
+                  const selectedPart = spareParts?.find((p: any) => p.id === item.sparePartId);
+                  return (
+                    <div key={idx} className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm space-y-2">
+                      <div className="grid grid-cols-[1fr_130px_75px_110px_32px] gap-3 items-center">
+                        {/* 1. Selector Inventario */}
+                        <select
+                          value={item.sparePartId || ''}
+                          onChange={(e) => handleSelectSparePart(idx, e.target.value)}
+                          className="input text-xs font-medium truncate w-full"
+                        >
+                          <option value="">-- Seleccionar --</option>
+                          {compatibleParts?.map((p: any) => (
+                            <option key={p.id} value={p.id}>
+                              {p.nombre} (Stock: {p.stockActual})
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* 2. Cód. SKU */}
+                        <input
+                          type="text"
+                          placeholder="Cód. SKU"
+                          value={item.repuestoCodigo || ''}
+                          onChange={(e) => handleItemChange(idx, 'repuestoCodigo', e.target.value)}
+                          className="input font-mono text-xs w-full"
+                        />
+
+                        {/* 3. Cant. */}
+                        <input
+                          type="number"
+                          placeholder="Cant"
+                          value={item.cantidad}
+                          onChange={(e) => handleItemChange(idx, 'cantidad', Number(e.target.value))}
+                          className="input text-xs text-center font-bold w-full"
+                          min={1}
+                        />
+
+                        {/* 4. Subtotal */}
+                        <div className="text-right text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                          ${((item.cantidad || 0) * (item.costoUnitario || 0)).toLocaleString('es-AR')}
+                        </div>
+
+                        {/* 5. Eliminar */}
+                        <div className="flex justify-center">
+                          {items.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(idx)}
+                              className="p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded flex items-center justify-center transition-colors"
+                              title="Eliminar fila"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {selectedPart && (
+                        <div className="flex flex-wrap items-center justify-between text-[11px] px-1 text-slate-500 gap-2 border-t border-slate-100 dark:border-slate-800 pt-1.5 mt-1">
+                          <span>Stock disponible: <b className={selectedPart.stockActual < item.cantidad ? 'text-rose-500 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'}>{selectedPart.stockActual} u.</b> (Ubicación: {selectedPart.ubicacion || 'Depósito Principal'})</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/20">
+                            ✓ Compatible con {selectedPart.marcasCompatibles || 'Flota'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Botón Agregar Repuesto abajo dentro de la casilla */}
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                className="w-full py-2 px-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800/80 text-blue-600 dark:text-blue-400 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-xs mt-2"
               >
-                <Plus className="w-3.5 h-3.5" /> Agregar Repuesto
+                <Plus className="w-4 h-4" /> Agregar Repuesto
               </button>
-            </div>
-
-            <div className="space-y-3">
-              {items.map((item, idx) => {
-                const selectedPart = spareParts?.find((p: any) => p.id === item.sparePartId);
-                return (
-                  <div key={idx} className="flex flex-col gap-1 p-2 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded-lg">
-                    <div className="flex gap-2 items-center">
-                      <select
-                        value={item.sparePartId || ''}
-                        onChange={(e) => handleSelectSparePart(idx, e.target.value)}
-                        className="input w-48 text-xs font-medium"
-                      >
-                        <option value="">-- Seleccionar del Inventario --</option>
-                        {compatibleParts?.map((p: any) => (
-                          <option key={p.id} value={p.id}>
-                            {p.sku} — {p.nombre} (Stock: {p.stockActual})
-                          </option>
-                        ))}
-                      </select>
-
-                      <input
-                        type="text"
-                        placeholder="Descripción del trabajo / repuesto"
-                        value={item.descripcion}
-                        onChange={(e) => handleItemChange(idx, 'descripcion', e.target.value)}
-                        className="input flex-1 text-xs"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Cód. Repuesto"
-                        value={item.repuestoCodigo || ''}
-                        onChange={(e) => handleItemChange(idx, 'repuestoCodigo', e.target.value)}
-                        className="input w-28 text-xs"
-                      />
-                      <input
-                        type="number"
-                        placeholder="Cant"
-                        value={item.cantidad}
-                        onChange={(e) => handleItemChange(idx, 'cantidad', Number(e.target.value))}
-                        className="input w-16 text-xs text-center"
-                        min={1}
-                      />
-                      <input
-                        type="number"
-                        placeholder="Precio ($)"
-                        value={item.costoUnitario}
-                        onChange={(e) => handleItemChange(idx, 'costoUnitario', Number(e.target.value))}
-                        className="input w-24 text-xs"
-                      />
-                      <div className="w-20 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        ${((item.cantidad || 0) * (item.costoUnitario || 0)).toLocaleString('es-AR')}
-                      </div>
-                      {items.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveItem(idx)}
-                          className="p-1 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                    {selectedPart && (
-                      <div className="flex flex-wrap items-center justify-between text-[11px] px-1 text-slate-500 gap-2">
-                        <span>Stock disponible: <b className={selectedPart.stockActual < item.cantidad ? 'text-rose-500' : 'text-emerald-500'}>{selectedPart.stockActual} u.</b> (Ubicación: {selectedPart.ubicacion || 'Depósito Main'})</span>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-500/20">
-                          ✓ Compatible con {selectedPart.marcasCompatibles || 'Flota'} {selectedPart.tipoEnganche !== 'TODOS' ? `(${selectedPart.tipoEnganche})` : ''}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
             </div>
           </div>
 

@@ -57,7 +57,7 @@ export class MaintenanceService {
     if (items && Array.isArray(items) && items.length > 0) {
       itemsCreate = {
         create: items.map((i: any) => ({
-          descripcion: i.descripcion,
+          descripcion: i.descripcion || 'Artículo de Inventario',
           repuestoCodigo: i.repuestoCodigo || null,
           sparePartId: i.sparePartId || null,
           cantidad: Number(i.cantidad) || 1,
@@ -120,7 +120,7 @@ export class MaintenanceService {
       await this.prisma.maintenanceItem.createMany({
         data: items.map((i: any) => ({
           maintenanceId: id,
-          descripcion: i.descripcion,
+          descripcion: i.descripcion || 'Artículo de Inventario',
           repuestoCodigo: i.repuestoCodigo || null,
           sparePartId: i.sparePartId || null,
           cantidad: Number(i.cantidad) || 1,

@@ -91,9 +91,9 @@ export const VEHICLE_TYPE_MAP: Record<string, string> = {
 };
 
 export const MAINTENANCE_STATUS_MAP: Record<string, { label: string; cls: string }> = {
-  PENDIENTE: { label: 'Pendiente', cls: 'badge-yellow' },
+  PENDIENTE: { label: 'Programada', cls: 'badge-yellow' },
   EN_CURSO: { label: 'En Curso', cls: 'badge-blue' },
-  COMPLETADO: { label: 'Completado', cls: 'badge-green' },
+  COMPLETADO: { label: 'Finalizado', cls: 'badge-green' },
   CANCELADO: { label: 'Cancelado', cls: 'badge-red' },
 };
 

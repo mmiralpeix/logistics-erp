@@ -611,7 +611,7 @@ export default function MaintenancePage() {
                             </button>
                             <button
                               onClick={() => {
-                                if (confirm(`¿Eliminar repuesto ${p.sku} (${p.nombre})?`)) {
+                                if (confirm(`¿Eliminar artículo ${p.sku} (${p.nombre})?`)) {
                                   deleteSpareMutation.mutate(p.id);
                                 }
                               }}
