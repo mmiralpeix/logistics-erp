@@ -4,6 +4,7 @@ import * as bcrypt from 'bcryptjs';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 import { PrismaService } from '../../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
@@ -11,11 +12,12 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private mailService: MailService,
   ) {}
 
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || !user.isActive) throw new UnauthorizedException('Credenciales inválidas');
+    if (!user || !user.isActive) throw new UnauthorizedException('Credenciales inválidas o cuenta inactiva');
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new UnauthorizedException('Credenciales inválidas');
     const { password: _, ...result } = user;
@@ -69,16 +71,23 @@ export class AuthService {
         role: true, phone: true, lastLogin: true, createdAt: true, mfaEnabled: true,
       },
     });
-    if (!user) throw new UnauthorizedException();
+    if (!user) throw new NotFoundException('Usuario no encontrado');
     return user;
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) throw new UnauthorizedException('Contraseña actual incorrecta');
-    const hashed = await bcrypt.hash(newPassword, 10);
-    await this.prisma.user.update({ where: { id: userId }, data: { password: hashed } });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
     return { message: 'Contraseña actualizada exitosamente' };
   }
 
@@ -86,15 +95,14 @@ export class AuthService {
   async generateMfaSecret(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
-    if (user.mfaEnabled) throw new BadRequestException('MFA ya está habilitado para este usuario');
 
     const secret = speakeasy.generateSecret({
       name: `LogisticsPro (${user.email})`,
       issuer: 'LogisticsPro ERP',
-      length: 32,
+      length: 20,
     });
 
-    // Store secret temporarily (not yet active — activated on first verify)
+    // Temporarily save secret until verified
     await this.prisma.user.update({
       where: { id: userId },
       data: { mfaSecret: secret.base32 },
@@ -105,16 +113,14 @@ export class AuthService {
     return {
       secret: secret.base32,
       otpauthUrl: secret.otpauth_url,
-      qrCode: qrCodeDataUrl,
+      qrCodeDataUrl,
     };
   }
 
-  // MFA: Verify TOTP and activate MFA on the account
+  // MFA: Enable MFA after verifying first TOTP code
   async enableMfa(userId: string, totpToken: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new UnauthorizedException();
-    if (!user.mfaSecret) throw new BadRequestException('Primero debe generar el secreto MFA');
-    if (user.mfaEnabled) throw new BadRequestException('MFA ya está activo');
+    if (!user || !user.mfaSecret) throw new BadRequestException('MFA no iniciado — solicite un código primero');
 
     const isValid = speakeasy.totp.verify({
       secret: user.mfaSecret,
@@ -155,13 +161,18 @@ export class AuthService {
     if (!user) {
       return { message: 'Si el correo electrónico está registrado, se han enviado las instrucciones de recuperación.' };
     }
+
     const resetToken = this.jwtService.sign(
       { sub: user.id, type: 'password_reset' },
       { expiresIn: '15m' },
     );
+
+    const mailResult = await this.mailService.sendPasswordResetEmail(user.email, user.firstName, resetToken);
+
     return {
-      message: 'Si el correo electrónico está registrado, se han enviado las instrucciones de recuperación.',
+      message: 'Instrucciones enviadas a tu correo electrónico.',
       resetToken,
+      resetLink: mailResult.resetLink,
     };
   }
 
@@ -177,14 +188,23 @@ export class AuthService {
         lastName: dto.lastName,
         phone: dto.phone || null,
         role: 'VIEWER',
+        isActive: true,
       },
     });
+
+    const activationToken = this.jwtService.sign(
+      { sub: user.id, type: 'account_activation' },
+      { expiresIn: '24h' },
+    );
+
+    const mailResult = await this.mailService.sendActivationEmail(user.email, user.firstName, activationToken);
 
     const payload = { sub: user.id, email: user.email, role: user.role };
     const token = this.jwtService.sign(payload);
 
     return {
       access_token: token,
+      activationLink: mailResult.activationLink,
       user: {
         id: user.id,
         email: user.email,
@@ -195,5 +215,34 @@ export class AuthService {
         mfaEnabled: user.mfaEnabled,
       },
     };
+  }
+
+  async activateAccount(token: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload.type !== 'account_activation') throw new BadRequestException('Token de activación inválido');
+      const user = await this.prisma.user.update({
+        where: { id: payload.sub },
+        data: { isActive: true },
+      });
+      return { message: `¡Cuenta de ${user.firstName} activada exitosamente! Ya puedes iniciar sesión.`, email: user.email };
+    } catch (err: any) {
+      throw new BadRequestException('Token de activación vencido o inválido');
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    try {
+      const payload = this.jwtService.verify(token);
+      if (payload.type !== 'password_reset') throw new BadRequestException('Token de recuperación inválido');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await this.prisma.user.update({
+        where: { id: payload.sub },
+        data: { password: hashedPassword },
+      });
+      return { message: 'Contraseña restablecida exitosamente. Ya puedes iniciar sesión con tu nueva clave.' };
+    } catch (err: any) {
+      throw new BadRequestException('El enlace de restablecimiento ha vencido o es inválido');
+    }
   }
 }

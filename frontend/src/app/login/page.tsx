@@ -44,6 +44,7 @@ export default function LoginPage() {
     lastName: '',
     email: '',
     password: '',
+    confirmPassword: '',
     phone: '',
   });
   const [regLoading, setRegLoading] = useState(false);
@@ -89,12 +90,33 @@ export default function LoginPage() {
       toast.error('Por favor complete todos los campos obligatorios');
       return;
     }
+    if (regForm.password !== regForm.confirmPassword) {
+      toast.error('Las contraseñas no coinciden');
+      return;
+    }
     setRegLoading(true);
     try {
       const res = await authApi.register(regForm);
-      setAuth(res.data.user, res.data.access_token);
-      toast.success(`¡Cuenta creada exitosamente! Bienvenido, ${res.data.user.firstName}`);
-      router.push('/dashboard');
+      if (res.data.activationLink) {
+        toast((t) => (
+          <div className="space-y-2">
+            <p className="font-bold text-white text-xs">📧 Enlace de Activación Simulado (Dev Mode):</p>
+            <p className="text-[11px] text-blue-300 break-all">{res.data.activationLink}</p>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                window.location.href = res.data.activationLink;
+              }}
+              className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-bold w-full"
+            >
+              Hacer clic para Activar Ahora
+            </button>
+          </div>
+        ), { duration: 15000 });
+      } else {
+        toast.success(`¡Cuenta creada! Se ha enviado el correo de activación a ${regForm.email}`);
+      }
+      setAuthMode('login');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Error al registrar la cuenta');
     } finally {
@@ -457,19 +479,37 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Contraseña *</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                    <input
-                      type="password"
-                      required
-                      minLength={6}
-                      value={regForm.password}
-                      onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                      placeholder="••••••••"
-                      className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
-                    />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Contraseña *</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        value={regForm.password}
+                        onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">Repetir Clave *</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        value={regForm.confirmPassword}
+                        onChange={(e) => setRegForm({ ...regForm, confirmPassword: e.target.value })}
+                        placeholder="••••••••"
+                        className="w-full bg-slate-900 text-white placeholder-slate-500 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all"
+                      />
+                    </div>
                   </div>
                 </div>
 

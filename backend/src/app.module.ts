@@ -21,7 +21,7 @@ import { GpsModule } from './modules/gps/gps.module';
 import { HealthModule } from './modules/health/health.module';
 import { AlertsModule } from './modules/alerts/alerts.module';
 import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.module';
-import { CertificationsModule } from './modules/certifications/certifications.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -29,6 +29,7 @@ import { CertificationsModule } from './modules/certifications/certifications.mo
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     ScheduleModule.forRoot(),
     PrismaModule,
+    MailModule,
     HealthModule,
     AuthModule,
     UsersModule,

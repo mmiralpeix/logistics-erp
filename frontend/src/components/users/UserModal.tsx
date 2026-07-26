@@ -14,6 +14,7 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
     lastName: initialData?.lastName || '',
     email: initialData?.email || '',
     password: '',
+    confirmPassword: '',
     role: initialData?.role || 'OPERATIONS_MANAGER',
     phone: initialData?.phone || '',
   });
@@ -34,12 +35,17 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
     if (!form.email.trim()) newErrors.email = 'El correo electrónico es obligatorio';
     if (!initialData && !form.password) newErrors.password = 'La contraseña inicial es obligatoria';
 
+    if (form.password && form.password !== form.confirmPassword) {
+      newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     const payload: any = { ...form };
+    delete payload.confirmPassword;
     if (initialData && !payload.password) {
       delete payload.password;
     }
@@ -124,22 +130,41 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
             {errors.email && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.email}</p>}
           </div>
 
-          {/* Password */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              {initialData ? 'Nueva Contraseña (dejar en blanco para mantener actual)' : 'Contraseña Inicial *'}
-            </label>
-            <div className="relative flex items-center">
-              <Lock className="w-4 h-4 absolute left-3 text-slate-400 pointer-events-none z-10" />
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="••••••••"
-                className="input w-full text-sm !pl-10"
-              />
+          {/* Passwords */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                {initialData ? 'Nueva Contraseña' : 'Contraseña Inicial *'}
+              </label>
+              <div className="relative flex items-center">
+                <Lock className="w-4 h-4 absolute left-3 text-slate-400 pointer-events-none z-10" />
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  placeholder="••••••••"
+                  className="input w-full text-sm !pl-10"
+                />
+              </div>
+              {errors.password && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.password}</p>}
             </div>
-            {errors.password && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.password}</p>}
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Repetir Contraseña {initialData ? '' : '*'}
+              </label>
+              <div className="relative flex items-center">
+                <Lock className="w-4 h-4 absolute left-3 text-slate-400 pointer-events-none z-10" />
+                <input
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                  placeholder="••••••••"
+                  className="input w-full text-sm !pl-10"
+                />
+              </div>
+              {errors.confirmPassword && <p className="text-xs text-rose-500 mt-1 font-medium">{errors.confirmPassword}</p>}
+            </div>
           </div>
 
           {/* Role */}

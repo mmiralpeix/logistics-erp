@@ -31,6 +31,20 @@ export class AuthController {
     return this.authService.register(body);
   }
 
+  @Public()
+  @Post('activate')
+  @ApiOperation({ summary: 'Activar cuenta mediante token recibido por correo' })
+  activateAccount(@Body('token') token: string) {
+    return this.authService.activateAccount(token);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Establecer nueva contraseña mediante token' })
+  resetPassword(@Body() body: { token: string; newPassword: string }) {
+    return this.authService.resetPassword(body.token, body.newPassword);
+  }
+
   @Get('profile')
   @ApiBearerAuth('JWT')
   @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })

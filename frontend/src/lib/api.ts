@@ -35,6 +35,8 @@ export const authApi = {
   login: (email: string, password: string, totpToken?: string) => api.post('/auth/login', { email, password, totpToken }),
   register: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) => api.post('/auth/register', data),
   forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+  activateAccount: (token: string) => api.post('/auth/activate', { token }),
+  resetPassword: (token: string, newPassword: string) => api.post('/auth/reset-password', { token, newPassword }),
   getProfile: () => api.get('/auth/profile'),
   changePassword: (currentPassword: string, newPassword: string) => api.patch('/auth/change-password', { currentPassword, newPassword }),
 };
