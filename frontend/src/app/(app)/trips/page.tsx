@@ -147,6 +147,20 @@ export default function TripsPage() {
                           {trip.numero}
                         </p>
                         <div className="flex flex-wrap items-center gap-1 mt-1">
+                          {trip.tipoOperacion === 'SUBCONTRATADA_TOTAL' ? (
+                            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
+                              🤝 Subcontratado 100%
+                            </span>
+                          ) : trip.tipoOperacion === 'TRACCION_TERCERO_SEMI_PROPIO' ? (
+                            <span className="bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-purple-300 dark:border-purple-800">
+                              🔗 Enganche Mixto
+                            </span>
+                          ) : (
+                            <span className="bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-blue-300 dark:border-blue-800">
+                              🚚 Flota Propia
+                            </span>
+                          )}
+
                           <span className="badge badge-gray text-[10px] font-semibold">
                             {trip.tipoCarga === 'SALMUERA' ? '🧪 SALMUERA' : trip.tipoCarga === 'CARRETON' ? '🚜 CARRETON' : trip.tipoCarga || 'GENERAL'}
                           </span>
@@ -168,6 +182,11 @@ export default function TripsPage() {
                       {/* Dual License Plates: Tractor + Trailer */}
                       <td className="px-4 py-3">
                         <div className="space-y-1">
+                          {trip.subcontractorName && (
+                            <p className="text-[11px] text-purple-600 dark:text-purple-400 font-extrabold flex items-center gap-1">
+                              <span>🤝 {trip.subcontractorName}</span>
+                            </p>
+                          )}
                           <p className="flex items-center gap-1.5 text-slate-900 dark:text-white text-xs font-bold">
                             <Truck className="w-3.5 h-3.5 text-emerald-600 dark:text-green-400" />
                             <span>Camión: {trip.vehicle?.patente}</span>

@@ -346,6 +346,10 @@ model Trip {
   numeroRemito     String?
   numeroOCCliente  String?
 
+  tipoOperacion     String   @default("PROPIA")
+  subcontractorName String?
+  subcontractorFee  Float?
+
   esCargaPeligrosa Boolean @default(false)
   esMineria        Boolean @default(false)
   esDistribucion   Boolean @default(false)

@@ -182,7 +182,7 @@ export class TripsService {
       }
     });
 
-    ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'costoTotal', 'pesoExcedenteKg', 'montoExcedente'].forEach((numKey) => {
+    ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'costoTotal', 'subcontractorFee', 'pesoExcedenteKg', 'montoExcedente'].forEach((numKey) => {
       if (sanitizedData[numKey] !== undefined && sanitizedData[numKey] !== null && sanitizedData[numKey] !== '') {
         sanitizedData[numKey] = Number(sanitizedData[numKey]);
       }

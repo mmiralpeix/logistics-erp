@@ -53,7 +53,9 @@ export class CreateTripDto {
   @ApiPropertyOptional() @IsOptional() @IsString() descripcionCarga?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() esCargaPeligrosa?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() esMineria?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsBoolean() esDistribucion?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() tipoOperacion?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() subcontractorName?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() subcontractorFee?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() tarifaAcordada?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() costoTotal?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() margenBruto?: number;

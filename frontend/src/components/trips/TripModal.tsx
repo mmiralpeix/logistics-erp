@@ -179,13 +179,110 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
+          <button type="button" onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="p-6 space-y-4 overflow-y-auto flex-1">
+          {/* Modalidad de Operación */}
+          <div className="p-3.5 bg-slate-100 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Modalidad de Operación Logística *
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setValue('tipoOperacion', 'PROPIA')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion')
+                    ? 'bg-white dark:bg-slate-900 border-blue-500 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
+                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold">
+                  <Truck className="w-3.5 h-3.5" />
+                  <span>Flota Propia</span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Tractor + Semi + Chofer Propio</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setValue('tipoOperacion', 'TRACCION_TERCERO_SEMI_PROPIO')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  watch('tipoOperacion') === 'TRACCION_TERCERO_SEMI_PROPIO'
+                    ? 'bg-white dark:bg-slate-900 border-purple-500 text-purple-600 dark:text-purple-400 shadow-sm font-bold'
+                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold">
+                  <Container className="w-3.5 h-3.5" />
+                  <span>Enganche Mixto</span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Tractor Externo + Semi Propio</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setValue('tipoOperacion', 'SUBCONTRATADA_TOTAL')}
+                className={`p-2.5 rounded-xl border text-left transition-all ${
+                  watch('tipoOperacion') === 'SUBCONTRATADA_TOTAL'
+                    ? 'bg-white dark:bg-slate-900 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm font-bold'
+                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 text-xs font-bold">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>Subcontratado 100%</span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Operador Logístico Externo</p>
+              </button>
+            </div>
+
+            {/* Subcontractor Panel if not PROPIA */}
+            {(watch('tipoOperacion') === 'SUBCONTRATADA_TOTAL' || watch('tipoOperacion') === 'TRACCION_TERCERO_SEMI_PROPIO') && (
+              <div className="pt-2 grid grid-cols-2 gap-3 border-t border-slate-200 dark:border-slate-700 mt-2 animate-fade-in">
+                <div>
+                  <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider mb-1">
+                    Operador Logístico / Subcontratista *
+                  </label>
+                  <input
+                    {...register('subcontractorName')}
+                    className="input w-full text-sm font-semibold border-purple-300 dark:border-purple-700"
+                    placeholder="Ej: Transportes Salta SRL / Don Pedro Logística"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                      Flete Acordado a Pagar al Subcontratista ($)
+                    </label>
+                    {Number(watch('tarifaAcordada') || 0) > 0 && Number(watch('subcontractorFee') || 0) > 0 && (
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                        Spread Neto: {formatMoney(Number(watch('tarifaAcordada') || 0) - Number(watch('subcontractorFee') || 0))}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    {...register('subcontractorFee')}
+                    type="number"
+                    step="any"
+                    onChange={(e) => {
+                      const fee = Number(e.target.value) || 0;
+                      setValue('subcontractorFee', fee);
+                      setValue('costoTotal', fee);
+                    }}
+                    className="input w-full text-sm font-bold text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-700"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Seccion 1: Cliente & Contrato */}
           <div className="grid grid-cols-2 gap-4">
             <div>
