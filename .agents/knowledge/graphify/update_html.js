@@ -2,28 +2,83 @@ const fs = require('fs');
 const path = require('path');
 
 const htmlPath = path.join(__dirname, 'GRAPH_TREE.html');
-const graphJsonPath1 = path.join(__dirname, 'graph.json');
-const graphJsonPath2 = path.join(__dirname, '../../../graphify-out/graph.json');
+const graphJsonPath1 = path.join(__dirname, '../../../graphify-out/graph.json');
+const graphJsonPath2 = path.join(__dirname, 'graph.json');
 
-let jsonStr = '{"name":"/","total_count":728,"children":[]}';
-if (fs.existsSync(htmlPath)) {
-  const content = fs.readFileSync(htmlPath, 'utf-8');
-  const startMarker = "const initialJsonData = ";
-  const startIdx = content.indexOf(startMarker);
-  if (startIdx !== -1) {
-    const jsonStart = startIdx + startMarker.length;
-    let jsonEnd = content.indexOf(";\n", jsonStart);
-    if (jsonEnd === -1) jsonEnd = content.indexOf("\n", jsonStart);
-    jsonStr = content.substring(jsonStart, jsonEnd).trim();
-  }
-}
+let graphObj = { nodes: [], links: [] };
+let graphRelStr = '{"nodes":[],"links":[]}';
 
-let graphRelStr = '{"nodes":[],"edges":[]}';
 if (fs.existsSync(graphJsonPath1)) {
   graphRelStr = fs.readFileSync(graphJsonPath1, 'utf-8');
 } else if (fs.existsSync(graphJsonPath2)) {
   graphRelStr = fs.readFileSync(graphJsonPath2, 'utf-8');
 }
+
+try {
+  graphObj = JSON.parse(graphRelStr);
+} catch (e) {}
+
+function buildTreeFromGraph(nodes) {
+  const root = { name: "LogisticsPro ERP", total_count: 0, children: [] };
+  const folderMap = new Map();
+  folderMap.set(".", root);
+  folderMap.set("", root);
+
+  (nodes || []).forEach(node => {
+    const srcFile = node.source_file || node.id || "uncategorized";
+    const normalizedPath = srcFile.replace(/\\/g, '/');
+    const parts = normalizedPath.split('/');
+    
+    let currentPath = "";
+    let currentFolder = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (!part || part === '.') continue;
+      currentPath = currentPath ? currentPath + '/' + part : part;
+      
+      if (!folderMap.has(currentPath)) {
+        const newFolder = { name: part, total_count: 0, children: [] };
+        currentFolder.children.push(newFolder);
+        folderMap.set(currentPath, newFolder);
+      }
+      currentFolder = folderMap.get(currentPath);
+    }
+    
+    const leafName = node.label || parts[parts.length - 1];
+    let existingLeaf = currentFolder.children.find(c => c.name === leafName);
+    if (!existingLeaf) {
+      existingLeaf = {
+        name: leafName,
+        total_count: 1,
+        id: node.id,
+        path: normalizedPath,
+        children: []
+      };
+      currentFolder.children.push(existingLeaf);
+    } else {
+      existingLeaf.total_count = (existingLeaf.total_count || 1) + 1;
+    }
+  });
+
+  function calcTotal(node) {
+    if (!node.children || node.children.length === 0) {
+      return node.total_count || 1;
+    }
+    let sum = 0;
+    for (const child of node.children) {
+      sum += calcTotal(child);
+    }
+    node.total_count = sum;
+    return sum;
+  }
+  calcTotal(root);
+
+  return root;
+}
+
+const initialJsonData = buildTreeFromGraph(graphObj.nodes);
+const jsonStr = JSON.stringify(initialJsonData);
+
 
 const htmlTemplate = `<!DOCTYPE html>
 <html lang="es">
@@ -575,8 +630,8 @@ const htmlTemplate = `<!DOCTYPE html>
   </div>
 
   <script>
-    const initialJsonData = \${jsonStr};
-    const graphRelationsData = \${graphRelStr};
+    const initialJsonData = __INITIAL_JSON_DATA__;
+    const graphRelationsData = __GRAPH_RELATIONS_DATA__;
 
     let neuralGraph = null;
     let visNetworkObj = null;
@@ -969,5 +1024,9 @@ const htmlTemplate = `<!DOCTYPE html>
 </html>
 `;
 
-fs.writeFileSync(htmlPath, htmlTemplate, 'utf-8');
+let finalHtml = htmlTemplate
+  .replace('__INITIAL_JSON_DATA__', jsonStr)
+  .replace('__GRAPH_RELATIONS_DATA__', graphRelStr);
+
+fs.writeFileSync(htmlPath, finalHtml, 'utf-8');
 console.log('Successfully updated GRAPH_TREE.html with Neural Map as default!');
