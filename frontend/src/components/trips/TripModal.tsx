@@ -131,12 +131,18 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   });
 
   const onSubmit = (data: any) => {
-    // Sanitize nested relational objects from initialValues before sending to API
+    // Sanitize nested relational objects and primary key from initialValues before sending to API
     const {
-      client, contract, vehicle, trailer, driver, dispatcher,
+      id: _id, client, contract, vehicle, trailer, driver, dispatcher,
       costs, checkpoints, documents, incidents, invoiceItems, fuelLogs,
       _count, createdAt, updatedAt, certification, ...cleanData
     } = data;
+
+    if (!cleanData.trailerId) cleanData.trailerId = null;
+    if (!cleanData.contractId) cleanData.contractId = null;
+    if (!cleanData.clientId) cleanData.clientId = null;
+    if (!cleanData.numeroRemito) cleanData.numeroRemito = cleanData.numeroRemito || null;
+    if (!cleanData.numeroOCCliente) cleanData.numeroOCCliente = cleanData.numeroOCCliente || null;
 
     const payload = isLocked
       ? {

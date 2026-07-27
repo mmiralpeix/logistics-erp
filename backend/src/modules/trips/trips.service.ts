@@ -167,24 +167,64 @@ export class TripsService {
 
   async update(id: string, dto: UpdateTripDto) {
     const existing = await this.findOne(id);
-    const { checkpoints, dangerousGoods, ...data } = dto;
+    
+    // Destructure non-scalar / relational properties and read-only audit fields
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      client: _client,
+      contract: _contract,
+      vehicle: _vehicle,
+      trailer: _trailer,
+      driver: _driver,
+      dispatcher: _dispatcher,
+      certification: _certification,
+      costs: _costs,
+      checkpoints,
+      dangerousGoods,
+      documents: _documents,
+      incidents: _incidents,
+      invoiceItems: _invoiceItems,
+      fuelLogs: _fuelLogs,
+      _count: __count,
+      ...data
+    } = dto as any;
 
     const sanitizedData: any = { ...data };
 
+    // Clean foreign key relations (convert empty strings or 'null' strings to null)
+    ['trailerId', 'clientId', 'contractId', 'dispatcherId', 'certificationId'].forEach((fkKey) => {
+      if (sanitizedData[fkKey] === '' || sanitizedData[fkKey] === 'null' || sanitizedData[fkKey] === undefined) {
+        sanitizedData[fkKey] = null;
+      }
+    });
+
+    // Clean dates
     ['fechaSalidaProgramada', 'fechaLlegadaEstimada', 'fechaSalidaReal', 'fechaLlegadaReal'].forEach((dateKey) => {
-      if (sanitizedData[dateKey]) {
-        const parsedDate = new Date(sanitizedData[dateKey]);
-        if (!isNaN(parsedDate.getTime())) {
-          sanitizedData[dateKey] = parsedDate;
+      if (sanitizedData[dateKey] !== undefined) {
+        if (!sanitizedData[dateKey] || sanitizedData[dateKey] === '') {
+          sanitizedData[dateKey] = null;
         } else {
-          delete sanitizedData[dateKey];
+          const parsedDate = new Date(sanitizedData[dateKey]);
+          if (!isNaN(parsedDate.getTime())) {
+            sanitizedData[dateKey] = parsedDate;
+          } else {
+            delete sanitizedData[dateKey];
+          }
         }
       }
     });
 
+    // Clean numbers
     ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'costoTotal', 'subcontractorFee', 'pesoExcedenteKg', 'montoExcedente'].forEach((numKey) => {
-      if (sanitizedData[numKey] !== undefined && sanitizedData[numKey] !== null && sanitizedData[numKey] !== '') {
-        sanitizedData[numKey] = Number(sanitizedData[numKey]);
+      if (sanitizedData[numKey] !== undefined) {
+        if (sanitizedData[numKey] === '' || sanitizedData[numKey] === null) {
+          sanitizedData[numKey] = null;
+        } else {
+          const num = Number(sanitizedData[numKey]);
+          sanitizedData[numKey] = isNaN(num) ? null : num;
+        }
       }
     });
 
@@ -192,11 +232,15 @@ export class TripsService {
       sanitizedData.pesoExcedenteKg = Math.max(0, Number(sanitizedData.pesoCarga) - 30000);
     }
 
-    const currentTarifa = sanitizedData.tarifaAcordada !== undefined ? sanitizedData.tarifaAcordada : (existing.tarifaAcordada || 0);
-    const currentCosto = sanitizedData.costoTotal !== undefined ? sanitizedData.costoTotal : (existing.costoTotal || 0);
+    const currentTarifa = sanitizedData.tarifaAcordada !== undefined && sanitizedData.tarifaAcordada !== null ? sanitizedData.tarifaAcordada : (existing.tarifaAcordada || 0);
+    const currentCosto = sanitizedData.costoTotal !== undefined && sanitizedData.costoTotal !== null ? sanitizedData.costoTotal : (existing.costoTotal || 0);
     sanitizedData.margenBruto = currentTarifa - currentCosto;
 
-    return this.prisma.trip.update({ where: { id }, data: sanitizedData, include: { client: true, vehicle: true, driver: true } });
+    return this.prisma.trip.update({
+      where: { id },
+      data: sanitizedData,
+      include: { client: true, vehicle: true, trailer: true, driver: true, dangerousGoods: true, checkpoints: true },
+    });
   }
 
   async updateStatus(id: string, status: TripStatus, notes?: string) {
