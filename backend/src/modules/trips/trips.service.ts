@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
-import { TripStatus } from '@prisma/client';
+import { TripStatus, VehicleStatus } from '@prisma/client';
 
 @Injectable()
 export class TripsService {
@@ -64,6 +64,10 @@ export class TripsService {
           vehicle: { select: { patente: true, marca: true, modelo: true, tipo: true } },
           trailer: { select: { patente: true, marca: true, modelo: true, tipo: true } },
           driver: { select: { firstName: true, lastName: true, telefono: true } },
+          carrier: { select: { id: true, razonSocial: true } },
+          carrierDriver: { select: { firstName: true, lastName: true } },
+          carrierVehicle: { select: { patente: true, tipo: true, marca: true } },
+          carrierTrailer: { select: { patente: true, tipo: true, marca: true } },
           dangerousGoods: true,
           _count: { select: { costs: true, incidents: true } },
         },
@@ -83,6 +87,10 @@ export class TripsService {
         trailer: true,
         driver: true,
         dispatcher: { select: { firstName: true, lastName: true, email: true } },
+        carrier: true,
+        carrierDriver: true,
+        carrierVehicle: true,
+        carrierTrailer: true,
         dangerousGoods: true,
         costs: { orderBy: { fecha: 'desc' } },
         checkpoints: { orderBy: { orden: 'asc' } },
@@ -105,31 +113,35 @@ export class TripsService {
     const departure = new Date(dto.fechaSalidaProgramada);
     const estimatedArrival = dto.fechaLlegadaEstimada ? new Date(dto.fechaLlegadaEstimada) : this.calculateArrivalEstimate(departure, leadTime);
 
-    const vehicleConflict = await this.prisma.trip.findFirst({
-      where: {
-        vehicleId: dto.vehicleId,
-        status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
-        fechaSalidaProgramada: { lte: estimatedArrival },
-        fechaLlegadaEstimada: { gte: departure },
-      },
-    });
-    if (vehicleConflict) throw new BadRequestException(`El vehículo ya tiene un viaje asignado en ese período (${vehicleConflict.numero})`);
+    if (dto.vehicleId && dto.vehicleId !== '') {
+      const vehicleConflict = await this.prisma.trip.findFirst({
+        where: {
+          vehicleId: dto.vehicleId,
+          status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
+          fechaSalidaProgramada: { lte: estimatedArrival },
+          fechaLlegadaEstimada: { gte: departure },
+        },
+      });
+      if (vehicleConflict) throw new BadRequestException(`El vehículo ya tiene un viaje asignado en ese período (${vehicleConflict.numero})`);
+    }
 
-    const driverConflict = await this.prisma.trip.findFirst({
-      where: {
-        driverId: dto.driverId,
-        status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
-        fechaSalidaProgramada: { lte: estimatedArrival },
-        fechaLlegadaEstimada: { gte: departure },
-      },
-    });
-    if (driverConflict) throw new BadRequestException(`El conductor ya tiene un viaje asignado en ese período (${driverConflict.numero})`);
+    if (dto.driverId && dto.driverId !== '') {
+      const driverConflict = await this.prisma.trip.findFirst({
+        where: {
+          driverId: dto.driverId,
+          status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
+          fechaSalidaProgramada: { lte: estimatedArrival },
+          fechaLlegadaEstimada: { gte: departure },
+        },
+      });
+      if (driverConflict) throw new BadRequestException(`El conductor ya tiene un viaje asignado en ese período (${driverConflict.numero})`);
 
-    // Validate dangerous goods compliance
-    if (dto.esCargaPeligrosa) {
-      const driver = await this.prisma.driver.findUnique({ where: { id: dto.driverId } });
-      if (!driver?.habilitadoCargasPeligrosas) {
-        throw new BadRequestException('El conductor no está habilitado para transportar cargas peligrosas');
+      // Validate dangerous goods compliance
+      if (dto.esCargaPeligrosa) {
+        const driver = await this.prisma.driver.findUnique({ where: { id: dto.driverId } });
+        if (!driver?.habilitadoCargasPeligrosas) {
+          throw new BadRequestException('El conductor no está habilitado para transportar cargas peligrosas');
+        }
       }
     }
 
@@ -138,13 +150,20 @@ export class TripsService {
     const costo = Number(dto.costoTotal) || 0;
     const margen = tarifa - costo;
 
+    // Sanitize empty strings for foreign keys to null
+    ['clientId', 'contractId', 'vehicleId', 'trailerId', 'driverId', 'carrierId', 'carrierDriverId', 'carrierVehicleId', 'carrierTrailerId'].forEach((fkKey) => {
+      if ((tripData as any)[fkKey] === '' || (tripData as any)[fkKey] === undefined) {
+        (tripData as any)[fkKey] = null;
+      }
+    });
+
     const trip = await this.prisma.trip.create({
       data: {
         ...tripData,
         costoTotal: dto.costoTotal !== undefined ? costo : undefined,
         margenBruto: margen,
         numero: this.generateTripNumber(),
-        dispatcherId,
+        dispatcherId: dispatcherId || null,
         fechaSalidaProgramada: departure,
         fechaLlegadaEstimada: estimatedArrival,
         leadTimeTotal: leadTime,
@@ -153,14 +172,16 @@ export class TripsService {
           : undefined,
         dangerousGoods: dangerousGoods ? { create: dangerousGoods as any } : undefined,
       },
-      include: { client: true, vehicle: true, driver: true, dangerousGoods: true, checkpoints: true },
+      include: { client: true, vehicle: true, driver: true, carrier: true, carrierDriver: true, carrierVehicle: true, carrierTrailer: true, dangerousGoods: true, checkpoints: true },
     });
 
-    // Update vehicle status
-    await this.prisma.vehicle.update({
-      where: { id: dto.vehicleId },
-      data: { status: 'RESERVADO' as any },
-    });
+    // Update vehicle status (only if own vehicle assigned)
+    if (dto.vehicleId) {
+      await this.prisma.vehicle.update({
+        where: { id: dto.vehicleId },
+        data: { status: VehicleStatus.RESERVADO },
+      });
+    }
 
     return trip;
   }
@@ -193,8 +214,8 @@ export class TripsService {
 
     const sanitizedData: any = { ...data };
 
-    // Clean foreign key relations (convert empty strings or 'null' strings to null)
-    ['trailerId', 'clientId', 'contractId', 'dispatcherId', 'certificationId'].forEach((fkKey) => {
+    // Clean foreign key relations (convert empty strings or 'null' strings or undefined to null)
+    ['clientId', 'contractId', 'vehicleId', 'trailerId', 'driverId', 'carrierId', 'carrierDriverId', 'carrierVehicleId', 'carrierTrailerId', 'dispatcherId', 'certificationId'].forEach((fkKey) => {
       if (sanitizedData[fkKey] === '' || sanitizedData[fkKey] === 'null' || sanitizedData[fkKey] === undefined) {
         sanitizedData[fkKey] = null;
       }
@@ -239,7 +260,7 @@ export class TripsService {
     return this.prisma.trip.update({
       where: { id },
       data: sanitizedData,
-      include: { client: true, vehicle: true, trailer: true, driver: true, dangerousGoods: true, checkpoints: true },
+      include: { client: true, vehicle: true, trailer: true, driver: true, carrier: true, carrierDriver: true, carrierVehicle: true, carrierTrailer: true, dangerousGoods: true, checkpoints: true },
     });
   }
 
@@ -315,17 +336,17 @@ export class TripsService {
   async createBatch(dto: any, dispatcherId?: string) {
     const { assignments, ...commonData } = dto;
     if (!assignments || assignments.length === 0) {
-      throw new BadRequestException('Debe incluir al menos 1 asignación de vehículo y conductor para el convoy');
+      throw new BadRequestException('Debe incluir al menos 1 asignación para el convoy');
     }
 
-    // Check for duplicate vehicle or driver within the batch
-    const vehicleIds = assignments.map((a: any) => a.vehicleId);
-    const driverIds = assignments.map((a: any) => a.driverId);
+    // Check for duplicate vehicle or driver within the batch (only for own fleet)
+    const vehicleIds = assignments.map((a: any) => a.vehicleId).filter(Boolean);
+    const driverIds = assignments.map((a: any) => a.driverId).filter(Boolean);
     if (new Set(vehicleIds).size !== vehicleIds.length) {
-      throw new BadRequestException('Hay vehículos duplicados en el lote de asignaciones');
+      throw new BadRequestException('Hay vehículos propios duplicados en el lote de asignaciones');
     }
     if (new Set(driverIds).size !== driverIds.length) {
-      throw new BadRequestException('Hay conductores duplicados en el lote de asignaciones');
+      throw new BadRequestException('Hay conductores propios duplicados en el lote de asignaciones');
     }
 
     const duracion = commonData.duracionEstimadaHoras || 12;
@@ -337,41 +358,50 @@ export class TripsService {
 
     // Validate availability for each assignment
     for (const item of assignments) {
-      const vehicleConflict = await this.prisma.trip.findFirst({
-        where: {
-          vehicleId: item.vehicleId,
-          status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
-          fechaSalidaProgramada: { lte: estimatedArrival },
-          fechaLlegadaEstimada: { gte: departure },
-        },
-        include: { vehicle: { select: { patente: true } } },
-      });
-      if (vehicleConflict) {
-        throw new BadRequestException(`El vehículo ${vehicleConflict.vehicle?.patente || item.vehicleId} ya tiene un viaje asignado en ese horario (${vehicleConflict.numero})`);
+      if (!item.tipoOperacion || item.tipoOperacion === 'PROPIA') {
+        if (!item.vehicleId || !item.driverId) {
+          throw new BadRequestException('Cada camión de Flota Propia debe tener un Vehículo y Conductor seleccionados');
+        }
       }
 
-      const driverConflict = await this.prisma.trip.findFirst({
-        where: {
-          driverId: item.driverId,
-          status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
-          fechaSalidaProgramada: { lte: estimatedArrival },
-          fechaLlegadaEstimada: { gte: departure },
-        },
-        include: { driver: { select: { firstName: true, lastName: true } } },
-      });
-      if (driverConflict) {
-        throw new BadRequestException(`El conductor ${driverConflict.driver?.firstName} ${driverConflict.driver?.lastName} ya tiene un viaje asignado en ese horario (${driverConflict.numero})`);
+      if (item.vehicleId) {
+        const vehicleConflict = await this.prisma.trip.findFirst({
+          where: {
+            vehicleId: item.vehicleId,
+            status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
+            fechaSalidaProgramada: { lte: estimatedArrival },
+            fechaLlegadaEstimada: { gte: departure },
+          },
+          include: { vehicle: { select: { patente: true } } },
+        });
+        if (vehicleConflict) {
+          throw new BadRequestException(`El vehículo ${vehicleConflict.vehicle?.patente || item.vehicleId} ya tiene un viaje asignado en ese horario (${vehicleConflict.numero})`);
+        }
       }
 
-      if (commonData.esCargaPeligrosa) {
-        const driver = await this.prisma.driver.findUnique({ where: { id: item.driverId } });
-        if (!driver?.habilitadoCargasPeligrosas) {
-          throw new BadRequestException(`El conductor ${driver?.firstName} ${driver?.lastName} no está habilitado para transporte de cargas peligrosas`);
+      if (item.driverId) {
+        const driverConflict = await this.prisma.trip.findFirst({
+          where: {
+            driverId: item.driverId,
+            status: { in: [TripStatus.PROGRAMADO, TripStatus.EN_CURSO] },
+            fechaSalidaProgramada: { lte: estimatedArrival },
+            fechaLlegadaEstimada: { gte: departure },
+          },
+          include: { driver: { select: { firstName: true, lastName: true } } },
+        });
+        if (driverConflict) {
+          throw new BadRequestException(`El conductor ${driverConflict.driver?.firstName} ${driverConflict.driver?.lastName} ya tiene un viaje asignado en ese horario (${driverConflict.numero})`);
+        }
+
+        if (commonData.esCargaPeligrosa) {
+          const driver = await this.prisma.driver.findUnique({ where: { id: item.driverId } });
+          if (!driver?.habilitadoCargasPeligrosas) {
+            throw new BadRequestException(`El conductor ${driver?.firstName} ${driver?.lastName} no está habilitado para transporte de cargas peligrosas`);
+          }
         }
       }
     }
 
-    // Generate Convoy Code (e.g. CNV-2026-8419)
     const now = new Date();
     const convoyCode = `CNV-${now.getFullYear()}-${Math.floor(Math.random() * 9000) + 1000}`;
 
@@ -388,9 +418,16 @@ export class TripsService {
             convoyCode,
             clientId: commonData.clientId || null,
             contractId: commonData.contractId || null,
-            vehicleId: item.vehicleId,
-            driverId: item.driverId,
+            vehicleId: item.vehicleId || null,
+            driverId: item.driverId || null,
             trailerId: item.trailerId || null,
+            tipoOperacion: item.tipoOperacion || 'PROPIA',
+            carrierId: item.carrierId || null,
+            carrierDriverId: item.carrierDriverId || null,
+            carrierVehicleId: item.carrierVehicleId || null,
+            carrierTrailerId: item.carrierTrailerId || null,
+            subcontractorName: item.subcontractorName || null,
+            subcontractorFee: item.subcontractorFee ? Number(item.subcontractorFee) : null,
             dispatcherId: dispatcherId || null,
             origen: commonData.origen,
             destino: commonData.destino,
@@ -415,14 +452,27 @@ export class TripsService {
             esMineria: commonData.esMineria || false,
             esDistribucion: commonData.esDistribucion || false,
             tarifaAcordada: item.tarifaAcordada || commonData.tarifaGenerica || null,
+            costoTotal: item.tipoOperacion === 'SUBCONTRATADA_TOTAL' || item.tipoOperacion === 'TRACCION_TERCERO_SEMI_PROPIO'
+              ? (item.subcontractorFee ? Number(item.subcontractorFee) : null)
+              : null,
             notas: commonData.notas ? `[CONVOY ${convoyCode}] ${commonData.notas}` : `[CONVOY ${convoyCode}]`,
           },
           include: {
             vehicle: { select: { patente: true, marca: true, modelo: true } },
             driver: { select: { firstName: true, lastName: true } },
+            carrier: { select: { razonSocial: true } },
+            carrierVehicle: { select: { patente: true } },
+            carrierDriver: { select: { firstName: true, lastName: true } },
             client: { select: { razonSocial: true } },
           },
         });
+
+        if (item.vehicleId) {
+          await tx.vehicle.update({
+            where: { id: item.vehicleId },
+            data: { status: VehicleStatus.RESERVADO },
+          });
+        }
 
         // Add Dangerous Goods declaration if present
         if (commonData.esCargaPeligrosa && commonData.dangerousGoods) {

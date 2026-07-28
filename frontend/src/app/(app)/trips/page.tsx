@@ -182,26 +182,49 @@ export default function TripsPage() {
                       {/* Dual License Plates: Tractor + Trailer */}
                       <td className="px-4 py-3">
                         <div className="space-y-1">
-                          {trip.subcontractorName && (
+                          {(trip.carrier || trip.subcontractorName) && (
                             <p className="text-[11px] text-purple-600 dark:text-purple-400 font-extrabold flex items-center gap-1">
-                              <span>🤝 {trip.subcontractorName}</span>
+                              <span>🤝 {trip.carrier?.razonSocial || trip.subcontractorName}</span>
                             </p>
                           )}
-                          <p className="flex items-center gap-1.5 text-slate-900 dark:text-white text-xs font-bold">
-                            <Truck className="w-3.5 h-3.5 text-emerald-600 dark:text-green-400" />
-                            <span>Camión: {trip.vehicle?.patente}</span>
-                          </p>
+                          {/* Own fleet vehicle */}
+                          {trip.vehicle?.patente && (
+                            <p className="flex items-center gap-1.5 text-slate-900 dark:text-white text-xs font-bold">
+                              <Truck className="w-3.5 h-3.5 text-emerald-600 dark:text-green-400" />
+                              <span>Camión: {trip.vehicle.patente}</span>
+                            </p>
+                          )}
+                          {/* Carrier vehicle */}
+                          {trip.carrierVehicle?.patente && (
+                            <p className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 text-xs font-bold">
+                              <Truck className="w-3.5 h-3.5" />
+                              <span>Camión: {trip.carrierVehicle.patente}</span>
+                            </p>
+                          )}
+                          {/* Own trailer */}
                           {trip.trailer ? (
                             <p className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 text-xs font-semibold">
                               <Container className="w-3.5 h-3.5" />
                               <span>Semi: {trip.trailer.patente} ({trip.trailer.tipo?.replace('_', ' ')})</span>
                             </p>
+                          ) : trip.carrierTrailer?.patente ? (
+                            <p className="flex items-center gap-1.5 text-purple-500 dark:text-purple-400 text-xs font-semibold">
+                              <Container className="w-3.5 h-3.5" />
+                              <span>Semi: {trip.carrierTrailer.patente}</span>
+                            </p>
                           ) : (
                             <p className="text-[11px] text-slate-400 dark:text-slate-500">Sin equipo remolcado</p>
                           )}
-                          <p className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[11px]">
-                            <User className="w-3 h-3 text-slate-400" /> {trip.driver?.firstName} {trip.driver?.lastName}
-                          </p>
+                          {/* Driver: own or carrier */}
+                          {trip.driver ? (
+                            <p className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-[11px]">
+                              <User className="w-3 h-3 text-slate-400" /> {trip.driver.firstName} {trip.driver.lastName}
+                            </p>
+                          ) : trip.carrierDriver ? (
+                            <p className="flex items-center gap-1 text-purple-500 dark:text-purple-400 text-[11px]">
+                              <User className="w-3 h-3" /> {trip.carrierDriver.firstName} {trip.carrierDriver.lastName}
+                            </p>
+                          ) : null}
                         </div>
                       </td>
 

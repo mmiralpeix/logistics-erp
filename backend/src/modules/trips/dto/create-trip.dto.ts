@@ -29,9 +29,9 @@ class CreateDangerousGoodsDto {
 export class CreateTripDto {
   @ApiPropertyOptional() @IsOptional() @IsString() clientId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() contractId?: string;
-  @ApiProperty() @IsString() vehicleId: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() vehicleId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() trailerId?: string;
-  @ApiProperty() @IsString() driverId: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() driverId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() numeroRemito?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() numeroOCCliente?: string;
   @ApiProperty() @IsString() origen: string;
@@ -56,6 +56,10 @@ export class CreateTripDto {
   @ApiPropertyOptional() @IsOptional() @IsString() tipoOperacion?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() subcontractorName?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() subcontractorFee?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() carrierId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() carrierDriverId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() carrierVehicleId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() carrierTrailerId?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() tarifaAcordada?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() costoTotal?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() margenBruto?: number;

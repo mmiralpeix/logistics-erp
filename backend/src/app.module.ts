@@ -23,6 +23,10 @@ import { AlertsModule } from './modules/alerts/alerts.module';
 import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
 import { MailModule } from './modules/mail/mail.module';
+import { CarriersModule } from './modules/carriers/carriers.module';
+
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -50,6 +54,13 @@ import { MailModule } from './modules/mail/mail.module';
     GpsModule,
     AlertsModule,
     DangerousGoodsModule,
+    CarriersModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

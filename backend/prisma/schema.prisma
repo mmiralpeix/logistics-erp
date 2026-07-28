@@ -314,10 +314,15 @@ model Trip {
   id           String     @id @default(cuid())
   numero       String     @unique
   clientId     String?
-  vehicleId    String
+  vehicleId    String?
   trailerId    String?
-  driverId     String
+  driverId     String?
   dispatcherId String?
+
+  carrierId        String?
+  carrierDriverId  String?
+  carrierVehicleId String?
+  carrierTrailerId String?
 
   origen      String
   destino     String
@@ -376,10 +381,15 @@ model Trip {
   client        Client?        @relation(fields: [clientId], references: [id])
   contract      Contract?      @relation(fields: [contractId], references: [id])
   certification Certification? @relation(fields: [certificationId], references: [id])
-  vehicle       Vehicle        @relation("VehicleTrips", fields: [vehicleId], references: [id])
+  vehicle       Vehicle?       @relation("VehicleTrips", fields: [vehicleId], references: [id])
   trailer       Vehicle?       @relation("TrailerTrips", fields: [trailerId], references: [id])
-  driver        Driver         @relation(fields: [driverId], references: [id])
-  dispatcher  User?    @relation("DispatcherTrips", fields: [dispatcherId], references: [id])
+  driver        Driver?        @relation(fields: [driverId], references: [id])
+  dispatcher    User?          @relation("DispatcherTrips", fields: [dispatcherId], references: [id])
+
+  carrier        Carrier?        @relation(fields: [carrierId], references: [id])
+  carrierDriver  CarrierDriver?  @relation(fields: [carrierDriverId], references: [id])
+  carrierVehicle CarrierVehicle? @relation("CarrierVehicleTrips", fields: [carrierVehicleId], references: [id])
+  carrierTrailer CarrierVehicle? @relation("CarrierTrailerTrips", fields: [carrierTrailerId], references: [id])
 
   dangerousGoods DangerousGoodsDeclaration?
   costs          TripCost[]
@@ -394,6 +404,7 @@ model Trip {
   @@index([driverId])
   @@index([fechaSalidaProgramada])
   @@index([convoyCode])
+  @@index([carrierId])
   @@map("trips")
 }
 
@@ -753,4 +764,63 @@ model Certification {
   @@index([clientId])
   @@index([estado])
   @@map("certifications")
+}
+
+model Carrier {
+  id            String   @id @default(cuid())
+  razonSocial   String
+  cuit          String?  @unique
+  telefono      String?
+  email         String?
+  contacto      String?
+  domicilio     String?
+  ciudad        String?
+  provincia     String?
+  isActive      Boolean  @default(true)
+  notas         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vehicles  CarrierVehicle[]
+  drivers   CarrierDriver[]
+  trips     Trip[]
+
+  @@map("carriers")
+}
+
+model CarrierVehicle {
+  id          String       @id @default(cuid())
+  carrierId   String
+  patente     String       @unique
+  tipo        VehicleType?
+  marca       String?
+  modelo      String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  carrier      Carrier @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  trips        Trip[]  @relation("CarrierVehicleTrips")
+  trailerTrips Trip[]  @relation("CarrierTrailerTrips")
+
+  @@index([carrierId])
+  @@map("carrier_vehicles")
+}
+
+model CarrierDriver {
+  id          String   @id @default(cuid())
+  carrierId   String
+  firstName   String
+  lastName    String
+  dni         String?
+  telefono    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  carrier Carrier @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  trips   Trip[]
+
+  @@index([carrierId])
+  @@map("carrier_drivers")
 }

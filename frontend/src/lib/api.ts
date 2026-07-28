@@ -171,6 +171,24 @@ export const dangerousGoodsApi = {
   approve: (id: string) => api.patch(`/dangerous-goods/${id}/approve`),
 };
 
+export const carriersApi = {
+  getAll: (params?: any) => api.get('/carriers', { params }),
+  getOne: (id: string) => api.get(`/carriers/${id}`),
+  create: (data: any) => api.post('/carriers', data),
+  update: (id: string, data: any) => api.patch(`/carriers/${id}`, data),
+  remove: (id: string) => api.delete(`/carriers/${id}`),
+  // Vehicles
+  getVehicles: (carrierId: string) => api.get(`/carriers/${carrierId}/vehicles`),
+  createVehicle: (carrierId: string, data: any) => api.post(`/carriers/${carrierId}/vehicles`, data),
+  updateVehicle: (vehicleId: string, data: any) => api.patch(`/carriers/vehicles/${vehicleId}`, data),
+  removeVehicle: (vehicleId: string) => api.delete(`/carriers/vehicles/${vehicleId}`),
+  // Drivers
+  getDrivers: (carrierId: string) => api.get(`/carriers/${carrierId}/drivers`),
+  createDriver: (carrierId: string, data: any) => api.post(`/carriers/${carrierId}/drivers`, data),
+  updateDriver: (driverId: string, data: any) => api.patch(`/carriers/drivers/${driverId}`, data),
+  removeDriver: (driverId: string) => api.delete(`/carriers/drivers/${driverId}`),
+};
+
 export const mfaApi = {
   generate: () => api.post('/auth/mfa/generate'),
   enable: (totpToken: string) => api.post('/auth/mfa/enable', { totpToken }),

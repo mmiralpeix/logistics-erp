@@ -183,16 +183,16 @@ export function WaybillModal({ trip, onClose }: WaybillModalProps) {
               <div className="flex items-center gap-2 pt-1">
                 {trip.esCargaPeligrosa ? (
                   <span className="px-2 py-0.5 bg-rose-100 text-rose-800 rounded font-bold text-[10px] border border-rose-300">
-                    ⚠ CARGA PELIGROSA ARBA / UN
+                    CARGA PELIGROSA ARBA / UN
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold text-[10px] border border-emerald-300">
-                    ✓ CARGA GENERAL ESTÁNDAR
+                    CARGA GENERAL ESTÁNDAR
                   </span>
                 )}
                 {trip.esMineria && (
                   <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded font-bold text-[10px] border border-amber-300">
-                    ⛏ PROTOCOLO MINERO
+                    PROTOCOLO MINERO
                   </span>
                 )}
               </div>

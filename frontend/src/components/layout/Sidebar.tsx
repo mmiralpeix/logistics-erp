@@ -5,7 +5,7 @@ import { useAuthStore, ROLE_LABELS } from '@/lib/auth';
 import {
   LayoutDashboard, Users, Truck, UserCheck, MapPin, Wrench, Droplet, Fuel,
   FileText, Receipt, BarChart2, Satellite, Settings,
-  ChevronRight, LogOut, Shield, Package
+  ChevronRight, LogOut, Shield, Package, Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/clients', icon: Users, label: 'Clientes', description: 'Gestión de clientes' },
   { href: '/vehicles', icon: Truck, label: 'Vehículos', description: 'Flota propia y tercerizada' },
   { href: '/drivers', icon: UserCheck, label: 'Conductores', description: 'Personal de conducción' },
+  { href: '/carriers', icon: Building2, label: 'Operadores', description: 'Transportistas externos' },
   { href: '/trips', icon: MapPin, label: 'Viajes', description: 'Planificación multidía' },
   { href: '/maintenance', icon: Wrench, label: 'Mantenimiento', description: 'Preventivo y correctivo' },
   { href: '/consumables', icon: Droplet, label: 'Consumibles', description: 'Diésel, Urea y fluidos' },

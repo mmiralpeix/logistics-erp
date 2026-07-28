@@ -1,7 +1,7 @@
 'use client';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { tripsApi, vehiclesApi, driversApi, clientsApi } from '@/lib/api';
+import { tripsApi, vehiclesApi, driversApi, clientsApi, carriersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { X, Map, Clock, FileText, Calculator, FileCheck, Truck, Container, Lock, Scale, CalendarCheck, DollarSign, Zap, User, Building2 } from 'lucide-react';
 import { useEffect } from 'react';
@@ -15,6 +15,8 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   const { data: vehicles } = useQuery({ queryKey: ['vehicles-select'], queryFn: () => vehiclesApi.getAll({ limit: 100 }).then((r) => r.data.data) });
   const { data: drivers } = useQuery({ queryKey: ['drivers-select'], queryFn: () => driversApi.getAll({ limit: 100 }).then((r) => r.data.data) });
   const { data: clients } = useQuery({ queryKey: ['clients-select'], queryFn: () => clientsApi.getAll({ limit: 100 }).then((r) => r.data.data) });
+  const { data: carriers } = useQuery({ queryKey: ['carriers-select'], queryFn: () => carriersApi.getAll({ limit: 100 }).then((r) => r.data.data) });
+
 
   const formatDateTimeInput = (d?: any) => {
     if (!d) return '';
@@ -56,6 +58,18 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   const selectedContractId = watch('contractId');
   const pesoCargaKg = Number(watch('pesoCarga')) || 0;
 
+  const selectedCarrierId = watch('carrierId');
+  const { data: carrierVehicles } = useQuery({
+    queryKey: ['carrier-vehicles', selectedCarrierId],
+    queryFn: () => selectedCarrierId ? carriersApi.getVehicles(selectedCarrierId).then((r) => r.data) : Promise.resolve([]),
+    enabled: !!selectedCarrierId,
+  });
+  const { data: carrierDrivers } = useQuery({
+    queryKey: ['carrier-drivers', selectedCarrierId],
+    queryFn: () => selectedCarrierId ? carriersApi.getDrivers(selectedCarrierId).then((r) => r.data) : Promise.resolve([]),
+    enabled: !!selectedCarrierId,
+  });
+
   // Filter vehicles: Power units vs Trailers
   const powerUnits = vehicles?.filter((v: any) => ['CAMION', 'TRACTOR', 'CAMIONETA', 'EQUIPO_ESPECIAL'].includes(v.tipo)) || vehicles;
   const trailers = vehicles?.filter((v: any) => ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CARRETON', 'BATEA', 'BITREN', 'CISTERNA', 'VOLQUETE', 'ACOPLADO'].includes(v.tipo)) || vehicles;
@@ -87,7 +101,7 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
       setValue('pesoExcedenteKg', Math.round(excessKg));
       setValue('montoExcedente', roundedExcessAmount);
     }
-  }, [selectedContractId, pesoCargaKg, activeContract?.id]);
+  }, [selectedContractId, pesoCargaKg, activeContract, calculatedTotalRate, excessAmount, excessKg, setValue]);
 
   const handleAutoCalculateCost = () => {
     const km = Number(watch('distanciaKm')) || 0;
@@ -155,6 +169,10 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
           driverId: trip.driverId,
         }
       : cleanData;
+
+    ['clientId', 'contractId', 'vehicleId', 'trailerId', 'driverId', 'carrierId', 'carrierDriverId', 'carrierVehicleId', 'carrierTrailerId'].forEach((k) => {
+      if (payload[k] === '') payload[k] = undefined;
+    });
 
     mutation.mutate(payload);
   };
@@ -247,44 +265,179 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
               </button>
             </div>
 
-            {/* Subcontractor Panel if not PROPIA */}
+            {/* Carrier Panel if not PROPIA */}
             {(watch('tipoOperacion') === 'SUBCONTRATADA_TOTAL' || watch('tipoOperacion') === 'TRACCION_TERCERO_SEMI_PROPIO') && (
-              <div className="pt-2 grid grid-cols-2 gap-3 border-t border-slate-200 dark:border-slate-700 mt-2 animate-fade-in">
-                <div>
-                  <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider mb-1">
-                    Operador Logístico / Subcontratista *
-                  </label>
-                  <input
-                    {...register('subcontractorName')}
-                    className="input w-full text-sm font-semibold border-purple-300 dark:border-purple-700"
-                    placeholder="Ej: Transportes Salta SRL / Don Pedro Logística"
-                  />
+              <div className="pt-2 space-y-3 border-t border-slate-200 dark:border-slate-700 mt-2 animate-fade-in">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                        Operador Logístico *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const name = prompt('Nombre del Operador Logístico (ej: Transportes Salta SRL):');
+                          if (name?.trim()) {
+                            try {
+                              const res = await carriersApi.create({ razonSocial: name.trim() });
+                              toast.success('Operador creado exitosamente');
+                              qc.invalidateQueries({ queryKey: ['carriers-select'] });
+                              qc.invalidateQueries({ queryKey: ['carriers'] });
+                              setValue('carrierId', res.data.id);
+                            } catch {
+                              toast.error('Error al crear operador');
+                            }
+                          }
+                        }}
+                        className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-0.5"
+                      >
+                        + Nuevo Operador
+                      </button>
+                    </div>
+                    <select
+                      {...register('carrierId')}
+                      className="input w-full text-sm font-semibold border-purple-300 dark:border-purple-700"
+                    >
+                      <option value="">Seleccionar operador...</option>
+                      {carriers?.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.razonSocial}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                        Flete a Pagar ($)
+                      </label>
+                      {Number(watch('tarifaAcordada') || 0) > 0 && Number(watch('subcontractorFee') || 0) > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                          Spread: {formatMoney(Number(watch('tarifaAcordada') || 0) - Number(watch('subcontractorFee') || 0))}
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      {...register('subcontractorFee')}
+                      type="number"
+                      step="any"
+                      onChange={(e) => {
+                        const fee = Number(e.target.value) || 0;
+                        setValue('subcontractorFee', fee);
+                        setValue('costoTotal', fee);
+                      }}
+                      className="input w-full text-sm font-bold text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-700"
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
-                      Flete Acordado a Pagar al Subcontratista ($)
-                    </label>
-                    {Number(watch('tarifaAcordada') || 0) > 0 && Number(watch('subcontractorFee') || 0) > 0 && (
-                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                        Spread Neto: {formatMoney(Number(watch('tarifaAcordada') || 0) - Number(watch('subcontractorFee') || 0))}
-                      </span>
-                    )}
+                {/* Carrier resources: driver + vehicle + trailer */}
+                {selectedCarrierId && (
+                  <div className="grid grid-cols-3 gap-3 animate-fade-in">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                          Chofer
+                        </label>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const name = prompt('Nombre y Apellido del Chofer (ej: Juan Pérez):');
+                            if (name?.trim()) {
+                              const parts = name.trim().split(' ');
+                              const firstName = parts[0];
+                              const lastName = parts.slice(1).join(' ') || '-';
+                              try {
+                                const res = await carriersApi.createDriver(selectedCarrierId, { firstName, lastName });
+                                toast.success('Chofer agregado al operador');
+                                qc.invalidateQueries({ queryKey: ['carrier-drivers', selectedCarrierId] });
+                                setValue('carrierDriverId', res.data.id);
+                              } catch {
+                                toast.error('Error al agregar chofer');
+                              }
+                            }
+                          }}
+                          className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                      <select {...register('carrierDriverId')} className="input w-full text-sm border-purple-300 dark:border-purple-700">
+                        <option value="">Seleccionar chofer...</option>
+                        {carrierDrivers?.map((d: any) => (
+                          <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                          Camión / Tractor
+                        </label>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const patente = prompt('Patente del Camión/Tractor (ej: AA123CD):');
+                            if (patente?.trim()) {
+                              try {
+                                const res = await carriersApi.createVehicle(selectedCarrierId, { patente: patente.trim().toUpperCase(), tipo: 'TRACTOR' });
+                                toast.success('Vehículo agregado al operador');
+                                qc.invalidateQueries({ queryKey: ['carrier-vehicles', selectedCarrierId] });
+                                setValue('carrierVehicleId', res.data.id);
+                              } catch {
+                                toast.error('Error al agregar vehículo');
+                              }
+                            }
+                          }}
+                          className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                      <select {...register('carrierVehicleId')} className="input w-full text-sm border-purple-300 dark:border-purple-700">
+                        <option value="">Seleccionar vehículo...</option>
+                        {carrierVehicles?.map((v: any) => (
+                          <option key={v.id} value={v.id}>{v.patente} {v.tipo ? `(${v.tipo.replace('_', ' ')})` : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                          Semi / Acoplado
+                        </label>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const patente = prompt('Patente del Semi/Acoplado (ej: AB987XY):');
+                            if (patente?.trim()) {
+                              try {
+                                const res = await carriersApi.createVehicle(selectedCarrierId, { patente: patente.trim().toUpperCase(), tipo: 'SEMIRREMOLQUE' });
+                                toast.success('Semi agregado al operador');
+                                qc.invalidateQueries({ queryKey: ['carrier-vehicles', selectedCarrierId] });
+                                setValue('carrierTrailerId', res.data.id);
+                              } catch {
+                                toast.error('Error al agregar semi');
+                              }
+                            }
+                          }}
+                          className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
+                        >
+                          + Agregar
+                        </button>
+                      </div>
+                      <select {...register('carrierTrailerId')} className="input w-full text-sm border-purple-300 dark:border-purple-700">
+                        <option value="">Sin remolque</option>
+                        {carrierVehicles?.map((v: any) => (
+                          <option key={v.id} value={v.id}>{v.patente} {v.tipo ? `(${v.tipo.replace('_', ' ')})` : ''}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <input
-                    {...register('subcontractorFee')}
-                    type="number"
-                    step="any"
-                    onChange={(e) => {
-                      const fee = Number(e.target.value) || 0;
-                      setValue('subcontractorFee', fee);
-                      setValue('costoTotal', fee);
-                    }}
-                    className="input w-full text-sm font-bold text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-700"
-                    placeholder="0.00"
-                  />
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -323,46 +476,71 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
             </div>
           </div>
 
-          {/* Seccion 2: Vehículos & Conductor */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Unidad Tractora / Camión *
-              </label>
-              <select {...register('vehicleId', { required: true })} className="input w-full text-sm font-medium" disabled={isLocked}>
-                <option value="">Seleccionar vehículo...</option>
-                {powerUnits?.map((v: any) => (
-                  <option key={v.id} value={v.id}>{v.patente} — {v.marca} {v.modelo} ({v.tipo})</option>
-                ))}
-              </select>
-            </div>
+          {/* Seccion 2: Asignación Flota Propia (Condicional según modalidad) */}
+          {watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion') ? (
+            <div className="grid grid-cols-2 gap-4 p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded-2xl">
+              <div className="col-span-2 text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
+                Recursos Flota Propia *
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Unidad Tractora / Camión *
+                </label>
+                <select
+                  {...register('vehicleId', { required: watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion') })}
+                  className="input w-full text-sm font-medium"
+                  disabled={isLocked}
+                >
+                  <option value="">Seleccionar vehículo...</option>
+                  {powerUnits?.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.patente} — {v.marca} {v.modelo} ({v.tipo})</option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Semi / Acoplado (Opcional)
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Semi / Acoplado (Opcional)
+                </label>
+                <select {...register('trailerId')} className="input w-full text-sm font-medium" disabled={isLocked}>
+                  <option value="">Sin remolque (Solo chasis)</option>
+                  {trailers?.map((v: any) => (
+                    <option key={v.id} value={v.id}>{v.patente} — {v.tipo?.replace('_', ' ')}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                  Conductor Asignado *
+                </label>
+                <select
+                  {...register('driverId', { required: watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion') })}
+                  className="input w-full text-sm font-medium"
+                  disabled={isLocked}
+                >
+                  <option value="">Seleccionar conductor...</option>
+                  {drivers?.map((d: any) => (
+                    <option key={d.id} value={d.id}>
+                      {d.firstName} {d.lastName} {d.habilitadoCargasPeligrosas ? '⚡ (Hab. Peligrosas)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : watch('tipoOperacion') === 'TRACCION_TERCERO_SEMI_PROPIO' ? (
+            <div className="p-3.5 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/50 rounded-2xl space-y-2">
+              <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
+                Remolque / Semi de Flota Propia (Enganche Mixto)
               </label>
               <select {...register('trailerId')} className="input w-full text-sm font-medium" disabled={isLocked}>
-                <option value="">Sin remolque (Solo chasis)</option>
+                <option value="">Seleccionar semi de nuestra flota...</option>
                 {trailers?.map((v: any) => (
                   <option key={v.id} value={v.id}>{v.patente} — {v.tipo?.replace('_', ' ')}</option>
                 ))}
               </select>
             </div>
-
-            <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Conductor Asignado *
-              </label>
-              <select {...register('driverId', { required: true })} className="input w-full text-sm font-medium" disabled={isLocked}>
-                <option value="">Seleccionar conductor...</option>
-                {drivers?.map((d: any) => (
-                  <option key={d.id} value={d.id}>
-                    {d.firstName} {d.lastName} {d.habilitadoCargasPeligrosas ? '⚡ (Hab. Peligrosas)' : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          ) : null}
 
           {/* Seccion 3: Ruta & Fechas */}
           <div className="grid grid-cols-2 gap-4">
