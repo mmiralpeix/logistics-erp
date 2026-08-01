@@ -9,3 +9,10 @@ Whenever the user requests "GIT" or asks to save/sync changes:
 2. Always run `git commit -m "<descriptive message>"`.
 3. Always run `git push` to ensure all commits are pushed to the remote repository so the user can pull them on other machines (e.g. desktop PC).
 
+## Multi-Agent Skills Integration & JIT Dynamic Skill Router (`aas-stack.json`)
+1. **Dynamic Skill Selection**: Subagents must inspect `aas-stack.json` to identify skills relevant to their domain before executing tasks.
+2. **JIT Context Scope**: No agent shall load more than 2-3 skills per task execution turn.
+3. **Context Purging**: When delegating or completing tasks, release skill context to keep prompt token consumption under 15% of context window.
+4. **Self-Healing Loop**: If a test or build fails, `qa-engineer` or `code-reviewer` must trigger the self-healing loop back to `backend-dev` or `frontend-dev` with exact log diagnostics without modifying production files directly.
+
+

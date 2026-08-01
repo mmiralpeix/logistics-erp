@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/sickn33/agentic-awesome-skills/main/schema/aas-stack.schema.json",
+  "project": "LogisticsPro ERP",
+  "version": "1.0.0",
+  "target": "antigravity",
+  "selection": {
+    "core": [
+      "brainstorming",
+      "systematic-debugging",
+      "software-architecture"
+    ],
+    "backend": [
+      "nestjs-best-practices",
+      "backend-dev-guidelines",
+      "prisma-orm-patterns",
+      "jwt-auth"
+    ],
+    "frontend": [
+      "nextjs-app-router",
+      "react-components",
+      "tailwind-design-system"
+    ],
+    "qa": [
+      "jest-unit-testing",
+      "playwright-e2e",
+      "integration-testing-patterns"
+    ],
+    "security": [
+      "owasp-security-audit",
+      "jwt-rbac-hardening"
+    ],
+    "devops": [
+      "docker-containerization",
+      "powershell-automation"
+    ],
+    "docs": [
+      "technical-documentation",
+      "mermaid-diagrams"
+    ]
+  },
+  "rules": {
+    "max_active_skills_per_agent": 3,
+    "context_purge_on_handoff": true,
+    "allow_critical_skills": false
+  }
+}
