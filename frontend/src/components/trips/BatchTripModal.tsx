@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { clientsApi, vehiclesApi, driversApi, carriersApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
+import { CARGO_TYPES } from '@/lib/constants';
 import { Plus, Trash2, Truck, UserCheck, ShieldAlert, Layers, MapPin, Calendar, DollarSign, FileCheck, FileText, Container, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -26,7 +27,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
     esperaEnDestinoHoras: 2,
     descansosConductorHoras: 8,
     distanciaKm: 450,
-    tipoCarga: 'Carga General',
+    tipoCarga: '',
     descripcionCarga: 'Transporte de mercadería en convoy',
     tarifaGenerica: 450000,
     pesoCargaGenericoKg: 30000,
@@ -125,7 +126,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal animate-fade-in max-w-6xl max-h-[92vh] flex flex-col shadow-2xl rounded-2xl overflow-hidden">
+      <div className="modal animate-fade-in max-w-7xl w-full max-h-[92vh] flex flex-col shadow-2xl rounded-2xl overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10">
           <div className="flex items-center gap-3">
@@ -171,8 +172,8 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
               <span className="text-xs text-slate-400">Paso 1 de 2</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+              <div className="lg:col-span-6">
                 <label className="label font-semibold">Cliente *</label>
                 <select value={form.clientId || ''} onChange={(e) => setField('clientId', e.target.value)} className="input py-2">
                   <option value="">Seleccionar cliente de la cartera...</option>
@@ -182,47 +183,61 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                 </select>
               </div>
 
-              <div>
+              <div className="lg:col-span-3">
                 <label className="label font-semibold">Origen *</label>
                 <input type="text" value={form.origen} onChange={(e) => setField('origen', e.target.value)} className="input py-2" placeholder="Ej: Rosario, Santa Fe" />
               </div>
 
-              <div>
+              <div className="lg:col-span-3">
                 <label className="label font-semibold">Destino *</label>
                 <input type="text" value={form.destino} onChange={(e) => setField('destino', e.target.value)} className="input py-2" placeholder="Ej: San Lorenzo, Terminal 6" />
               </div>
 
-              <div>
+              <div className="lg:col-span-3">
                 <label className="label font-semibold">Fecha y Hora Salida *</label>
                 <input type="datetime-local" value={form.fechaSalidaProgramada} onChange={(e) => setField('fechaSalidaProgramada', e.target.value)} className="input py-2" />
               </div>
 
-              <div>
+              <div className="lg:col-span-3">
                 <label className="label font-semibold">Duración Est. (Horas)</label>
                 <input type="number" value={form.duracionEstimadaHoras} onChange={(e) => setField('duracionEstimadaHoras', Number(e.target.value))} className="input py-2" />
               </div>
 
-              <div>
+              <div className="lg:col-span-3">
                 <label className="label font-semibold">Distancia Est. (Km)</label>
                 <input type="number" value={form.distanciaKm} onChange={(e) => setField('distanciaKm', Number(e.target.value))} className="input py-2" />
               </div>
 
-              <div>
+              <div className="lg:col-span-3">
                 <label className="label font-semibold">Tarifa Base por Unidad ($)</label>
                 <input type="number" value={form.tarifaGenerica} onChange={(e) => setField('tarifaGenerica', Number(e.target.value))} className="input py-2 font-bold text-emerald-600 dark:text-emerald-400" placeholder="450000" />
               </div>
 
-              <div>
+              <div className="lg:col-span-4">
                 <label className="label font-semibold">Tipo de Carga</label>
-                <input type="text" value={form.tipoCarga} onChange={(e) => setField('tipoCarga', e.target.value)} className="input py-2" placeholder="Ej: Graneles / Combustible" />
+                <select
+                  value={form.tipoCarga}
+                  onChange={(e) => setField('tipoCarga', e.target.value)}
+                  className="input py-2 bg-white dark:bg-slate-900 font-medium w-full"
+                >
+                  <option value="">Seleccionar tipo de carga...</option>
+                  {!CARGO_TYPES.some((c) => c.value === form.tipoCarga) && form.tipoCarga && (
+                    <option value={form.tipoCarga}>{form.tipoCarga}</option>
+                  )}
+                  {CARGO_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div>
+              <div className="lg:col-span-3">
                 <label className="label font-semibold">Peso Estimado / Unidad (Kg)</label>
                 <input type="number" value={form.pesoCargaGenericoKg} onChange={(e) => setField('pesoCargaGenericoKg', Number(e.target.value))} className="input py-2" placeholder="30000" />
               </div>
 
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-5">
                 <label className="label font-semibold">Descripción General de Carga</label>
                 <input type="text" value={form.descripcionCarga} onChange={(e) => setField('descripcionCarga', e.target.value)} className="input py-2" placeholder="Detalle adicional..." />
               </div>

@@ -3,16 +3,44 @@ import { Type } from 'class-transformer';
 
 export class BatchUnitAssignmentDto {
   @IsString()
-  @IsNotEmpty()
-  vehicleId: string;
+  @IsOptional()
+  vehicleId?: string;
 
   @IsString()
-  @IsNotEmpty()
-  driverId: string;
+  @IsOptional()
+  driverId?: string;
 
   @IsString()
   @IsOptional()
   trailerId?: string;
+
+  @IsString()
+  @IsOptional()
+  tipoOperacion?: string;
+
+  @IsString()
+  @IsOptional()
+  carrierId?: string;
+
+  @IsString()
+  @IsOptional()
+  carrierDriverId?: string;
+
+  @IsString()
+  @IsOptional()
+  carrierVehicleId?: string;
+
+  @IsString()
+  @IsOptional()
+  carrierTrailerId?: string;
+
+  @IsString()
+  @IsOptional()
+  subcontractorName?: string;
+
+  @IsNumber()
+  @IsOptional()
+  subcontractorFee?: number;
 
   @IsString()
   @IsOptional()
@@ -30,6 +58,7 @@ export class BatchUnitAssignmentDto {
   @IsOptional()
   pesoCargaKg?: number;
 }
+
 
 export class CreateBatchTripDto {
   @IsString()

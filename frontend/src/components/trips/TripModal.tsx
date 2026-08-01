@@ -3,9 +3,15 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { tripsApi, vehiclesApi, driversApi, clientsApi, carriersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { X, Map, Clock, FileText, Calculator, FileCheck, Truck, Container, Lock, Scale, CalendarCheck, DollarSign, Zap, User, Building2 } from 'lucide-react';
+import { X, Map, Lock } from 'lucide-react';
 import { useEffect } from 'react';
 import { formatMoney } from '@/lib/utils';
+import { OperationModeSection } from './modal-sections/OperationModeSection';
+import { ClientAndContractSection } from './modal-sections/ClientAndContractSection';
+import { FleetAssignmentSection } from './modal-sections/FleetAssignmentSection';
+import { RouteAndDatesSection } from './modal-sections/RouteAndDatesSection';
+import { CargoAndDocsSection } from './modal-sections/CargoAndDocsSection';
+import { FinancialsSection } from './modal-sections/FinancialsSection';
 
 export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () => void; onSave?: () => void }) {
   const qc = useQueryClient();
@@ -16,7 +22,6 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   const { data: drivers } = useQuery({ queryKey: ['drivers-select'], queryFn: () => driversApi.getAll({ limit: 100 }).then((r) => r.data.data) });
   const { data: clients } = useQuery({ queryKey: ['clients-select'], queryFn: () => clientsApi.getAll({ limit: 100 }).then((r) => r.data.data) });
   const { data: carriers } = useQuery({ queryKey: ['carriers-select'], queryFn: () => carriersApi.getAll({ limit: 100 }).then((r) => r.data.data) });
-
 
   const formatDateTimeInput = (d?: any) => {
     if (!d) return '';
@@ -41,7 +46,7 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
       }
     : {
         status: 'PENDIENTE',
-        tipoCarga: 'SALMUERA',
+        tipoCarga: '',
         esCargaPeligrosa: false,
         esMineria: false,
         esDistribucion: false,
@@ -70,11 +75,9 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
     enabled: !!selectedCarrierId,
   });
 
-  // Filter vehicles: Power units vs Trailers
   const powerUnits = vehicles?.filter((v: any) => ['CAMION', 'TRACTOR', 'CAMIONETA', 'EQUIPO_ESPECIAL'].includes(v.tipo)) || vehicles;
   const trailers = vehicles?.filter((v: any) => ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CARRETON', 'BATEA', 'BITREN', 'CISTERNA', 'VOLQUETE', 'ACOPLADO'].includes(v.tipo)) || vehicles;
 
-  // Fetch contracts for the selected client
   const { data: clientContracts } = useQuery({
     queryKey: ['client-contracts', selectedClientId],
     queryFn: () => selectedClientId ? clientsApi.getContracts(selectedClientId).then((r) => r.data) : Promise.resolve([]),
@@ -83,7 +86,6 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
 
   const activeContract = clientContracts?.find((c: any) => c.id === selectedContractId) || clientContracts?.[0];
 
-  // Automatic calculation of base rate + excess tonnage
   const baseRate = activeContract?.tarifaBase || 0;
   const minWeightKg = activeContract?.pesoMinimoKg || 30000;
   const excessRatePerTn = activeContract?.tarifaExcedentePorTn || 0;
@@ -109,7 +111,6 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
       toast.error('Ingrese los KM de la ruta para calcular el costo');
       return;
     }
-    // Formula: Gasoil 35L/100km a $1.150/L + $150/km en peajes/viáticos
     const fuelCost = (km / 100) * 35 * 1150;
     const tollAndDriverCost = km * 150;
     const totalEstCost = Math.round(fuelCost + tollAndDriverCost);
@@ -145,7 +146,6 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   });
 
   const onSubmit = (data: any) => {
-    // Sanitize nested relational objects and primary key from initialValues before sending to API
     const {
       id: _id, client, contract, vehicle, trailer, driver, dispatcher,
       costs, checkpoints, documents, incidents, invoiceItems, fuelLogs,
@@ -155,8 +155,6 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
     if (!cleanData.trailerId) cleanData.trailerId = null;
     if (!cleanData.contractId) cleanData.contractId = null;
     if (!cleanData.clientId) cleanData.clientId = null;
-    if (!cleanData.numeroRemito) cleanData.numeroRemito = cleanData.numeroRemito || null;
-    if (!cleanData.numeroOCCliente) cleanData.numeroOCCliente = cleanData.numeroOCCliente || null;
 
     const payload = isLocked
       ? {
@@ -185,7 +183,7 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
@@ -210,551 +208,61 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
 
         {/* Form Body */}
         <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="p-6 space-y-4 overflow-y-auto flex-1">
-          {/* Modalidad de Operación */}
-          <div className="p-3.5 bg-slate-100 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              Modalidad de Operación Logística *
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setValue('tipoOperacion', 'PROPIA')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion')
-                    ? 'bg-white dark:bg-slate-900 border-blue-500 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
-                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold">
-                  <Truck className="w-3.5 h-3.5" />
-                  <span>Flota Propia</span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Tractor + Semi + Chofer Propio</p>
-              </button>
+          <OperationModeSection
+            register={register}
+            watch={watch}
+            setValue={setValue}
+            carriers={carriers || []}
+            selectedCarrierId={selectedCarrierId}
+            carrierVehicles={carrierVehicles}
+            carrierDrivers={carrierDrivers}
+            qc={qc}
+          />
 
-              <button
-                type="button"
-                onClick={() => setValue('tipoOperacion', 'TRACCION_TERCERO_SEMI_PROPIO')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  watch('tipoOperacion') === 'TRACCION_TERCERO_SEMI_PROPIO'
-                    ? 'bg-white dark:bg-slate-900 border-purple-500 text-purple-600 dark:text-purple-400 shadow-sm font-bold'
-                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold">
-                  <Container className="w-3.5 h-3.5" />
-                  <span>Enganche Mixto</span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Tractor Externo + Semi Propio</p>
-              </button>
+          <ClientAndContractSection
+            register={register}
+            isLocked={isLocked}
+            clients={clients}
+            selectedClientId={selectedClientId}
+            clientContracts={clientContracts}
+            activeContract={activeContract}
+          />
 
-              <button
-                type="button"
-                onClick={() => setValue('tipoOperacion', 'SUBCONTRATADA_TOTAL')}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  watch('tipoOperacion') === 'SUBCONTRATADA_TOTAL'
-                    ? 'bg-white dark:bg-slate-900 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm font-bold'
-                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold">
-                  <Building2 className="w-3.5 h-3.5" />
-                  <span>Subcontratado 100%</span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Operador Logístico Externo</p>
-              </button>
-            </div>
+          <FleetAssignmentSection
+            register={register}
+            watch={watch}
+            isLocked={isLocked}
+            powerUnits={powerUnits}
+            trailers={trailers}
+            drivers={drivers}
+          />
 
-            {/* Carrier Panel if not PROPIA */}
-            {(watch('tipoOperacion') === 'SUBCONTRATADA_TOTAL' || watch('tipoOperacion') === 'TRACCION_TERCERO_SEMI_PROPIO') && (
-              <div className="pt-2 space-y-3 border-t border-slate-200 dark:border-slate-700 mt-2 animate-fade-in">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
-                        Operador Logístico *
-                      </label>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          const name = prompt('Nombre del Operador Logístico (ej: Transportes Salta SRL):');
-                          if (name?.trim()) {
-                            try {
-                              const res = await carriersApi.create({ razonSocial: name.trim() });
-                              toast.success('Operador creado exitosamente');
-                              qc.invalidateQueries({ queryKey: ['carriers-select'] });
-                              qc.invalidateQueries({ queryKey: ['carriers'] });
-                              setValue('carrierId', res.data.id);
-                            } catch {
-                              toast.error('Error al crear operador');
-                            }
-                          }
-                        }}
-                        className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-0.5"
-                      >
-                        + Nuevo Operador
-                      </button>
-                    </div>
-                    <select
-                      {...register('carrierId')}
-                      className="input w-full text-sm font-semibold border-purple-300 dark:border-purple-700"
-                    >
-                      <option value="">Seleccionar operador...</option>
-                      {carriers?.map((c: any) => (
-                        <option key={c.id} value={c.id}>{c.razonSocial}</option>
-                      ))}
-                    </select>
-                  </div>
+          <RouteAndDatesSection
+            register={register}
+            isLocked={isLocked}
+            totalLeadTime={totalLeadTime}
+          />
 
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
-                        Flete a Pagar ($)
-                      </label>
-                      {Number(watch('tarifaAcordada') || 0) > 0 && Number(watch('subcontractorFee') || 0) > 0 && (
-                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                          Spread: {formatMoney(Number(watch('tarifaAcordada') || 0) - Number(watch('subcontractorFee') || 0))}
-                        </span>
-                      )}
-                    </div>
-                    <input
-                      {...register('subcontractorFee')}
-                      type="number"
-                      step="any"
-                      onChange={(e) => {
-                        const fee = Number(e.target.value) || 0;
-                        setValue('subcontractorFee', fee);
-                        setValue('costoTotal', fee);
-                      }}
-                      className="input w-full text-sm font-bold text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-700"
-                      placeholder="0.00"
-                    />
-                  </div>
-                </div>
+          <CargoAndDocsSection
+            register={register}
+            watch={watch}
+            pesoCargaKg={pesoCargaKg}
+          />
 
-                {/* Carrier resources: driver + vehicle + trailer */}
-                {selectedCarrierId && (
-                  <div className="grid grid-cols-3 gap-3 animate-fade-in">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
-                          Chofer
-                        </label>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const name = prompt('Nombre y Apellido del Chofer (ej: Juan Pérez):');
-                            if (name?.trim()) {
-                              const parts = name.trim().split(' ');
-                              const firstName = parts[0];
-                              const lastName = parts.slice(1).join(' ') || '-';
-                              try {
-                                const res = await carriersApi.createDriver(selectedCarrierId, { firstName, lastName });
-                                toast.success('Chofer agregado al operador');
-                                qc.invalidateQueries({ queryKey: ['carrier-drivers', selectedCarrierId] });
-                                setValue('carrierDriverId', res.data.id);
-                              } catch {
-                                toast.error('Error al agregar chofer');
-                              }
-                            }
-                          }}
-                          className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
-                        >
-                          + Agregar
-                        </button>
-                      </div>
-                      <select {...register('carrierDriverId')} className="input w-full text-sm border-purple-300 dark:border-purple-700">
-                        <option value="">Seleccionar chofer...</option>
-                        {carrierDrivers?.map((d: any) => (
-                          <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
-                        ))}
-                      </select>
-                    </div>
+          <FinancialsSection
+            register={register}
+            margenWatch={margenWatch}
+            handleAutoCalculateCost={handleAutoCalculateCost}
+            activeContract={activeContract}
+            calculatedTotalRate={calculatedTotalRate}
+            minWeightKg={minWeightKg}
+            baseRate={baseRate}
+            excessTn={excessTn}
+            excessKg={excessKg}
+            excessAmount={excessAmount}
+          />
 
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
-                          Camión / Tractor
-                        </label>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const patente = prompt('Patente del Camión/Tractor (ej: AA123CD):');
-                            if (patente?.trim()) {
-                              try {
-                                const res = await carriersApi.createVehicle(selectedCarrierId, { patente: patente.trim().toUpperCase(), tipo: 'TRACTOR' });
-                                toast.success('Vehículo agregado al operador');
-                                qc.invalidateQueries({ queryKey: ['carrier-vehicles', selectedCarrierId] });
-                                setValue('carrierVehicleId', res.data.id);
-                              } catch {
-                                toast.error('Error al agregar vehículo');
-                              }
-                            }
-                          }}
-                          className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
-                        >
-                          + Agregar
-                        </button>
-                      </div>
-                      <select {...register('carrierVehicleId')} className="input w-full text-sm border-purple-300 dark:border-purple-700">
-                        <option value="">Seleccionar vehículo...</option>
-                        {carrierVehicles?.map((v: any) => (
-                          <option key={v.id} value={v.id}>{v.patente} {v.tipo ? `(${v.tipo.replace('_', ' ')})` : ''}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
-                          Semi / Acoplado
-                        </label>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const patente = prompt('Patente del Semi/Acoplado (ej: AB987XY):');
-                            if (patente?.trim()) {
-                              try {
-                                const res = await carriersApi.createVehicle(selectedCarrierId, { patente: patente.trim().toUpperCase(), tipo: 'SEMIRREMOLQUE' });
-                                toast.success('Semi agregado al operador');
-                                qc.invalidateQueries({ queryKey: ['carrier-vehicles', selectedCarrierId] });
-                                setValue('carrierTrailerId', res.data.id);
-                              } catch {
-                                toast.error('Error al agregar semi');
-                              }
-                            }
-                          }}
-                          className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
-                        >
-                          + Agregar
-                        </button>
-                      </div>
-                      <select {...register('carrierTrailerId')} className="input w-full text-sm border-purple-300 dark:border-purple-700">
-                        <option value="">Sin remolque</option>
-                        {carrierVehicles?.map((v: any) => (
-                          <option key={v.id} value={v.id}>{v.patente} {v.tipo ? `(${v.tipo.replace('_', ' ')})` : ''}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Seccion 1: Cliente & Contrato */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Cliente *
-              </label>
-              <select {...register('clientId', { required: true })} className="input w-full text-sm font-medium" disabled={isLocked}>
-                <option value="">Seleccionar cliente...</option>
-                {clients?.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.razonSocial}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Contrato Corporativo
-                </label>
-                {activeContract && (
-                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-                    Base: {formatMoney(activeContract.tarifaBase)}
-                  </span>
-                )}
-              </div>
-              <select {...register('contractId')} className="input w-full text-sm font-medium" disabled={isLocked || !selectedClientId}>
-                <option value="">{selectedClientId ? 'Sin contrato específico' : 'Seleccione cliente primero...'}</option>
-                {clientContracts?.map((c: any) => (
-                  <option key={c.id} value={c.id}>#{c.numero} — {c.descripcion || 'Contrato Estándar'}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Seccion 2: Asignación Flota Propia (Condicional según modalidad) */}
-          {watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion') ? (
-            <div className="grid grid-cols-2 gap-4 p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded-2xl">
-              <div className="col-span-2 text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">
-                Recursos Flota Propia *
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Unidad Tractora / Camión *
-                </label>
-                <select
-                  {...register('vehicleId', { required: watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion') })}
-                  className="input w-full text-sm font-medium"
-                  disabled={isLocked}
-                >
-                  <option value="">Seleccionar vehículo...</option>
-                  {powerUnits?.map((v: any) => (
-                    <option key={v.id} value={v.id}>{v.patente} — {v.marca} {v.modelo} ({v.tipo})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Semi / Acoplado (Opcional)
-                </label>
-                <select {...register('trailerId')} className="input w-full text-sm font-medium" disabled={isLocked}>
-                  <option value="">Sin remolque (Solo chasis)</option>
-                  {trailers?.map((v: any) => (
-                    <option key={v.id} value={v.id}>{v.patente} — {v.tipo?.replace('_', ' ')}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Conductor Asignado *
-                </label>
-                <select
-                  {...register('driverId', { required: watch('tipoOperacion') === 'PROPIA' || !watch('tipoOperacion') })}
-                  className="input w-full text-sm font-medium"
-                  disabled={isLocked}
-                >
-                  <option value="">Seleccionar conductor...</option>
-                  {drivers?.map((d: any) => (
-                    <option key={d.id} value={d.id}>
-                      {d.firstName} {d.lastName} {d.habilitadoCargasPeligrosas ? '⚡ (Hab. Peligrosas)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          ) : watch('tipoOperacion') === 'TRACCION_TERCERO_SEMI_PROPIO' ? (
-            <div className="p-3.5 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/50 rounded-2xl space-y-2">
-              <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">
-                Remolque / Semi de Flota Propia (Enganche Mixto)
-              </label>
-              <select {...register('trailerId')} className="input w-full text-sm font-medium" disabled={isLocked}>
-                <option value="">Seleccionar semi de nuestra flota...</option>
-                {trailers?.map((v: any) => (
-                  <option key={v.id} value={v.id}>{v.patente} — {v.tipo?.replace('_', ' ')}</option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-
-          {/* Seccion 3: Ruta & Fechas */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Origen *
-              </label>
-              <input {...register('origen', { required: true })} className="input w-full text-sm" placeholder="Ej: Salta" disabled={isLocked} />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Destino *
-              </label>
-              <input {...register('destino', { required: true })} className="input w-full text-sm" placeholder="Ej: Mariana" disabled={isLocked} />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Fecha y Hora de Salida *
-              </label>
-              <input {...register('fechaSalidaProgramada', { required: true })} type="datetime-local" className="input w-full text-sm" disabled={isLocked} />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Llegada Estimada
-                </label>
-                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {totalLeadTime}h Lead Time Total
-                </span>
-              </div>
-              <input {...register('fechaLlegadaEstimada')} type="datetime-local" className="input w-full text-sm" disabled={isLocked} />
-            </div>
-
-            {/* Fechas Reales */}
-            <div>
-              <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <CalendarCheck className="w-3.5 h-3.5" /> Salida Real
-              </label>
-              <input {...register('fechaSalidaReal')} type="datetime-local" className="input w-full text-sm border-emerald-300 dark:border-emerald-700/50" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                <CalendarCheck className="w-3.5 h-3.5" /> Llegada Real
-              </label>
-              <input {...register('fechaLlegadaReal')} type="datetime-local" className="input w-full text-sm border-emerald-300 dark:border-emerald-700/50" />
-            </div>
-          </div>
-
-          {/* Seccion 4: Documentos & Carga (Con recuadro naranja destacado para Remito) */}
-          <div className="col-span-2 p-3.5 bg-amber-50/90 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700/60 rounded-2xl shadow-sm space-y-3">
-            <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300 font-bold text-xs">
-              <FileCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span>Documentación de Ruta & Ticket de Balanza</span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">
-                  N° Remito Digital / Balanza
-                </label>
-                <input
-                  {...register('numeroRemito')}
-                  className="input w-full text-sm font-mono font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-amber-300 dark:border-amber-700/60 focus:border-amber-500 focus:ring-amber-500"
-                  placeholder="00001-00007000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 uppercase tracking-wider mb-1">
-                  N° Orden de Compra (OC)
-                </label>
-                <input
-                  {...register('numeroOCCliente')}
-                  className="input w-full text-sm font-mono font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white border-amber-300 dark:border-amber-700/60 focus:border-amber-500 focus:ring-amber-500"
-                  placeholder="OC N°4500004664-4"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Tipo de Carga
-              </label>
-              <input {...register('tipoCarga')} className="input w-full text-sm" placeholder="SALMUERA" />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Peso Carga (kg)
-                </label>
-                {pesoCargaKg > 0 && (
-                  <span className="text-[11px] font-bold text-slate-500">{(pesoCargaKg / 1000).toFixed(1)} Tn</span>
-                )}
-              </div>
-              <input {...register('pesoCarga')} type="number" className="input w-full text-sm" placeholder="32550" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Distancia Estimada (KM)
-              </label>
-              <input {...register('distanciaKm')} type="number" className="input w-full text-sm" placeholder="1200" />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Clasificación Especial
-              </label>
-              <select {...register('esCargaPeligrosa')} className="input w-full text-sm">
-                <option value="false">Carga General Estándar</option>
-                <option value="true">⚠ CARGA PELIGROSA / UN</option>
-              </select>
-            </div>
-
-            <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Estado del Viaje
-              </label>
-              <select {...register('status')} className="input w-full text-sm font-semibold">
-                <option value="PENDIENTE">Pendiente</option>
-                <option value="PROGRAMADO">Programado</option>
-                <option value="EN_CURSO">En Curso</option>
-                <option value="FINALIZADO">Finalizado</option>
-                <option value="CANCELADO">Cancelado</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Seccion 5: Bloque Financiero Impecable (Tarifa, Costo Estimado & Margen Bruto) */}
-          <div className="p-4 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
-            <div className="grid grid-cols-3 gap-3">
-              {/* Tarifa Acordada */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Tarifa Acordada ($)
-                </label>
-                <input
-                  {...register('tarifaAcordada')}
-                  type="number"
-                  step="any"
-                  className="input w-full text-sm font-bold text-blue-600 dark:text-blue-400"
-                  placeholder="0.00"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">Facturación al cliente</span>
-              </div>
-
-              {/* Costo Estimado */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Costo Estimado ($)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleAutoCalculateCost}
-                    className="px-2 py-0.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 border border-amber-500/20"
-                    title="Calcular costo automáticamente en base a la distancia en KM"
-                  >
-                    <Zap className="w-3 h-3" /> Auto por KM
-                  </button>
-                </div>
-                <input
-                  {...register('costoTotal')}
-                  type="number"
-                  step="any"
-                  className="input w-full text-sm font-bold text-slate-900 dark:text-white"
-                  placeholder="0.00"
-                />
-                <span className="text-[10px] text-slate-400 mt-1 block">Combustible, peajes, chofer</span>
-              </div>
-
-              {/* Margen Bruto */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                  Margen Bruto ($)
-                </label>
-                <div className={`input w-full text-sm font-black flex items-center ${
-                  margenWatch >= 0
-                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800'
-                    : 'text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800'
-                }`}>
-                  {formatMoney(margenWatch)}
-                </div>
-                <span className="text-[10px] text-slate-400 mt-1 block">Tarifa - Costo</span>
-              </div>
-            </div>
-
-            {/* Desglose por Contrato */}
-            {activeContract && (
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1.5">
-                <div className="flex items-center justify-between font-bold text-amber-900 dark:text-amber-300">
-                  <span className="flex items-center gap-1.5">
-                    <Calculator className="w-4 h-4 text-amber-600" /> Desglose por Contrato ({activeContract.numero})
-                  </span>
-                  <span className="text-sm font-extrabold">{formatMoney(calculatedTotalRate)}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-slate-700 dark:text-slate-300 pt-1 text-[11px]">
-                  <div>Base garantizada: <strong>{(minWeightKg / 1000).toFixed(0)} Tn</strong> → {formatMoney(baseRate)}</div>
-                  <div>Excedente: <strong className="text-amber-600 dark:text-amber-400">+{excessTn.toFixed(1)} Tn (+{excessKg.toLocaleString('es-AR')} kg)</strong></div>
-                  <div>Monto Extra: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">+{formatMoney(excessAmount)}</strong></div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Notas */}
-          <div>
+          <div className="pt-2">
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               Notas & Observaciones de Balanza
             </label>

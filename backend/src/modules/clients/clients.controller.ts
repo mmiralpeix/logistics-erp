@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Clients')
 @ApiBearerAuth('JWT')
@@ -26,18 +28,21 @@ export class ClientsController {
   }
 
   @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTANT)
   @ApiOperation({ summary: 'Crear cliente' })
   create(@Body() dto: CreateClientDto) {
     return this.clientsService.create(dto);
   }
 
   @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTANT)
   @ApiOperation({ summary: 'Actualizar cliente' })
   update(@Param('id') id: string, @Body() dto: UpdateClientDto) {
     return this.clientsService.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Eliminar cliente (soft delete)' })
   remove(@Param('id') id: string) {
     return this.clientsService.remove(id);
@@ -56,8 +61,10 @@ export class ClientsController {
   }
 
   @Post(':id/contracts')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTANT)
   @ApiOperation({ summary: 'Crear Órden de Compra / Contrato para el cliente' })
   createContract(@Param('id') id: string, @Body() dto: any) {
     return this.clientsService.createContract(id, dto);
   }
 }
+

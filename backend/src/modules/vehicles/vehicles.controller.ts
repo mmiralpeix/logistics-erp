@@ -3,7 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { VehiclesService } from './vehicles.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { VehicleStatus, VehicleType } from '@prisma/client';
+import { VehicleStatus, VehicleType, UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Vehicles')
 @ApiBearerAuth('JWT')
@@ -31,13 +32,22 @@ export class VehiclesController {
 
   @Get(':id') findOne(@Param('id') id: string) { return this.vehiclesService.findOne(id); }
 
-  @Post() create(@Body() dto: CreateVehicleDto) { return this.vehiclesService.create(dto); }
+  @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  create(@Body() dto: CreateVehicleDto) { return this.vehiclesService.create(dto); }
 
-  @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateVehicleDto) { return this.vehiclesService.update(id, dto); }
+  @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  update(@Param('id') id: string, @Body() dto: UpdateVehicleDto) { return this.vehiclesService.update(id, dto); }
 
-  @Patch(':id/status') updateStatus(@Param('id') id: string, @Body('status') status: VehicleStatus) {
+  @Patch(':id/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  updateStatus(@Param('id') id: string, @Body('status') status: VehicleStatus) {
     return this.vehiclesService.updateStatus(id, status);
   }
 
-  @Delete(':id') remove(@Param('id') id: string) { return this.vehiclesService.remove(id); }
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  remove(@Param('id') id: string) { return this.vehiclesService.remove(id); }
 }
+

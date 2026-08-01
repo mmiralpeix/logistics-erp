@@ -3,8 +3,11 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
-import { TripStatus } from '@prisma/client';
+import { CreateBatchTripDto } from './dto/create-batch-trip.dto';
+import { AddTripCostDto } from './dto/add-trip-cost.dto';
+import { TripStatus, UserRole } from '@prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Trips')
 @ApiBearerAuth('JWT')
@@ -18,13 +21,14 @@ export class TripsController {
     @Query('vehicleId') vehicleId?: string,
     @Query('driverId') driverId?: string,
     @Query('clientId') clientId?: string,
+    @Query('tipoOperacion') tipoOperacion?: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('search') search?: string,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    return this.tripsService.findAll({ status, vehicleId, driverId, clientId, from, to, search, page, limit });
+    return this.tripsService.findAll({ status, vehicleId, driverId, clientId, tipoOperacion, from, to, search, page, limit });
   }
 
   @Get('gantt')
@@ -38,32 +42,40 @@ export class TripsController {
   @Get(':id') findOne(@Param('id') id: string) { return this.tripsService.findOne(id); }
 
   @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Crear viaje con validación de conflictos y cálculo de lead time' })
   create(@Body() dto: CreateTripDto, @CurrentUser('id') userId: string) {
     return this.tripsService.create(dto, userId);
   }
 
   @Post('batch')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Programar despacho multi-unidad (Convoy) en lote' })
-  createBatch(@Body() dto: any, @CurrentUser('id') userId: string) {
+  createBatch(@Body() dto: CreateBatchTripDto, @CurrentUser('id') userId: string) {
     return this.tripsService.createBatch(dto, userId);
   }
 
-  @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateTripDto) { return this.tripsService.update(id, dto); }
+  @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
+  update(@Param('id') id: string, @Body() dto: UpdateTripDto) { return this.tripsService.update(id, dto); }
 
   @Patch(':id/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Cambiar estado del viaje' })
   updateStatus(@Param('id') id: string, @Body('status') status: TripStatus, @Body('notes') notes?: string) {
     return this.tripsService.updateStatus(id, status, notes);
   }
 
   @Post(':id/costs')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Agregar costo al viaje' })
-  addCost(@Param('id') id: string, @Body() body: any) { return this.tripsService.addCost(id, body); }
+  addCost(@Param('id') id: string, @Body() body: AddTripCostDto) { return this.tripsService.addCost(id, body); }
 
   @Patch(':id/reschedule')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Reprogramar viaje con recálculo automático de llegada' })
   reschedule(@Param('id') id: string, @Body() body: { newDeparture: string; reason: string }) {
     return this.tripsService.reschedule(id, new Date(body.newDeparture), body.reason);
   }
 }
+

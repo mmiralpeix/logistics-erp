@@ -2,10 +2,13 @@ import { Controller, Get, Query, Res } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ReportsService } from './reports.service';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Reports')
 @ApiBearerAuth('JWT')
 @Controller('reports')
+@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTANT)
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
 
@@ -47,3 +50,4 @@ export class ReportsController {
     res.end(buffer);
   }
 }
+

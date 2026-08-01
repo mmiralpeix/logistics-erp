@@ -15,6 +15,8 @@ import { CarriersService } from './carriers.service';
 import { CreateCarrierDto } from './dto/create-carrier.dto';
 import { UpdateCarrierDto } from './dto/update-carrier.dto';
 import { CreateCarrierVehicleDto, CreateCarrierDriverDto } from './dto/carrier-resources.dto';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Carriers')
 @ApiBearerAuth()
@@ -48,18 +50,21 @@ export class CarriersController {
   }
 
   @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Crear operador logístico' })
   create(@Body() dto: CreateCarrierDto) {
     return this.carriersService.create(dto);
   }
 
   @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Actualizar operador logístico' })
   update(@Param('id') id: string, @Body() dto: UpdateCarrierDto) {
     return this.carriersService.update(id, dto);
   }
 
   @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Desactivar operador logístico' })
   remove(@Param('id') id: string) {
     return this.carriersService.remove(id);
@@ -76,6 +81,7 @@ export class CarriersController {
   }
 
   @Post(':carrierId/vehicles')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Agregar vehículo a un operador' })
   createVehicle(
     @Param('carrierId') carrierId: string,
@@ -85,6 +91,7 @@ export class CarriersController {
   }
 
   @Patch('vehicles/:vehicleId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Actualizar vehículo de operador' })
   updateVehicle(
     @Param('vehicleId') vehicleId: string,
@@ -94,6 +101,7 @@ export class CarriersController {
   }
 
   @Delete('vehicles/:vehicleId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Desactivar vehículo de operador' })
   removeVehicle(@Param('vehicleId') vehicleId: string) {
     return this.carriersService.removeVehicle(vehicleId);
@@ -110,6 +118,7 @@ export class CarriersController {
   }
 
   @Post(':carrierId/drivers')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Agregar chofer a un operador' })
   createDriver(
     @Param('carrierId') carrierId: string,
@@ -119,6 +128,7 @@ export class CarriersController {
   }
 
   @Patch('drivers/:driverId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Actualizar chofer de operador' })
   updateDriver(
     @Param('driverId') driverId: string,
@@ -128,8 +138,10 @@ export class CarriersController {
   }
 
   @Delete('drivers/:driverId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   @ApiOperation({ summary: 'Desactivar chofer de operador' })
   removeDriver(@Param('driverId') driverId: string) {
     return this.carriersService.removeDriver(driverId);
   }
 }
+

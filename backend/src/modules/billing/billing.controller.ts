@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
-import { InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus, UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Billing')
 @ApiBearerAuth('JWT')
@@ -17,14 +18,20 @@ export class BillingController {
   @Get('invoices/stats') getStats() { return this.billingService.getStats(); }
   @Get('invoices/overdue') getOverdue() { return this.billingService.getOverdue(); }
   @Get('invoices/:id') findOne(@Param('id') id: string) { return this.billingService.findOne(id); }
-  @Post('invoices') create(@Body() body: any) { return this.billingService.create(body); }
+
+  @Post('invoices')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
+  create(@Body() body: any) { return this.billingService.create(body); }
 
   @Patch('invoices/:id/status')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
   updateStatus(@Param('id') id: string, @Body('status') status: InvoiceStatus) { return this.billingService.updateStatus(id, status); }
 
   @Post('invoices/from-trip')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Generar factura desde viaje' })
   createFromTrip(@Body() body: { tripId: string; clientId: string; tipo: string }) {
     return this.billingService.createFromTrip(body.tripId, body.clientId, body.tipo);
   }
 }
+

@@ -3,6 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { DriversService } from './drivers.service';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Drivers')
 @ApiBearerAuth('JWT')
@@ -22,13 +24,21 @@ export class DriversController {
 
   @Get(':id') findOne(@Param('id') id: string) { return this.driversService.findOne(id); }
 
-  @Post() create(@Body() dto: CreateDriverDto) { return this.driversService.create(dto); }
+  @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  create(@Body() dto: CreateDriverDto) { return this.driversService.create(dto); }
 
-  @Patch(':id') update(@Param('id') id: string, @Body() dto: UpdateDriverDto) { return this.driversService.update(id, dto); }
+  @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  update(@Param('id') id: string, @Body() dto: UpdateDriverDto) { return this.driversService.update(id, dto); }
 
-  @Delete(':id') remove(@Param('id') id: string) { return this.driversService.remove(id); }
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  remove(@Param('id') id: string) { return this.driversService.remove(id); }
 
   @Post(':id/trainings')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Agregar capacitación a conductor' })
   addTraining(@Param('id') id: string, @Body() body: any) { return this.driversService.addTraining(id, body); }
 }
+

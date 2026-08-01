@@ -3,6 +3,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Response } from 'express';
 import { DocumentsService } from './documents.service';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Documents')
 @ApiBearerAuth('JWT')
@@ -29,11 +31,15 @@ export class DocumentsController {
   @Get(':id') findOne(@Param('id') id: string) { return this.documentsService.findOne(id); }
 
   @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER, UserRole.ACCOUNTANT)
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   create(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
     return this.documentsService.create(file, body);
   }
 
-  @Delete(':id') remove(@Param('id') id: string) { return this.documentsService.remove(id); }
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  remove(@Param('id') id: string) { return this.documentsService.remove(id); }
 }
+

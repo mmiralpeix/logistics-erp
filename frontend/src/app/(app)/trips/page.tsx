@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsApi, clientsApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatMoney, formatDate, formatDateTime, TRIP_STATUS_MAP } from '@/lib/utils';
-import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers, Printer } from 'lucide-react';
+import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers, Printer, Users, Link2, ShieldAlert, Droplets, Package, Flame } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TripModal } from '@/components/trips/TripModal';
 import { BatchTripModal } from '@/components/trips/BatchTripModal';
@@ -16,6 +16,7 @@ export default function TripsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [clientFilter, setClientFilter] = useState('');
+  const [operationFilter, setOperationFilter] = useState('');
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -29,8 +30,15 @@ export default function TripsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['trips', search, statusFilter, clientFilter, page],
-    queryFn: () => tripsApi.getAll({ search, status: statusFilter || undefined, clientId: clientFilter || undefined, page, limit: 15 }).then((r) => r.data),
+    queryKey: ['trips', search, statusFilter, clientFilter, operationFilter, page],
+    queryFn: () => tripsApi.getAll({
+      search,
+      status: statusFilter || undefined,
+      clientId: clientFilter || undefined,
+      tipoOperacion: operationFilter || undefined,
+      page,
+      limit: 15
+    }).then((r) => r.data),
   });
 
   const updateStatusMutation = useMutation({
@@ -83,7 +91,66 @@ export default function TripsPage() {
       />
 
       <div className="space-y-4">
-        {/* Filters */}
+        {/* Quick Tabs por Titularidad / Modalidad de Operación */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              onClick={() => { setOperationFilter(''); setPage(1); }}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                operationFilter === ''
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>Todos los Viajes</span>
+            </button>
+
+            <button
+              onClick={() => { setOperationFilter('PROPIA'); setPage(1); }}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                operationFilter === 'PROPIA'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Truck className="w-3.5 h-3.5 text-blue-500" />
+              <span>Flota Propia (Mío)</span>
+            </button>
+
+            <button
+              onClick={() => { setOperationFilter('SUBCONTRATADA_TOTAL'); setPage(1); }}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                operationFilter === 'SUBCONTRATADA_TOTAL'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Operador Logístico (Subcontratado 100%)</span>
+            </button>
+
+            <button
+              onClick={() => { setOperationFilter('TRACCION_TERCERO_SEMI_PROPIO'); setPage(1); }}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 ${
+                operationFilter === 'TRACCION_TERCERO_SEMI_PROPIO'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/20'
+                  : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+              }`}
+            >
+              <Link2 className="w-3.5 h-3.5 text-purple-500" />
+              <span>Enganche Mixto</span>
+            </button>
+          </div>
+
+          {data?.total !== undefined && (
+            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2">
+              Mostrando <span className="font-bold text-slate-800 dark:text-white">{data?.data?.length || 0}</span> de <span className="font-bold text-slate-800 dark:text-white">{data?.total || 0}</span> viajes
+            </div>
+          )}
+        </div>
+
+        {/* Filters Bar */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[240px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -95,6 +162,13 @@ export default function TripsPage() {
               className="input pl-9"
             />
           </div>
+
+          <select value={operationFilter} onChange={(e) => { setOperationFilter(e.target.value); setPage(1); }} className="input w-56 font-medium">
+            <option value="">Todas las modalidades</option>
+            <option value="PROPIA">Flota Propia (Mío)</option>
+            <option value="SUBCONTRATADA_TOTAL">Operador Logístico (Subcontratado)</option>
+            <option value="TRACCION_TERCERO_SEMI_PROPIO">Enganche Mixto</option>
+          </select>
 
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input w-44">
             <option value="">Todos los estados</option>
@@ -148,28 +222,48 @@ export default function TripsPage() {
                         </p>
                         <div className="flex flex-wrap items-center gap-1 mt-1">
                           {trip.tipoOperacion === 'SUBCONTRATADA_TOTAL' ? (
-                            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">
-                              🤝 Subcontratado 100%
+                            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-800 flex items-center gap-1">
+                              <Users className="w-3 h-3" /> Subcontratado 100%
                             </span>
                           ) : trip.tipoOperacion === 'TRACCION_TERCERO_SEMI_PROPIO' ? (
-                            <span className="bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-purple-300 dark:border-purple-800">
-                              🔗 Enganche Mixto
+                            <span className="bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-purple-300 dark:border-purple-800 flex items-center gap-1">
+                              <Link2 className="w-3 h-3" /> Enganche Mixto
                             </span>
                           ) : (
-                            <span className="bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-blue-300 dark:border-blue-800">
-                              🚚 Flota Propia
+                            <span className="bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-blue-300 dark:border-blue-800 flex items-center gap-1">
+                              <Truck className="w-3 h-3" /> Flota Propia
                             </span>
                           )}
 
-                          <span className="badge badge-gray text-[10px] font-semibold">
-                            {trip.tipoCarga === 'SALMUERA' ? '🧪 SALMUERA' : trip.tipoCarga === 'CARRETON' ? '🚜 CARRETON' : trip.tipoCarga || 'GENERAL'}
+                          <span className="badge badge-gray text-[10px] font-semibold flex items-center gap-1">
+                            {trip.tipoCarga === 'SALMUERA' || trip.tipoCarga === 'Salmuera' ? (
+                              <>
+                                <Droplets className="w-3 h-3 text-blue-500" /> Salmuera
+                              </>
+                            ) : trip.tipoCarga === 'CARRETON' || trip.tipoCarga === 'Carretón' ? (
+                              <>
+                                <Truck className="w-3 h-3 text-amber-500" /> Carretón
+                              </>
+                            ) : trip.tipoCarga === 'Ácido' ? (
+                              <>
+                                <ShieldAlert className="w-3 h-3 text-rose-500" /> Ácido
+                              </>
+                            ) : (
+                              <>
+                                <Package className="w-3 h-3 text-slate-500" /> {trip.tipoCarga || 'General'}
+                              </>
+                            )}
                           </span>
                           {trip.convoyCode && (
-                            <span className="badge badge-blue text-[10px] font-bold" title="Viaje emitido en convoy multi-unidad">
-                              🚀 {trip.convoyCode}
+                            <span className="badge badge-blue text-[10px] font-bold flex items-center gap-1" title="Viaje emitido en convoy multi-unidad">
+                              <Layers className="w-3 h-3 text-blue-600" /> {trip.convoyCode}
                             </span>
                           )}
-                          {trip.esCargaPeligrosa && <span className="badge badge-red text-[10px]">⚠ Peligrosa</span>}
+                          {trip.esCargaPeligrosa && (
+                            <span className="badge badge-red text-[10px] flex items-center gap-1">
+                              <ShieldAlert className="w-3 h-3 text-red-500" /> Peligrosa
+                            </span>
+                          )}
                         </div>
                       </td>
 

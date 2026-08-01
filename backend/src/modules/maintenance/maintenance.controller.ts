@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { MaintenanceService } from './maintenance.service';
-import { MaintenanceStatus, MaintenanceType } from '@prisma/client';
+import { MaintenanceStatus, MaintenanceType, UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Maintenance')
 @ApiBearerAuth('JWT')
@@ -17,7 +18,17 @@ export class MaintenanceController {
   @Get('upcoming') getUpcoming() { return this.maintenanceService.getUpcoming(); }
   @Get('costs-by-vehicle') getCosts() { return this.maintenanceService.getCostsByVehicle(); }
   @Get(':id') findOne(@Param('id') id: string) { return this.maintenanceService.findOne(id); }
-  @Post() create(@Body() body: any) { return this.maintenanceService.create(body); }
-  @Patch(':id') update(@Param('id') id: string, @Body() body: any) { return this.maintenanceService.update(id, body); }
-  @Delete(':id') remove(@Param('id') id: string) { return this.maintenanceService.remove(id); }
+
+  @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  create(@Body() body: any) { return this.maintenanceService.create(body); }
+
+  @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  update(@Param('id') id: string, @Body() body: any) { return this.maintenanceService.update(id, body); }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  remove(@Param('id') id: string) { return this.maintenanceService.remove(id); }
 }
+
