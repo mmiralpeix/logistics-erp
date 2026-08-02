@@ -251,7 +251,7 @@ async function main() {
 
   const vehicle1 = await prisma.vehicle.upsert({
     where: { patente: 'AB 123 CD' },
-    update: {},
+    update: { status: VehicleStatus.EN_VIAJE },
     create: {
       patente: 'AB 123 CD',
       marca: 'Scania',
@@ -261,7 +261,7 @@ async function main() {
       capacidadKg: 40000,
       capacidadM3: 80,
       tipoCarga: 'General / Granel',
-      status: VehicleStatus.DISPONIBLE,
+      status: VehicleStatus.EN_VIAJE,
       color: 'Blanco',
       numeroChasis: 'YS2R6X20005392145',
       numeroMotor: 'DC1301',
@@ -449,7 +449,7 @@ async function main() {
       capacidadKg: 65000,
       kilometraje: 98400,
       tipoCarga: 'Tracción Pesada / Minería',
-      status: VehicleStatus.DISPONIBLE,
+      status: VehicleStatus.EN_VIAJE,
       color: 'Rojo',
       vencimientoSeguro: future(9),
       vencimientoITV: future(5),
@@ -580,7 +580,7 @@ async function main() {
 
   const trip1 = await prisma.trip.create({
     data: {
-      numero: 'VJ-2024-001',
+      numero: 'VJ-2024-000001',
       clientId: client1.id,
       vehicleId: vehicle1.id,
       driverId: driver1.id,
@@ -607,6 +607,8 @@ async function main() {
       numeroOCCliente: 'OC-BBC-4091',
       esMineria: true,
       tarifaAcordada: 185000,
+      costoTotal: 57300,
+      margenBruto: 127700,
       notas: 'Viaje prioritario - coordinar con supervisor de planta',
     },
   });
@@ -629,7 +631,7 @@ async function main() {
 
   const trip2 = await prisma.trip.create({
     data: {
-      numero: 'VJ-2024-002',
+      numero: 'VJ-2024-000002',
       clientId: client3.id,
       vehicleId: vehicle3.id,
       driverId: driver3.id,
@@ -653,6 +655,8 @@ async function main() {
       descripcionCarga: 'Nafta virgen - Clase 3 Líquidos Inflamables',
       esCargaPeligrosa: true,
       tarifaAcordada: 420000,
+      costoTotal: 250000,
+      margenBruto: 170000,
       notas: 'Carga peligrosa - requiere documentación completa',
     },
   });
@@ -676,7 +680,7 @@ async function main() {
 
   const trip3 = await prisma.trip.create({
     data: {
-      numero: 'VJ-2024-003',
+      numero: 'VJ-2024-000003',
       clientId: client2.id,
       vehicleId: vehicle2.id,
       driverId: driver2.id,
@@ -707,7 +711,7 @@ async function main() {
 
   const trip4 = await prisma.trip.create({
     data: {
-      numero: 'VJ-2024-004',
+      numero: 'VJ-2024-000004',
       clientId: clientLitio.id,
       contractId: contractLitio.id,
       vehicleId: vehicleTractor.id,
@@ -730,6 +734,8 @@ async function main() {
       pesoExcedenteKg: 4500,
       montoExcedente: 65250,
       tarifaAcordada: 445250,
+      costoTotal: 220000,
+      margenBruto: 225250,
       numeroRemito: 'R-0002-00045123',
       numeroOCCliente: 'OC-LMA-2024-089',
       descripcionCarga: 'Salmuera Concentrada de Litio (34,5 Tn Balanza)',
@@ -740,7 +746,7 @@ async function main() {
 
   const trip5 = await prisma.trip.create({
     data: {
-      numero: 'VJ-2024-005',
+      numero: 'VJ-2024-000005',
       clientId: clientBBC.id,
       vehicleId: vehicleTractor.id,
       trailerId: vehicleCarreton.id,
@@ -768,6 +774,43 @@ async function main() {
       esMineria: true,
     },
   });
+
+  // Generar 45 viajes adicionales para QA audit y stress test (Total 50)
+  const opTypes = ['PROPIA', 'TRACCION_TERCERO_SEMI_PROPIO', 'SUBCONTRATADA_TOTAL'];
+  const statuses = [TripStatus.PENDIENTE, TripStatus.PROGRAMADO, TripStatus.EN_CURSO, TripStatus.FINALIZADO];
+
+  for (let i = 6; i <= 50; i++) {
+    const padded = String(i).padStart(6, '0');
+    const opType = opTypes[(i - 6) % opTypes.length];
+    const status = statuses[(i - 6) % statuses.length];
+    const isSubcontracted = opType === 'SUBCONTRATADA_TOTAL';
+    const tarifa = 200000 + i * 5000;
+    const costo = 120000 + i * 3000;
+    const margen = tarifa - costo;
+
+    await prisma.trip.create({
+      data: {
+        numero: `VJ-2024-${padded}`,
+        clientId: (i % 2 === 0) ? client1.id : client2.id,
+        vehicleId: isSubcontracted ? null : vehicle1.id,
+        driverId: isSubcontracted ? null : (i % 2 === 0 ? driver1.id : driver2.id),
+        dispatcherId: dispatcher.id,
+        origen: 'Comodoro Rivadavia, Chubut',
+        destino: 'Añelo, Neuquén',
+        fechaSalidaProgramada: addDays(now, i - 10),
+        fechaLlegadaEstimada: addDays(now, i - 9),
+        status,
+        tipoOperacion: opType,
+        subcontractorName: isSubcontracted ? 'Logística Express S.A.' : null,
+        subcontractorFee: isSubcontracted ? 150000 : null,
+        tipoCarga: 'Carga General',
+        pesoCarga: 25000,
+        tarifaAcordada: tarifa,
+        costoTotal: costo,
+        margenBruto: margen,
+      },
+    });
+  }
 
   console.log('✅ Viajes creados');
 
