@@ -6,9 +6,11 @@ import { Header } from '@/components/layout/Header';
 import { formatMoney, formatDate, formatDateTime, TRIP_STATUS_MAP } from '@/lib/utils';
 import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers, Printer, Users, Link2, ShieldAlert, Droplets, Package, Flame } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { TripModal } from '@/components/trips/TripModal';
-import { BatchTripModal } from '@/components/trips/BatchTripModal';
-import { WaybillModal } from '@/components/trips/WaybillModal';
+import dynamic from 'next/dynamic';
+
+const TripModal = dynamic(() => import('@/components/trips/TripModal').then((mod) => mod.TripModal), { ssr: false });
+const BatchTripModal = dynamic(() => import('@/components/trips/BatchTripModal').then((mod) => mod.BatchTripModal), { ssr: false });
+const WaybillModal = dynamic(() => import('@/components/trips/WaybillModal').then((mod) => mod.WaybillModal), { ssr: false });
 
 const STATUSES = Object.entries(TRIP_STATUS_MAP);
 
