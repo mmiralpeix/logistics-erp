@@ -67,7 +67,7 @@ async function bootstrap() {
     swaggerOptions: { persistAuthorization: true },
   });
 
-  const port = process.env.PORT || 3001;
+  const port = parseInt(process.env.PORT || '3001', 10);
   await app.listen(port, '0.0.0.0');
   console.log(`\n🚀 LogisticsPro ERP Backend corriendo en el puerto ${port}`);
   console.log(`📚 Swagger Docs disponible en /api/docs\n`);
