@@ -18,7 +18,9 @@
     "frontend": [
       "nextjs-app-router",
       "react-components",
-      "tailwind-design-system"
+      "tailwind-design-system",
+      "frontend-design",
+      "shadcn-ui-expert"
     ],
     "qa": [
       "jest-unit-testing",

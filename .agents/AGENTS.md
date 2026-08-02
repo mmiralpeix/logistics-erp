@@ -15,4 +15,23 @@ Whenever the user requests "GIT" or asks to save/sync changes:
 3. **Context Purging**: When delegating or completing tasks, release skill context to keep prompt token consumption under 15% of context window.
 4. **Self-Healing Loop**: If a test or build fails, `qa-engineer` or `code-reviewer` must trigger the self-healing loop back to `backend-dev` or `frontend-dev` with exact log diagnostics without modifying production files directly.
 
+## Frontend Design & Component Skills (Obligatorias para UI)
+Cualquier agente que modifique archivos en `frontend/src/app/`, `frontend/src/components/` o `frontend/src/lib/` **DEBE** leer y aplicar las siguientes skills **antes** de escribir código:
+
+### `frontend-design` → Dirección Visual
+📍 `.agents/skills/frontend-design/SKILL.md`
+- Principios de diseño de Anthropic (anti-template, intencionalidad visual)
+- Design System tokens y clases permitidas (prohibido inventar nuevos)
+- Estética de referencia: Linear, Stripe, Vercel, Notion
+- Reglas de accesibilidad WCAG AA y responsive mobile-first
+- Checklist de verificación pre-commit
+
+### `shadcn-ui-expert` → Implementación Técnica de Componentes
+📍 `.agents/skills/shadcn-ui-expert/SKILL.md`
+- Componentes shadcn/ui: Dialog, Sheet, Command, Toast, Popover, DataTable, Skeleton
+- Composición (compound pattern), variants con CVA
+- Formularios con React Hook Form + Zod
+- Estados de carga, vacío y error
+- Patrones específicos para logística empresarial (KPI, Timeline, StatusBadge)
+
 
