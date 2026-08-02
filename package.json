@@ -14,8 +14,8 @@
     "electron": "electron .",
     "build:backend": "cd backend && npm install && npm run build",
     "build:frontend": "cd frontend && npm run build",
-    "build": "npm run build:backend",
-    "start": "cd backend && npm run start:prod",
+    "build": "cd backend && npm install && npm run build",
+    "start": "node backend/dist/main.js || node dist/main.js",
     "dist:win": "npm run build && electron-builder --win --x64",
     "dist:preview": "electron-builder --win --x64 --dir"
   },
