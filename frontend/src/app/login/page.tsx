@@ -80,7 +80,11 @@ export default function LoginPage() {
       toast.success(`¡Bienvenido, ${res.data.user.firstName}! Conectado como ${roleLabels[res.data.user.role] || res.data.user.role}`);
       router.push('/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Credenciales inválidas');
+      if (!err.response) {
+        toast.error('Error de conexión: No se pudo conectar al servidor API backend. Verifique la URL de Railway.');
+      } else {
+        toast.error(err.response?.data?.message || 'Credenciales inválidas');
+      }
     }
   };
 
