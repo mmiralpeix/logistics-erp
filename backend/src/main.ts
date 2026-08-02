@@ -15,8 +15,17 @@ async function bootstrap() {
   // Security headers
   app.use(helmet());
 
+  const allowedOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
+    : ['http://localhost:3000'];
+
   app.enableCors({
-    origin: [process.env.FRONTEND_URL || 'http://localhost:3000', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -59,9 +68,9 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
-  console.log(`\n🚀 LogisticsPro ERP Backend corriendo en: http://localhost:${port}/api`);
-  console.log(`📚 Swagger Docs: http://localhost:${port}/api/docs\n`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`\n🚀 LogisticsPro ERP Backend corriendo en el puerto ${port}`);
+  console.log(`📚 Swagger Docs disponible en /api/docs\n`);
 }
 
 bootstrap();

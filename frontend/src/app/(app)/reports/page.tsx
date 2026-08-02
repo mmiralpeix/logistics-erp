@@ -134,7 +134,7 @@ export default function ReportsPage() {
         <div className="card p-5">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-300 mb-2">Acceso a la API</h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">Todos los módulos disponen de API REST documentada. Intégralos con tus sistemas existentes.</p>
-          <a href="http://localhost:3001/api/docs" target="_blank" rel="noopener noreferrer" className="btn-secondary">
+          <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/docs`} target="_blank" rel="noopener noreferrer" className="btn-secondary">
             <FileSpreadsheet className="w-4 h-4" /> Abrir Swagger API Docs
           </a>
         </div>
