@@ -4,10 +4,10 @@
   "description": "LogisticsPro ERP - Backend API",
   "main": "dist/main.js",
   "scripts": {
-    "build": "prisma generate && nest build",
+    "build": "prisma generate && prisma db push && nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch",
-    "start:prod": "prisma db push && node dist/main",
+    "start:prod": "node dist/main",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
