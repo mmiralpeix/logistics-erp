@@ -1,9 +1,11 @@
 'use client';
-import { Bell, Sun, Moon, Menu } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, Sun, Moon, Menu, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api';
 import { useTheme } from '@/lib/theme';
 import { useLayoutStore } from '@/lib/layoutStore';
+import { CommandMenu } from './CommandMenu';
 
 interface HeaderProps {
   title: string;
@@ -14,6 +16,7 @@ interface HeaderProps {
 export function Header({ title, subtitle, actions }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { toggleMobileMenu } = useLayoutStore();
+  const [commandOpen, setCommandOpen] = useState(false);
 
   const { data: alerts } = useQuery({
     queryKey: ['expiring-alerts'],
@@ -42,6 +45,19 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+          {/* Global Search / Command Menu Button */}
+          <button
+            onClick={() => setCommandOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-700/80 rounded-xl transition-all border border-slate-200 dark:border-slate-700 font-medium"
+            title="Buscar módulo o acción (Ctrl+K)"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Buscar...</span>
+            <kbd className="hidden md:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-500 dark:text-slate-400">
+              Ctrl+K
+            </kbd>
+          </button>
+
           {actions && <div className="flex items-center gap-2">{actions}</div>}
 
           {/* Theme Toggle Button */}
@@ -74,6 +90,8 @@ export function Header({ title, subtitle, actions }: HeaderProps) {
           </button>
         </div>
       </div>
+
+      <CommandMenu isOpen={commandOpen} onClose={() => setCommandOpen(false)} />
     </header>
   );
 }

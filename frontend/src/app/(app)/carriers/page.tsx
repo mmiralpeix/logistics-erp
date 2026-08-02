@@ -5,6 +5,7 @@ import { carriersApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { Plus, Search, Building2, Truck, User, Edit2, ChevronDown, ChevronRight, Phone, Mail, MapPin, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 function CarrierModal({ carrier, onClose }: { carrier?: any; onClose: () => void }) {
   const qc = useQueryClient();
@@ -312,11 +313,21 @@ export default function CarriersPage() {
                 {isLoading ? (
                   <tr><td colSpan={7} className="text-center py-12 text-slate-500">Cargando operadores...</td></tr>
                 ) : data?.data?.length === 0 ? (
-                  <tr><td colSpan={7} className="text-center py-12">
-                    <Building2 className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-slate-600" />
-                    <p className="text-slate-500 dark:text-slate-400">No hay operadores logísticos registrados</p>
-                    <p className="text-xs text-slate-400 mt-1">Creá tu primer operador para subcontratar viajes</p>
-                  </td></tr>
+                  <tr>
+                    <td colSpan={7} className="p-8">
+                      <EmptyState
+                        icon={Building2}
+                        title="Sin operadores logísticos"
+                        description="No hay transportistas subcontratados registrados en el sistema. Registre su primer operador para asignarle viajes en modalidad tercerizada o enganche."
+                        action={
+                          <button onClick={() => setShowModal(true)} className="btn-primary text-xs px-4 py-2">
+                            <Plus className="w-4 h-4" />
+                            <span>Registrar Primer Operador</span>
+                          </button>
+                        }
+                      />
+                    </td>
+                  </tr>
                 ) : data?.data?.map((carrier: any) => (
                   <CarrierRow key={carrier.id} carrier={carrier} />
                 ))}
