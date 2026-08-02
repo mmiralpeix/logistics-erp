@@ -12,11 +12,16 @@
     "graph:serve": "powershell -ExecutionPolicy Bypass -File ./.agents/scripts/serve-graph.ps1",
     "test:agents": "powershell -ExecutionPolicy Bypass -File ./.agents/scripts/run-tests.ps1",
     "electron": "electron .",
-    "build:backend": "cd backend && npm run build",
+    "build:backend": "cd backend && npm install && npm run build",
     "build:frontend": "cd frontend && npm run build",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build": "npm run build:backend",
+    "start": "cd backend && npm run start:prod",
     "dist:win": "npm run build && electron-builder --win --x64",
     "dist:preview": "electron-builder --win --x64 --dir"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0",
+    "prisma": "^5.10.0"
   },
   "devDependencies": {
     "electron": "^29.4.0",
