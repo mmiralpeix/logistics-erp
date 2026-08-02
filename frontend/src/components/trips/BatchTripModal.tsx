@@ -154,7 +154,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
               </div>
             </div>
 
-            <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <button onClick={onClose} aria-label="Cerrar ventana" className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
               ✕
             </button>
           </div>
