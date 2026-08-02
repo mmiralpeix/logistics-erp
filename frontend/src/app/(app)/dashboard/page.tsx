@@ -52,9 +52,9 @@ export default function DashboardPage() {
         subtitle={`Actualizado: ${new Date().toLocaleString('es-AR', { timeStyle: 'short', dateStyle: 'short' })}`}
       />
 
-      <div className="p-6 space-y-6">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6 overflow-x-hidden">
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <StatCard
             icon={<Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
             label="Flota Total"
@@ -85,7 +85,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <StatCard
             icon={<Users className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
             label="Conductores"
@@ -117,7 +117,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Main Chart Card with View Switcher Carousel */}
           <div className="lg:col-span-2 card p-5 relative flex flex-col justify-between">
             {/* Chart Header with Navigation Controls */}
