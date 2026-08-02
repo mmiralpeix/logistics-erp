@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Package, Truck, ShieldCheck, Tag, Layers, MapPin, DollarSign, Image as ImageIcon } from 'lucide-react';
+import { Package, Truck, ShieldCheck, Tag, Layers, MapPin, DollarSign, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 interface SparePartModalProps {
   initialData?: any;
@@ -34,6 +34,7 @@ const VEHICLE_TYPES = [
 ];
 
 export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: SparePartModalProps) {
+  const [submitting, setSubmitting] = useState(false);
   // Extract unique brands dynamically from the loaded fleet
   const fleetBrands = Array.from(
     new Set(
@@ -66,16 +67,21 @@ export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: 
 
   const set = (k: string, v: any) => setForm((f: any) => ({ ...f, [k]: v }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const finalSku = form.sku?.trim() || `SKU-${Date.now().toString().slice(-6)}`;
-    onSave({
-      ...form,
-      sku: finalSku,
-      stockActual: Number(form.stockActual) || 0,
-      stockMinimo: Number(form.stockMinimo) || 1,
-      precioUnitario: Number(form.precioUnitario) || 0,
-    });
+    setSubmitting(true);
+    try {
+      const finalSku = form.sku?.trim() || `SKU-${Date.now().toString().slice(-6)}`;
+      await onSave({
+        ...form,
+        sku: finalSku,
+        stockActual: Number(form.stockActual) || 0,
+        stockMinimo: Number(form.stockMinimo) || 1,
+        precioUnitario: Number(form.precioUnitario) || 0,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -306,8 +312,15 @@ export function SparePartModal({ initialData, vehicles = [], onClose, onSave }: 
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancelar
             </button>
-            <button type="submit" className="btn-primary">
-              Guardar Repuesto
+            <button type="submit" disabled={submitting} className="btn-primary flex items-center gap-2">
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <span>Guardar Repuesto</span>
+              )}
             </button>
           </div>
         </form>

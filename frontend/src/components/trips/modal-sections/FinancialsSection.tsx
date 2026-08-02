@@ -1,6 +1,6 @@
 'use client';
 import { Zap, Calculator } from 'lucide-react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatWeight } from '@/lib/utils';
 
 export function FinancialsSection({
   register,
@@ -94,8 +94,8 @@ export function FinancialsSection({
             <span className="text-sm font-extrabold">{formatMoney(calculatedTotalRate)}</span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-slate-700 dark:text-slate-300 pt-1 text-[11px]">
-            <div>Base garantizada: <strong>{(minWeightKg / 1000).toFixed(0)} Tn</strong> → {formatMoney(baseRate)}</div>
-            <div>Excedente: <strong className="text-amber-600 dark:text-amber-400">+{excessTn.toFixed(1)} Tn (+{excessKg.toLocaleString('es-AR')} kg)</strong></div>
+            <div>Base garantizada: <strong>{formatWeight(minWeightKg)}</strong> → {formatMoney(baseRate)}</div>
+            <div>Excedente: <strong className="text-amber-600 dark:text-amber-400">+{formatWeight(excessKg)}</strong></div>
             <div>Monto Extra: <strong className="text-emerald-600 dark:text-emerald-400 font-bold">+{formatMoney(excessAmount)}</strong></div>
           </div>
         </div>

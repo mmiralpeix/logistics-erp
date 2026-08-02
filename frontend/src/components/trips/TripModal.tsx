@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { tripsApi, vehiclesApi, driversApi, clientsApi, carriersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { X, Map, Lock } from 'lucide-react';
+import { X, Map, Lock, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { formatMoney } from '@/lib/utils';
 import { OperationModeSection } from './modal-sections/OperationModeSection';
@@ -274,8 +274,15 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
             <button type="button" onClick={onClose} className="btn-secondary text-sm px-4 py-2">
               Cancelar
             </button>
-            <button type="submit" disabled={isSubmitting} className="btn-primary text-sm px-5 py-2">
-              {isSubmitting ? 'Guardando...' : isEdit ? 'Guardar Cambios' : 'Planificar Viaje'}
+            <button type="submit" disabled={isSubmitting || mutation.isPending} className="btn-primary text-sm px-5 py-2 flex items-center gap-2">
+              {(isSubmitting || mutation.isPending) ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <span>{isEdit ? 'Guardar Cambios' : 'Planificar Viaje'}</span>
+              )}
             </button>
           </div>
         </form>

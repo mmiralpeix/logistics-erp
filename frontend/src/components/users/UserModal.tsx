@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { User, Mail, Lock, Phone, X, Check } from 'lucide-react';
+import { User, Mail, Lock, Phone, X, Check, Loader2 } from 'lucide-react';
 
 interface UserModalProps {
   initialData?: any;
@@ -26,7 +26,9 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
     if (errors[key]) setErrors({ ...errors, [key]: '' });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
@@ -50,7 +52,12 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
       delete payload.password;
     }
 
-    onSave(payload);
+    setSubmitting(true);
+    try {
+      await onSave(payload);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -215,10 +222,20 @@ export function UserModal({ initialData, onClose, onSave }: UserModalProps) {
             </button>
             <button
               type="submit"
+              disabled={submitting}
               className="btn-primary text-sm px-5 py-2 flex items-center gap-2"
             >
-              <Check className="w-4 h-4" />
-              <span>{initialData ? 'Guardar Cambios' : 'Dar de Alta Usuario'}</span>
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>{initialData ? 'Guardar Cambios' : 'Dar de Alta Usuario'}</span>
+                </>
+              )}
             </button>
           </div>
         </form>

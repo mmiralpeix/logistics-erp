@@ -32,6 +32,19 @@ export function formatNumber(n: number | null | undefined) {
   return new Intl.NumberFormat('es-AR').format(n);
 }
 
+export function formatDistance(km: number | null | undefined) {
+  if (km === null || km === undefined) return '-';
+  return `${new Intl.NumberFormat('es-AR').format(km)} km`;
+}
+
+export function formatWeight(kg: number | null | undefined) {
+  if (kg === null || kg === undefined) return '-';
+  if (kg >= 1000) {
+    return `${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 }).format(kg / 1000)} Tn`;
+  }
+  return `${new Intl.NumberFormat('es-AR').format(kg)} kg`;
+}
+
 export function isExpired(date: string | Date | null) {
   if (!date) return false;
   return isBefore(new Date(date), new Date());

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { vehiclesApi, sparePartsApi } from '@/lib/api';
-import { Wrench, Plus, Trash2, ShieldCheck, DollarSign, Calendar, PackageCheck } from 'lucide-react';
+import { Wrench, Plus, Trash2, ShieldCheck, DollarSign, Calendar, PackageCheck, Loader2 } from 'lucide-react';
 
 interface Item {
   descripcion: string;
@@ -19,6 +19,7 @@ interface WorkOrderModalProps {
 }
 
 export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalProps) {
+  const [submitting, setSubmitting] = useState(false);
   const { data: vehicles } = useQuery({
     queryKey: ['vehicles-mnt-select'],
     queryFn: () => vehiclesApi.getAll({ limit: 100 }).then((r) => r.data.data),
@@ -105,20 +106,25 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
   const itemsTotal = items.reduce((sum, item) => sum + (Number(item.cantidad) || 0) * (Number(item.costoUnitario) || 0), 0);
   const totalCostoFinal = (Number(form.costoManoObra) || 0) + itemsTotal;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validItems = items
-      .filter((i) => i.sparePartId || i.repuestoCodigo || i.descripcion?.trim() !== '')
-      .map((i) => ({
-        ...i,
-        descripcion: i.descripcion?.trim() || i.repuestoCodigo || 'Artículo de Inventario',
-      }));
-    onSave({
-      ...form,
-      costoRepuestos: itemsTotal,
-      costoTotal: totalCostoFinal,
-      items: validItems,
-    });
+    setSubmitting(true);
+    try {
+      const validItems = items
+        .filter((i) => i.sparePartId || i.repuestoCodigo || i.descripcion?.trim() !== '')
+        .map((i) => ({
+          ...i,
+          descripcion: i.descripcion?.trim() || i.repuestoCodigo || 'Artículo de Inventario',
+        }));
+      await onSave({
+        ...form,
+        costoRepuestos: itemsTotal,
+        costoTotal: totalCostoFinal,
+        items: validItems,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -387,8 +393,15 @@ export function WorkOrderModal({ initialData, onClose, onSave }: WorkOrderModalP
             <button type="button" onClick={onClose} className="btn-secondary">
               Cancelar
             </button>
-            <button type="submit" className="btn-primary">
-              {initialData ? 'Guardar Cambios' : 'Crear Orden de Trabajo'}
+            <button type="submit" disabled={submitting} className="btn-primary flex items-center gap-2">
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <span>{initialData ? 'Guardar Cambios' : 'Crear Orden de Trabajo'}</span>
+              )}
             </button>
           </div>
         </form>
