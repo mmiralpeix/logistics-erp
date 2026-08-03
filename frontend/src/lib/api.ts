@@ -12,7 +12,7 @@ export const getApiUrl = () => {
     }
 
     if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      return 'https://logistics-erp-production-ff4a.up.railway.app/api';
+      return `${window.location.origin}/api`;
     }
   }
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
