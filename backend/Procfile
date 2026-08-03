@@ -1,1 +1,1 @@
-web: node backend/dist/main.js || node dist/main.js
+web: npx prisma db push --accept-data-loss && node prisma/import_railway.js && node dist/src/main.js
