@@ -104,6 +104,23 @@ enum InvoiceType {
   NOTA_DEBITO
 }
 
+enum TireType {
+  DIRECCIONAL
+  TRACCION
+  REMOLQUE
+  AUXILIAR
+}
+
+enum TireStatus {
+  EN_DEPOSITO
+  INSTALADO
+  EN_REPARACION
+  EN_RECAPADO
+  EN_INSPECCION
+  FUERA_DE_SERVICIO
+  DADO_DE_BAJA
+}
+
 model User {
   id          String    @id @default(cuid())
   email       String    @unique
@@ -117,6 +134,7 @@ model User {
   mfaEnabled  Boolean   @default(false)
   mfaSecret   String?
   lastLogin   DateTime?
+  dashboardConfig Json?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -160,16 +178,39 @@ model Client {
   categoriaCliente  String   @default("STANDARD")
   isActive          Boolean  @default(true)
   notas             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  limiteCredito      Float    @default(0)
+  diasCredito        Int      @default(30)
+  saldoActual        Float    @default(0)
+  bloqueadoPorRiesgo Boolean  @default(false)
+  scoring            String   @default("A")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   contacts ClientContact[]
   contracts Contract[]
   trips     Trip[]
   invoices  Invoice[]
   certifications Certification[]
+  rates     ClientRate[]
 
   @@map("clients")
+}
+
+model ClientRate {
+  id                  String   @id @default(cuid())
+  clientId            String
+  origen              String
+  destino             String
+  tipoCarga           String?
+  tarifaBase          Float
+  costoPorTnExcedente Float?   @default(0)
+  horasEsperaLibres   Float?   @default(2)
+  createdAt           DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("client_rates")
 }
 
 model ClientContact {
@@ -252,8 +293,110 @@ model Vehicle {
   trips        Trip[]        @relation("VehicleTrips")
   trailerTrips Trip[]        @relation("TrailerTrips")
   gpsDevice    GPSDevice?
+  tires        Tire[]
+  tireMovements TireMovement[]
 
   @@map("vehicles")
+}
+
+model Tire {
+  id                    String      @id @default(cuid())
+  codigoInterno         String      @unique
+  codigoQR              String      @unique
+  codigoBarras          String?
+  numeroSerie           String      @unique
+  marca                 String
+  modelo                String
+  medida                String
+  tipo                  TireType
+  status                TireStatus  @default(EN_DEPOSITO)
+
+  fechaCompra           DateTime
+  proveedor             String?
+  precioCompra          Float
+  garantiaMeses         Int?        @default(12)
+
+  profundidadInicialMm  Float
+  profundidadActualMm   Float
+  presionRecomendadaPsi Float       @default(110)
+  presionActualPsi      Float?
+  kilometrosRecorridos  Float       @default(0)
+  cantidadRecapados     Int         @default(0)
+  maxRecapadosPermitidos Int        @default(3)
+  vidaUtilEstimadaKm    Float       @default(120000)
+  fotoUrl               String?
+  notas                 String?
+
+  vehicleId             String?
+  posicion              String?
+
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  vehicle               Vehicle?         @relation(fields: [vehicleId], references: [id])
+  movements             TireMovement[]
+  retreads              TireRetread[]
+  inspections           TireInspection[]
+
+  @@map("tires")
+}
+
+model TireMovement {
+  id                  String   @id @default(cuid())
+  tireId              String
+  vehicleId           String?
+  tipoMovimiento      String
+  posicionOrigen      String?
+  posicionDestino     String?
+  kilometrajeVehiculo Float?
+  profundidadMm       Float?
+  presionPsi          Float?
+  motivo              String?
+  costo               Float?   @default(0)
+  usuario             String?
+  createdAt           DateTime @default(now())
+
+  tire    Tire     @relation(fields: [tireId], references: [id], onDelete: Cascade)
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  @@map("tire_movements")
+}
+
+model TireRetread {
+  id                  String    @id @default(cuid())
+  tireId              String
+  empresaRecapadora   String
+  numeroRecapado      Int
+  fechaEnvio          DateTime
+  fechaRecepcion      DateTime?
+  costo               Float
+  profundidadNuevaMm  Float
+  garantiaMeses       Int?      @default(6)
+  observaciones       String?
+  status              String    @default("EN_PROCESO")
+  createdAt           DateTime  @default(now())
+
+  tire Tire @relation(fields: [tireId], references: [id], onDelete: Cascade)
+
+  @@map("tire_retreads")
+}
+
+model TireInspection {
+  id             String   @id @default(cuid())
+  tireId         String
+  vehicleId      String?
+  fecha          DateTime @default(now())
+  inspector      String
+  profundidadMm  Float
+  presionPsi     Float
+  estadoVisual   String
+  resultado      String
+  fotografiaUrl  String?
+  observaciones  String?
+
+  tire Tire @relation(fields: [tireId], references: [id], onDelete: Cascade)
+
+  @@map("tire_inspections")
 }
 
 model Driver {
@@ -281,6 +424,14 @@ model Driver {
   examenMedicoVencimiento      DateTime?
   psicofisicoVencimiento       DateTime?
 
+  modalidadLaboral    String    @default("21x7")
+  diasTrabajo         Int       @default(21)
+  diasDescanso        Int       @default(7)
+  supervisor          String?
+  fechaInicioTurno    DateTime?
+  fechaRegreso        DateTime?
+  fechaInicioDescanso DateTime?
+
   isActive  Boolean  @default(true)
   notas     String?
   createdAt DateTime @default(now())
@@ -290,8 +441,26 @@ model Driver {
   trips      Trip[]
   trainings  DriverTraining[]
   incidents  Incident[]
+  shiftLogs  DriverShiftLog[]
 
   @@map("drivers")
+}
+
+model DriverShiftLog {
+  id              String    @id @default(cuid())
+  driverId        String
+  tipoRegistro    String
+  fechaInicio     DateTime
+  fechaFin        DateTime?
+  diasTrabajados  Int?
+  diasDescansados Int?
+  excedido        Boolean   @default(false)
+  notas           String?
+  createdAt       DateTime  @default(now())
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("driver_shift_logs")
 }
 
 model DriverTraining {
@@ -826,4 +995,112 @@ model CarrierDriver {
 
   @@index([carrierId])
   @@map("carrier_drivers")
+}
+
+model ReportTemplate {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  categoria   String
+  configJson  Json
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  savedReports ReportSaved[]
+
+  @@map("report_templates")
+}
+
+model ReportSaved {
+  id          String   @id @default(cuid())
+  templateId  String?
+  titulo      String
+  categoria   String
+  periodoFrom DateTime
+  periodoTo   DateTime
+  filtrosJson Json?
+  resumenIA   String?
+  datosJson   Json?
+  favorito    Boolean  @default(false)
+  creadoPor   String?
+  createdAt   DateTime @default(now())
+
+  template ReportTemplate? @relation(fields: [templateId], references: [id])
+
+  @@map("report_saved")
+}
+
+model ReportSchedule {
+  id           String    @id @default(cuid())
+  titulo       String
+  categoria    String
+  frecuencia   String
+  destinatarios String
+  formato      String
+  isActive     Boolean   @default(true)
+  ultimoEnvio  DateTime?
+  proximoEnvio DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@map("report_schedules")
+}
+
+enum AlertSeverity {
+  INFORMACION
+  ADVERTENCIA
+  CRITICA
+  EMERGENCIA
+}
+
+enum AlertCategory {
+  DOCUMENTACION
+  MANTENIMIENTO
+  NEUMATICOS
+  CHOFERES
+  COMBUSTIBLE
+  FACTURACION
+  GPS
+  INVENTARIO
+}
+
+model AlertRecord {
+  id             String        @id @default(cuid())
+  codigo         String        @unique
+  categoria      AlertCategory
+  severidad      AlertSeverity
+  titulo         String
+  mensaje        String
+  moduloOrigen   String
+  entidadId      String?
+  metaDataJson   Json?
+
+  isResolved     Boolean       @default(false)
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  resolucionNota String?
+
+  isSilenced     Boolean       @default(false)
+  silencedUntil  DateTime?
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([categoria])
+  @@index([severidad])
+  @@index([isResolved])
+  @@map("alert_records")
+}
+
+model UserAlertPreference {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  severidadMinima AlertSeverity @default(INFORMACION)
+  emailNotify     Boolean       @default(true)
+  systemNotify    Boolean       @default(true)
+  categoriasMuted Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("user_alert_preferences")
 }

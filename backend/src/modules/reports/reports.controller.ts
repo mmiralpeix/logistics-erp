@@ -1,53 +1,101 @@
-import { Controller, Get, Query, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, Res } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ReportsService } from './reports.service';
-import { UserRole } from '@prisma/client';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { CreateReportTemplateDto } from './dto/create-report-template.dto';
+import { SaveReportDto } from './dto/save-report.dto';
+import { CreateReportScheduleDto } from './dto/create-report-schedule.dto';
 
 @ApiTags('Reports')
 @ApiBearerAuth('JWT')
 @Controller('reports')
-@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTANT)
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
 
+  @Get('templates')
+  @ApiOperation({ summary: 'Obtener plantillas de reportes disponibles' })
+  getTemplates() {
+    return this.reportsService.getTemplates();
+  }
+
+  @Post('templates')
+  @ApiOperation({ summary: 'Crear una nueva plantilla de reporte' })
+  createTemplate(@Body() dto: CreateReportTemplateDto) {
+    return this.reportsService.createTemplate(dto);
+  }
+
+  @Get('saved')
+  @ApiOperation({ summary: 'Obtener biblioteca de reportes guardados' })
+  getSavedReports() {
+    return this.reportsService.getSavedReports();
+  }
+
+  @Post('saved')
+  @ApiOperation({ summary: 'Guardar un reporte generado en la biblioteca' })
+  saveReport(@Body() dto: SaveReportDto) {
+    return this.reportsService.saveReport(dto);
+  }
+
+  @Patch('saved/:id/favorite')
+  @ApiOperation({ summary: 'Marcar o desmarcar reporte como favorito' })
+  toggleFavorite(@Param('id') id: string) {
+    return this.reportsService.toggleFavoriteSavedReport(id);
+  }
+
+  @Get('schedules')
+  @ApiOperation({ summary: 'Obtener envíos automáticos programados' })
+  getSchedules() {
+    return this.reportsService.getSchedules();
+  }
+
+  @Post('schedules')
+  @ApiOperation({ summary: 'Programar envío recurrente de reporte' })
+  createSchedule(@Body() dto: CreateReportScheduleDto) {
+    return this.reportsService.createSchedule(dto);
+  }
+
+  @Patch('schedules/:id/toggle')
+  @ApiOperation({ summary: 'Activar / pausar envío programado' })
+  toggleSchedule(@Param('id') id: string) {
+    return this.reportsService.toggleScheduleActive(id);
+  }
+
+  @Get('executive-summary')
+  @ApiOperation({ summary: 'Generar resumen ejecutivo analítico del período' })
+  generateExecutiveSummary(@Query() query: any) {
+    return this.reportsService.generateExecutiveSummary(query);
+  }
+
+  @Get('generate-data')
+  @ApiOperation({ summary: 'Compilar datos de viajes, flota, diésel, mantenimiento y neumáticos para reporte' })
+  generateReportData(@Query() query: any) {
+    return this.reportsService.generateReportData(query);
+  }
+
   @Get('trips/excel')
   @ApiOperation({ summary: 'Exportar reporte de viajes a Excel' })
-  async tripsExcel(@Query('from') from: string, @Query('to') to: string, @Res() res: Response) {
-    const fromDate = from || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-    const toDate = to || new Date().toISOString();
-    const buffer = await this.reportsService.generateTripsReport(fromDate, toDate);
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="reporte-viajes-${new Date().toLocaleDateString('es-AR').replace(/\//g, '-')}.xlsx"`,
-      'Content-Length': buffer.length,
-    });
-    res.end(buffer);
+  async downloadTripsExcel(@Query('from') from: string, @Query('to') to: string, @Res() res: Response) {
+    const buffer = await this.reportsService.generateTripsReport(from, to);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=Reporte_Viajes_${from}_${to}.xlsx`);
+    res.send(buffer);
   }
 
   @Get('fleet/excel')
   @ApiOperation({ summary: 'Exportar reporte de flota a Excel' })
-  async fleetExcel(@Res() res: Response) {
+  async downloadFleetExcel(@Res() res: Response) {
     const buffer = await this.reportsService.generateFleetReport();
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename="reporte-flota.xlsx"',
-    });
-    res.end(buffer);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Reporte_Flota.xlsx');
+    res.send(buffer);
   }
 
   @Get('fuel/excel')
   @ApiOperation({ summary: 'Exportar reporte de combustible a Excel' })
-  async fuelExcel(@Query('from') from: string, @Query('to') to: string, @Res() res: Response) {
-    const fromDate = from || new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-    const toDate = to || new Date().toISOString();
-    const buffer = await this.reportsService.generateFuelReport(fromDate, toDate);
-    res.set({
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': 'attachment; filename="reporte-combustible.xlsx"',
-    });
-    res.end(buffer);
+  async downloadFuelExcel(@Query('from') from: string, @Query('to') to: string, @Res() res: Response) {
+    const buffer = await this.reportsService.generateFuelReport(from, to);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=Reporte_Combustible_${from}_${to}.xlsx`);
+    res.send(buffer);
   }
 }
-

@@ -4,13 +4,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsApi, clientsApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatMoney, formatDate, formatDateTime, TRIP_STATUS_MAP } from '@/lib/utils';
-import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers, Printer, Users, Link2, ShieldAlert, Droplets, Package, Flame } from 'lucide-react';
+import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers, Printer, Users, Link2, ShieldAlert, Droplets, Package, Flame, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
 const TripModal = dynamic(() => import('@/components/trips/TripModal').then((mod) => mod.TripModal), { ssr: false });
 const BatchTripModal = dynamic(() => import('@/components/trips/BatchTripModal').then((mod) => mod.BatchTripModal), { ssr: false });
 const WaybillModal = dynamic(() => import('@/components/trips/WaybillModal').then((mod) => mod.WaybillModal), { ssr: false });
+const TripDetailDrawer = dynamic(() => import('@/components/trips/TripDetailDrawer').then((mod) => mod.TripDetailDrawer), { ssr: false });
+const AddTripCostModal = dynamic(() => import('@/components/trips/AddTripCostModal').then((mod) => mod.AddTripCostModal), { ssr: false });
 
 const STATUSES = Object.entries(TRIP_STATUS_MAP);
 
@@ -23,6 +25,8 @@ export default function TripsPage() {
   const [showModal, setShowModal] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [waybillTrip, setWaybillTrip] = useState<any>(null);
+  const [selected360Id, setSelected360Id] = useState<string | null>(null);
+  const [costTrip, setCostTrip] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const qc = useQueryClient();
 
@@ -415,6 +419,21 @@ export default function TripsPage() {
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => setSelected360Id(trip.id)}
+                            className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-100"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Ficha 360°
+                          </button>
+
+                          <button
+                            onClick={() => setCostTrip(trip)}
+                            title="Rendir Gasto Directo"
+                            className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1 bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800 hover:bg-rose-100"
+                          >
+                            <DollarSign className="w-3.5 h-3.5" /> Gastos
+                          </button>
+
+                          <button
                             onClick={() => setWaybillTrip(trip)}
                             className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded-lg transition-colors border border-blue-200 dark:border-blue-800"
                             title="Imprimir Hoja de Ruta / Manifiesto Digital"
@@ -428,13 +447,6 @@ export default function TripsPage() {
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <a
-                            href={`/trips/${trip.id}`}
-                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors"
-                            title="Ver detalles"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </a>
                         </div>
                       </td>
                     </tr>
@@ -492,6 +504,18 @@ export default function TripsPage() {
           onClose={() => setWaybillTrip(null)}
         />
       )}
+
+      {costTrip && (
+        <AddTripCostModal
+          trip={costTrip}
+          onClose={() => setCostTrip(null)}
+        />
+      )}
+
+      <TripDetailDrawer
+        tripId={selected360Id}
+        onClose={() => setSelected360Id(null)}
+      />
     </div>
   );
 }

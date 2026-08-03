@@ -23,6 +23,10 @@ export class CreateClientDto {
   @ApiPropertyOptional() @IsOptional() @IsString() condicionIVA?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() categoriaCliente?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() notas?: string;
+  @ApiPropertyOptional() @IsOptional() limiteCredito?: number;
+  @ApiPropertyOptional() @IsOptional() diasCredito?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() scoring?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() bloqueadoPorRiesgo?: boolean;
   @ApiPropertyOptional({ type: [CreateContactDto] })
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => CreateContactDto)
   contacts?: CreateContactDto[];

@@ -143,5 +143,22 @@ export class CarriersController {
   removeDriver(@Param('driverId') driverId: string) {
     return this.carriersService.removeDriver(driverId);
   }
+
+  @Get(':id/summary-360')
+  @ApiOperation({ summary: 'Obtener expediente 360° del operador logístico' })
+  getSummary360(@Param('id') id: string) {
+    return this.carriersService.getSummary360(id);
+  }
+
+  @Post(':id/settlement')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
+  @ApiOperation({ summary: 'Generar orden de liquidación de fletes para operador logístico' })
+  createSettlement(
+    @Param('id') id: string,
+    @Body('tripIds') tripIds: string[],
+    @Body('retencionPct') retencionPct?: number,
+  ) {
+    return this.carriersService.createSettlement(id, tripIds, retencionPct);
+  }
 }
 

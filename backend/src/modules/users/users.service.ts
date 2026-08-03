@@ -17,7 +17,7 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, email: true, firstName: true, lastName: true, role: true, phone: true, isActive: true, lastLogin: true, createdAt: true },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, phone: true, isActive: true, dashboardConfig: true, lastLogin: true, createdAt: true },
     });
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return user;
@@ -39,12 +39,28 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: dto,
-      select: { id: true, email: true, firstName: true, lastName: true, role: true, phone: true, isActive: true },
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, phone: true, isActive: true, dashboardConfig: true },
     });
   }
 
   async toggleActive(id: string) {
     const user = await this.findOne(id);
     return this.prisma.user.update({ where: { id }, data: { isActive: !user.isActive } });
+  }
+
+  async getDashboardConfig(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { dashboardConfig: true },
+    });
+    return user?.dashboardConfig || null;
+  }
+
+  async updateDashboardConfig(userId: string, config: any) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { dashboardConfig: config },
+      select: { dashboardConfig: true },
+    });
   }
 }

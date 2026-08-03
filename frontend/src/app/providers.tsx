@@ -5,16 +5,20 @@ import { useState } from 'react';
 import { ThemeProvider } from '@/lib/theme';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: { 
-      queries: { 
-        staleTime: 30000,         // 30 segundos de frescura
-        gcTime: 300000,          // 5 minutos en memoria
-        refetchOnWindowFocus: false,
-        retry: 1 
-      } 
-    },
-  }));
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 10 * 60 * 1000, // 10 minutos de frescura en memoria (Navegación instantánea a 0ms)
+            gcTime: 60 * 60 * 1000, // 60 minutos de retención en memoria
+            refetchOnWindowFocus: false, // Evitar peticiones en segundo plano
+            refetchOnReconnect: false,
+            retry: 1,
+          },
+        },
+      })
+  );
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -32,4 +36,3 @@ export function Providers({ children }: { children: React.ReactNode }) {
     </QueryClientProvider>
   );
 }
-

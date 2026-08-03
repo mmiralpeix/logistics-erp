@@ -51,6 +51,16 @@ export const dashboardApi = {
   getVehicleConsumptionChart: () => api.get('/dashboard/vehicle-consumption'),
 };
 
+export const alertsApi = {
+  getActiveAlerts: (params?: any) => api.get('/alerts/active', { params }),
+  getStats: () => api.get('/alerts/stats'),
+  evaluateAll: () => api.post('/alerts/evaluate-all'),
+  resolveAlert: (id: string, nota?: string) => api.patch(`/alerts/${id}/resolve`, { nota }),
+  silenceAlert: (id: string, dias?: number) => api.patch(`/alerts/${id}/silence`, { dias }),
+  getPreferences: () => api.get('/alerts/preferences'),
+  updatePreferences: (data: any) => api.patch('/alerts/preferences', data),
+};
+
 export const clientsApi = {
   getAll: (params?: any) => api.get('/clients', { params }),
   getOne: (id: string) => api.get(`/clients/${id}`),
@@ -60,6 +70,10 @@ export const clientsApi = {
   getHistory: (id: string) => api.get(`/clients/${id}/history`),
   getContracts: (id: string) => api.get(`/clients/${id}/contracts`),
   createContract: (id: string, data: any) => api.post(`/clients/${id}/contracts`, data),
+  getSummary360: (id: string) => api.get(`/clients/${id}/summary-360`),
+  getRates: (id: string) => api.get(`/clients/${id}/rates`),
+  addRate: (id: string, data: any) => api.post(`/clients/${id}/rates`, data),
+  removeRate: (rateId: string) => api.delete(`/clients/rates/${rateId}`),
 };
 
 export const vehiclesApi = {
@@ -71,6 +85,8 @@ export const vehiclesApi = {
   remove: (id: string) => api.delete(`/vehicles/${id}`),
   getExpiring: () => api.get('/vehicles/expiring'),
   getAvailable: (date?: string) => api.get('/vehicles/available', { params: { date } }),
+  getSummary360: (id: string) => api.get(`/vehicles/${id}/summary-360`),
+  updateOdometer: (id: string, data: { kilometraje: number; horasMotor?: number }) => api.patch(`/vehicles/${id}/odometer`, data),
 };
 
 export const driversApi = {
@@ -82,6 +98,12 @@ export const driversApi = {
   getExpiring: () => api.get('/drivers/expiring-licenses'),
   getAvailable: (date?: string) => api.get('/drivers/available', { params: { date } }),
   addTraining: (id: string, data: any) => api.post(`/drivers/${id}/trainings`, data),
+  getSchedule: (params?: any) => api.get('/drivers/schedule', { params }),
+  getScheduleKpis: () => api.get('/drivers/schedule/kpis'),
+  recordShiftEvent: (id: string, data: any) => api.post(`/drivers/${id}/shift-event`, data),
+  getShiftHistory: (id: string) => api.get(`/drivers/${id}/shift-history`),
+  updateScheduleConfig: (id: string, data: any) => api.patch(`/drivers/${id}/schedule-config`, data),
+  exportScheduleReport: (params?: any) => api.get('/drivers/schedule/export', { params }),
 };
 
 export const tripsApi = {
@@ -94,6 +116,7 @@ export const tripsApi = {
   addCost: (id: string, data: any) => api.post(`/trips/${id}/costs`, data),
   getGantt: (from: string, to: string) => api.get('/trips/gantt', { params: { from, to } }),
   reschedule: (id: string, newDeparture: string, reason: string) => api.patch(`/trips/${id}/reschedule`, { newDeparture, reason }),
+  getSummary360: (id: string) => api.get(`/trips/${id}/summary-360`),
 };
 
 export const maintenanceApi = {
@@ -114,6 +137,24 @@ export const sparePartsApi = {
   update: (id: string, data: any) => api.patch(`/maintenance/spare-parts/${id}`, data),
   adjustStock: (id: string, delta: number) => api.patch(`/maintenance/spare-parts/${id}/stock`, { delta }),
   remove: (id: string) => api.delete(`/maintenance/spare-parts/${id}`),
+  getLowStock: () => api.get('/maintenance/spare-parts/low-stock'),
+};
+
+export const tiresApi = {
+  getAll: (params?: any) => api.get('/maintenance/tires', { params }),
+  getKPIs: () => api.get('/maintenance/tires/kpis'),
+  getVehiclePositions: (vehicleId: string) => api.get(`/maintenance/tires/vehicle/${vehicleId}/positions`),
+  getOne: (id: string) => api.get(`/maintenance/tires/${id}`),
+  create: (data: any) => api.post('/maintenance/tires', data),
+  update: (id: string, data: any) => api.patch(`/maintenance/tires/${id}`, data),
+  install: (id: string, data: any) => api.post(`/maintenance/tires/${id}/install`, data),
+  dismount: (id: string, data: any) => api.post(`/maintenance/tires/${id}/dismount`, data),
+  rotate: (data: any) => api.post('/maintenance/tires/rotate', data),
+  sendToRetread: (id: string, data: any) => api.post(`/maintenance/tires/${id}/retread`, data),
+  receiveFromRetread: (id: string, data: any) => api.post(`/maintenance/tires/${id}/retread/receive`, data),
+  recordInspection: (id: string, data: any) => api.post(`/maintenance/tires/${id}/inspection`, data),
+  retire: (id: string, motivo: string) => api.post(`/maintenance/tires/${id}/retire`, { motivo }),
+  exportReport: (params?: any) => api.get('/maintenance/tires/export', { params }),
 };
 
 export const consumablesApi = {
@@ -144,7 +185,25 @@ export const certificationsApi = {
   remove: (id: string) => api.delete(`/certifications/${id}`),
 };
 
+export const analyticsApi = {
+  getKpis: (params?: any) => api.get('/analytics/kpis', { params }),
+  getComparative: (params?: any) => api.get('/analytics/comparative', { params }),
+  getPredictive: () => api.get('/analytics/predictions'),
+  getVehicleRanking: () => api.get('/analytics/vehicle-ranking'),
+  exportAnalyticsExcel: () => api.get('/analytics/export', { responseType: 'blob' }),
+};
+
 export const reportsApi = {
+  getTemplates: () => api.get('/reports/templates'),
+  createTemplate: (data: any) => api.post('/reports/templates', data),
+  getSavedReports: () => api.get('/reports/saved'),
+  saveReport: (data: any) => api.post('/reports/saved', data),
+  toggleFavoriteSavedReport: (id: string) => api.patch(`/reports/saved/${id}/favorite`),
+  getSchedules: () => api.get('/reports/schedules'),
+  createSchedule: (data: any) => api.post('/reports/schedules', data),
+  toggleSchedule: (id: string) => api.patch(`/reports/schedules/${id}/toggle`),
+  getExecutiveSummary: (params?: any) => api.get('/reports/executive-summary', { params }),
+  generateReportData: (params?: any) => api.get('/reports/generate-data', { params }),
   downloadTripsExcel: (from: string, to: string) => api.get('/reports/trips/excel', { params: { from, to }, responseType: 'blob' }),
   downloadFleetExcel: () => api.get('/reports/fleet/excel', { responseType: 'blob' }),
   downloadFuelExcel: (from: string, to: string) => api.get('/reports/fuel/excel', { params: { from, to }, responseType: 'blob' }),
@@ -160,6 +219,8 @@ export const usersApi = {
   create: (data: any) => api.post('/users', data),
   update: (id: string, data: any) => api.patch(`/users/${id}`, data),
   toggle: (id: string) => api.patch(`/users/${id}/toggle`),
+  getDashboardConfig: () => api.get('/users/me/dashboard-config'),
+  updateDashboardConfig: (config: any) => api.patch('/users/me/dashboard-config', config),
 };
 
 export const dangerousGoodsApi = {
@@ -187,6 +248,8 @@ export const carriersApi = {
   createDriver: (carrierId: string, data: any) => api.post(`/carriers/${carrierId}/drivers`, data),
   updateDriver: (driverId: string, data: any) => api.patch(`/carriers/drivers/${driverId}`, data),
   removeDriver: (driverId: string) => api.delete(`/carriers/drivers/${driverId}`),
+  getSummary360: (id: string) => api.get(`/carriers/${id}/summary-360`),
+  createSettlement: (id: string, data: { tripIds: string[]; retencionPct?: number }) => api.post(`/carriers/${id}/settlement`, data),
 };
 
 export const mfaApi = {

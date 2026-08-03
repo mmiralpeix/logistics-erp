@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { clientsApi, vehiclesApi, driversApi, carriersApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
 import { CARGO_TYPES } from '@/lib/constants';
-import { Plus, Trash2, Truck, UserCheck, ShieldAlert, Layers, MapPin, Calendar, DollarSign, FileCheck, FileText, Container, Building2 } from 'lucide-react';
+import { Plus, Trash2, Truck, UserCheck, ShieldAlert, Layers, MapPin, Calendar, DollarSign, FileCheck, FileText, Container, Building2, Lock, Unlock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface BatchTripModalProps {
@@ -20,6 +20,9 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
   const { data: carriers } = useQuery({ queryKey: ['carriers-select'], queryFn: () => carriersApi.getAll({ limit: 100 }).then((r) => r.data.data) });
 
   const [form, setForm] = useState<any>({
+    clientId: '',
+    contractId: '',
+    numeroOCCliente: '',
     origen: '',
     destino: '',
     fechaSalidaProgramada: new Date(Date.now() + 2 * 3600 * 1000).toISOString().slice(0, 16),
@@ -36,6 +39,46 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
     esDistribucion: false,
     notas: '',
   });
+
+  const [isOcUnlocked, setIsOcUnlocked] = useState(false);
+
+  const { data: clientContracts } = useQuery({
+    queryKey: ['client-contracts', form.clientId],
+    queryFn: () => form.clientId ? clientsApi.getContracts(form.clientId).then((r) => r.data) : Promise.resolve([]),
+    enabled: !!form.clientId,
+  });
+
+  const activeContract = clientContracts?.find((c: any) => c.id === form.contractId);
+  const hasContract = !!form.contractId && !!activeContract;
+  const isOcLocked = hasContract && !isOcUnlocked;
+
+  const handleContractChange = (contractId: string) => {
+    const selected = clientContracts?.find((c: any) => c.id === contractId);
+    setIsOcUnlocked(false);
+    setForm((prev: any) => {
+      const ocValue = selected?.numero
+        ? (selected.numero.startsWith('OC') ? selected.numero : `OC N°${selected.numero}`)
+        : '';
+      const newTariff = selected?.tarifaBase ? selected.tarifaBase : prev.tarifaGenerica;
+
+      if (selected) {
+        setAssignments((assigns) =>
+          assigns.map((a) => ({
+            ...a,
+            tarifaAcordada: selected.tarifaBase || a.tarifaAcordada,
+            numeroOCCliente: ocValue || a.numeroOCCliente,
+          }))
+        );
+      }
+
+      return {
+        ...prev,
+        contractId,
+        numeroOCCliente: ocValue || prev.numeroOCCliente,
+        tarifaGenerica: newTariff,
+      };
+    });
+  };
 
   const [assignments, setAssignments] = useState<any[]>([
     { tipoOperacion: 'PROPIA', vehicleId: '', driverId: '', trailerId: '', carrierId: '', carrierVehicleId: '', carrierDriverId: '', numeroRemito: '', numeroOCCliente: '', tarifaAcordada: 450000 },
@@ -120,7 +163,13 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
 
     onSave({
       ...form,
-      assignments,
+      contractId: form.contractId || undefined,
+      numeroOCCliente: form.numeroOCCliente || undefined,
+      assignments: assignments.map((a) => ({
+        ...a,
+        contractId: form.contractId || undefined,
+        numeroOCCliente: a.numeroOCCliente || form.numeroOCCliente || undefined,
+      })),
     });
   };
 
@@ -175,12 +224,94 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
               <div className="lg:col-span-6">
                 <label className="label font-semibold">Cliente *</label>
-                <select value={form.clientId || ''} onChange={(e) => setField('clientId', e.target.value)} className="input py-2">
+                <select
+                  value={form.clientId || ''}
+                  onChange={(e) => {
+                    setField('clientId', e.target.value);
+                    setField('contractId', '');
+                    setField('numeroOCCliente', '');
+                  }}
+                  className="input py-2"
+                >
                   <option value="">Seleccionar cliente de la cartera...</option>
                   {clients?.map((c: any) => (
                     <option key={c.id} value={c.id}>{c.razonSocial} (CUIT: {c.cuit})</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="lg:col-span-6">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label font-semibold mb-0">Contrato Corporativo</label>
+                  {activeContract && (
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
+                      Base: {formatMoney(activeContract.tarifaBase)}
+                    </span>
+                  )}
+                </div>
+                <select
+                  value={form.contractId || ''}
+                  onChange={(e) => handleContractChange(e.target.value)}
+                  className="input py-2"
+                  disabled={!form.clientId}
+                >
+                  <option value="">{form.clientId ? 'Sin contrato específico' : 'Seleccione cliente primero...'}</option>
+                  {clientContracts?.map((c: any) => (
+                    <option key={c.id} value={c.id}>#{c.numero} — {c.descripcion || 'Contrato Estándar'}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="lg:col-span-6">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="label font-semibold mb-0">N° Orden de Compra (OC)</label>
+                  {hasContract && (
+                    <button
+                      type="button"
+                      onClick={() => setIsOcUnlocked(!isOcUnlocked)}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-200 transition-colors"
+                      title={isOcUnlocked ? 'Bloquear y vincular al contrato' : 'Desbloquear para modificar'}
+                    >
+                      {isOcUnlocked ? (
+                        <>
+                          <Unlock className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-emerald-600 dark:text-emerald-400">Modo Manual</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                          <span>Modificar</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={form.numeroOCCliente || ''}
+                    readOnly={isOcLocked}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setField('numeroOCCliente', val);
+                      setAssignments((prev) => prev.map((a) => ({ ...a, numeroOCCliente: val })));
+                    }}
+                    className={`input py-2 font-mono font-bold transition-all ${
+                      isOcLocked
+                        ? 'bg-amber-100/70 dark:bg-amber-950/50 text-amber-950 dark:text-amber-200 cursor-not-allowed select-none pr-8 border-amber-300 dark:border-amber-700/60'
+                        : 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white'
+                    }`}
+                    placeholder="OC N°4500004664-4"
+                  />
+                  {isOcLocked && (
+                    <Lock className="w-4 h-4 text-amber-600 dark:text-amber-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
+                  )}
+                </div>
+                {isOcLocked && (
+                  <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-1 font-medium">
+                    🔒 Bloqueada por Contrato Corporativo #{activeContract.numero}. Hacé clic en &quot;Modificar&quot; para cambiar.
+                  </p>
+                )}
               </div>
 
               <div className="lg:col-span-3">

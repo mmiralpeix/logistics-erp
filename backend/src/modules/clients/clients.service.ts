@@ -156,4 +156,89 @@ export class ClientsService {
       },
     });
   }
+
+  // Rate Matrix
+  async getRates(clientId: string) {
+    return this.prisma.clientRate.findMany({
+      where: { clientId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async addRate(clientId: string, dto: any) {
+    return this.prisma.clientRate.create({
+      data: {
+        clientId,
+        origen: dto.origen,
+        destino: dto.destino,
+        tipoCarga: dto.tipoCarga || 'GENERAL',
+        tarifaBase: Number(dto.tarifaBase || 0),
+        costoPorTnExcedente: Number(dto.costoPorTnExcedente || 0),
+        horasEsperaLibres: Number(dto.horasEsperaLibres || 2),
+      },
+    });
+  }
+
+  async removeRate(rateId: string) {
+    return this.prisma.clientRate.delete({ where: { id: rateId } });
+  }
+
+  // Expediente 360° Completo
+  async getSummary360(clientId: string) {
+    const client = await this.prisma.client.findUnique({
+      where: { id: clientId },
+      include: {
+        contacts: true,
+        contracts: {
+          orderBy: { createdAt: 'desc' },
+          include: { _count: { select: { trips: true } } },
+        },
+        rates: { orderBy: { createdAt: 'desc' } },
+      },
+    });
+
+    if (!client) throw new NotFoundException('Cliente no encontrado');
+
+    const [trips, invoices, aggTrips] = await Promise.all([
+      this.prisma.trip.findMany({
+        where: { clientId },
+        orderBy: { fechaSalidaProgramada: 'desc' },
+        take: 10,
+        include: { vehicle: true, driver: true, contract: true, costs: true },
+      }),
+      this.prisma.invoice.findMany({
+        where: { clientId },
+        orderBy: { fechaEmision: 'desc' },
+        take: 10,
+      }),
+      this.prisma.trip.aggregate({
+        where: { clientId, status: { notIn: ['CANCELADO'] as any } },
+        _sum: { tarifaAcordada: true, pesoCarga: true },
+        _count: true,
+      }),
+    ]);
+
+    const totalFacturado = invoices.reduce((sum, inv) => sum + (inv.status === 'PAGADA' ? inv.total : 0), 0);
+    const totalPendienteCobro = invoices.reduce((sum, inv) => sum + (inv.status === 'EMITIDA' ? inv.total : 0), 0);
+
+    const facturasVencidas = invoices.filter((inv) => inv.status === 'EMITIDA' && inv.fechaVencimiento && new Date(inv.fechaVencimiento) < new Date());
+    const riesgoBloqueado = client.bloqueadoPorRiesgo || (client.limiteCredito > 0 && totalPendienteCobro > client.limiteCredito) || facturasVencidas.length > 0;
+
+    return {
+      client: {
+        ...client,
+        riesgoBloqueado,
+        facturasVencidasCantidad: facturasVencidas.length,
+      },
+      stats: {
+        totalViajes: aggTrips._count || 0,
+        totalMontoAcordado: aggTrips._sum.tarifaAcordada || 0,
+        totalPesoKg: aggTrips._sum.pesoCarga || 0,
+        totalFacturado,
+        totalPendienteCobro,
+      },
+      trips,
+      invoices,
+    };
+  }
 }

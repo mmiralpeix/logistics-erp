@@ -3,15 +3,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuthStore, ROLE_LABELS } from '@/lib/auth';
 import { useLayoutStore } from '@/lib/layoutStore';
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  dashboardApi, alertsApi, analyticsApi, vehiclesApi, driversApi, reportsApi, tripsApi, maintenanceApi, billingApi
+} from '@/lib/api';
 import {
   LayoutDashboard, Users, Truck, UserCheck, MapPin, Wrench, Droplet,
   FileText, Receipt, BarChart2, Satellite, Settings,
-  ChevronRight, LogOut, Shield, Package, Building2, X
+  ChevronRight, LogOut, Shield, Package, Building2, X, AlertTriangle, LineChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', description: 'Resumen ejecutivo' },
+  { href: '/alerts', icon: AlertTriangle, label: 'Alertas ERP', description: 'Centro de riesgos' },
+  { href: '/analytics', icon: LineChart, label: 'BI & Analítica', description: 'Inteligencia empresarial' },
   { href: '/clients', icon: Users, label: 'Clientes', description: 'Gestión de clientes' },
   { href: '/vehicles', icon: Truck, label: 'Vehículos', description: 'Flota propia y tercerizada' },
   { href: '/drivers', icon: UserCheck, label: 'Conductores', description: 'Personal de conducción' },
@@ -35,6 +41,32 @@ export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { isMobileMenuOpen, closeMobileMenu } = useLayoutStore();
+  const qc = useQueryClient();
+
+  const handlePrefetch = (href: string) => {
+    switch (href) {
+      case '/dashboard':
+        qc.prefetchQuery({ queryKey: ['dashboard-stats'], queryFn: () => dashboardApi.getStats().then((r) => r.data) });
+        break;
+      case '/alerts':
+        qc.prefetchQuery({ queryKey: ['alerts-stats'], queryFn: () => alertsApi.getStats().then((r) => r.data) });
+        break;
+      case '/analytics':
+        qc.prefetchQuery({ queryKey: ['analytics-kpis'], queryFn: () => analyticsApi.getKpis().then((r) => r.data) });
+        break;
+      case '/vehicles':
+        qc.prefetchQuery({ queryKey: ['vehicles'], queryFn: () => vehiclesApi.getAll().then((r) => r.data) });
+        break;
+      case '/drivers':
+        qc.prefetchQuery({ queryKey: ['drivers'], queryFn: () => driversApi.getAll().then((r) => r.data) });
+        break;
+      case '/reports':
+        qc.prefetchQuery({ queryKey: ['report-templates'], queryFn: () => reportsApi.getTemplates().then((r) => r.data) });
+        break;
+      default:
+        break;
+    }
+  };
 
   const renderNavContent = (isMobile = false) => (
     <>
@@ -69,6 +101,8 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={true}
+              onMouseEnter={() => handlePrefetch(item.href)}
               onClick={() => isMobile && closeMobileMenu()}
               className={cn('sidebar-link', isActive && 'active')}
             >
@@ -88,6 +122,8 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={true}
+                  onMouseEnter={() => handlePrefetch(item.href)}
                   onClick={() => isMobile && closeMobileMenu()}
                   className={cn('sidebar-link', isActive && 'active')}
                 >

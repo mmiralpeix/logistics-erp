@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as compression from 'compression';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
@@ -12,7 +13,8 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
-  // Security headers
+  // Gzip Response Compression & Security Headers
+  app.use(compression());
   app.use(helmet());
 
   const allowedOrigins = process.env.FRONTEND_URL

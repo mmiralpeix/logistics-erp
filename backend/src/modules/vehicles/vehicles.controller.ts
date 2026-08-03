@@ -46,6 +46,23 @@ export class VehiclesController {
     return this.vehiclesService.updateStatus(id, status);
   }
 
+  @Get(':id/summary-360')
+  @ApiOperation({ summary: 'Obtener expediente 360° completo del vehículo' })
+  getSummary360(@Param('id') id: string) {
+    return this.vehiclesService.getSummary360(id);
+  }
+
+  @Patch(':id/odometer')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  @ApiOperation({ summary: 'Actualizar kilometraje u horómetro del vehículo' })
+  updateOdometer(
+    @Param('id') id: string,
+    @Body('kilometraje') kilometraje: number,
+    @Body('horasMotor') horasMotor?: number,
+  ) {
+    return this.vehiclesService.updateOdometer(id, kilometraje, horasMotor);
+  }
+
   @Delete(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   remove(@Param('id') id: string) { return this.vehiclesService.remove(id); }
