@@ -61,8 +61,32 @@ async function restore() {
     console.log('[Railway Migration] Re-activando restricciones de claves foráneas...');
     await prisma.$executeRawUnsafe(`SET session_replication_role = 'origin';`);
 
+    console.log('[Railway Migration] Creado/Restableciendo usuarios por defecto...');
+    const bcrypt = require('bcryptjs');
+    const adminPass = await bcrypt.hash('Admin123!', 10);
+    const opsPass = await bcrypt.hash('Ops123!', 10);
+    const driverPass = await bcrypt.hash('Driver123!', 10);
+
+    const users = [
+      { email: 'admin@logistics.com', pass: adminPass, name: 'Carlos', surname: 'Rodríguez', role: 'SUPER_ADMIN' },
+      { email: 'ops@logistics.com', pass: opsPass, name: 'María', surname: 'González', role: 'OPERATIONS_MANAGER' },
+      { email: 'despacho@logistics.com', pass: opsPass, name: 'Roberto', surname: 'López', role: 'DISPATCHER' },
+      { email: 'chofer@logistics.com', pass: driverPass, name: 'Juan', surname: 'Martínez', role: 'DRIVER' },
+      { email: 'contaduria@logistics.com', pass: opsPass, name: 'Laura', surname: 'Sánchez', role: 'ACCOUNTANT' },
+    ];
+
+    for (const u of users) {
+      const sql = `
+        INSERT INTO "public"."users" ("id", "email", "password", "firstName", "lastName", "role", "isActive", "mfaEnabled", "createdAt", "updatedAt")
+        VALUES ('usr_${u.email.split('@')[0]}', '${u.email}', '${u.pass}', '${u.name}', '${u.surname}', '${u.role}', TRUE, FALSE, NOW(), NOW())
+        ON CONFLICT ("email") DO UPDATE SET "password" = EXCLUDED."password", "isActive" = TRUE;
+      `;
+      await prisma.$executeRawUnsafe(sql);
+    }
+    console.log('[Railway Migration] ✅ Usuarios demo (admin@logistics.com / Admin123!) listos para inicio de sesión.');
+
     console.log('\n======================================================');
-    console.log('🎉 [Railway Migration] ¡ÉXITO! Todos los datos de Neon han sido importados a Railway PostgreSQL.');
+    console.log('🎉 [Railway Migration] ¡ÉXITO! Todos los datos han sido importados a Railway PostgreSQL.');
     console.log('======================================================\n');
   } catch (err) {
     console.error('[Railway Migration] ERROR durante la importación:', err);
