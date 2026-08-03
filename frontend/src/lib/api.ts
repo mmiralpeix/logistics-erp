@@ -169,6 +169,16 @@ export const certificationsApi = {
 };
 
 export const reportsApi = {
+  getTemplates: () => api.get('/reports/templates'),
+  createTemplate: (data: any) => api.post('/reports/templates', data),
+  getSavedReports: () => api.get('/reports/saved'),
+  saveReport: (data: any) => api.post('/reports/saved', data),
+  toggleFavoriteSavedReport: (id: string) => api.patch(`/reports/saved/${id}/favorite`),
+  getSchedules: () => api.get('/reports/schedules'),
+  createSchedule: (data: any) => api.post('/reports/schedules', data),
+  toggleSchedule: (id: string) => api.patch(`/reports/schedules/${id}/toggle`),
+  getExecutiveSummary: (params?: any) => api.get('/reports/executive-summary', { params }),
+  generateReportData: (params?: any) => api.get('/reports/generate-data', { params }),
   downloadTripsExcel: (from: string, to: string) => api.get('/reports/trips/excel', { params: { from, to }, responseType: 'blob' }),
   downloadFleetExcel: () => api.get('/reports/fleet/excel', { responseType: 'blob' }),
   downloadFuelExcel: (from: string, to: string) => api.get('/reports/fuel/excel', { params: { from, to }, responseType: 'blob' }),

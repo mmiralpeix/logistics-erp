@@ -973,3 +973,52 @@ model CarrierDriver {
   @@index([carrierId])
   @@map("carrier_drivers")
 }
+
+model ReportTemplate {
+  id          String   @id @default(cuid())
+  nombre      String
+  descripcion String?
+  categoria   String
+  configJson  Json
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  savedReports ReportSaved[]
+
+  @@map("report_templates")
+}
+
+model ReportSaved {
+  id          String   @id @default(cuid())
+  templateId  String?
+  titulo      String
+  categoria   String
+  periodoFrom DateTime
+  periodoTo   DateTime
+  filtrosJson Json?
+  resumenIA   String?
+  datosJson   Json?
+  favorito    Boolean  @default(false)
+  creadoPor   String?
+  createdAt   DateTime @default(now())
+
+  template ReportTemplate? @relation(fields: [templateId], references: [id])
+
+  @@map("report_saved")
+}
+
+model ReportSchedule {
+  id           String    @id @default(cuid())
+  titulo       String
+  categoria    String
+  frecuencia   String
+  destinatarios String
+  formato      String
+  isActive     Boolean   @default(true)
+  ultimoEnvio  DateTime?
+  proximoEnvio DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@map("report_schedules")
+}
