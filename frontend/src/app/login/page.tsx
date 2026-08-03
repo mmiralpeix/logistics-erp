@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -41,6 +42,34 @@ export default function LoginPage() {
   // Manual API URL Config Panel
   const [showApiConfig, setShowApiConfig] = useState(false);
   const [customApiUrlInput, setCustomApiUrlInput] = useState('');
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionResult, setConnectionResult] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const handleTestConnection = async (targetUrl?: string) => {
+    const urlToTest = targetUrl || customApiUrlInput || getApiUrl();
+    let clean = urlToTest.trim().replace(/\/+$/, '');
+    if (!clean.endsWith('/api')) clean += '/api';
+
+    setTestingConnection(true);
+    setConnectionResult(null);
+    try {
+      const res = await axios.get(`${clean}/docs`, { timeout: 6000 }).catch(() => null)
+        || await axios.get(`${clean}/auth/profile`, { timeout: 6000 }).catch(() => null);
+
+      if (res && (res.status === 200 || res.status === 401)) {
+        setConnectionResult({ ok: true, message: `✅ Servidor respondiendo en ${clean} (Status ${res.status})` });
+        toast.success(`Conexión exitosa con ${clean}`);
+      } else {
+        setConnectionResult({ ok: false, message: `⚠️ Servidor respondió en ${clean} pero sin API NestJS válida.` });
+        toast.error(`Sin respuesta válida en ${clean}`);
+      }
+    } catch (err: any) {
+      setConnectionResult({ ok: false, message: `❌ No se pudo conectar a ${clean}. Error de red o CORS.` });
+      toast.error(`Error de conexión con ${clean}`);
+    } finally {
+      setTestingConnection(false);
+    }
+  };
 
   // Self-Registration State
   const [regForm, setRegForm] = useState({
@@ -116,9 +145,24 @@ export default function LoginPage() {
       if (!err.response) {
         setCustomApiUrlInput(getApiUrl());
         setShowApiConfig(true);
-        toast.error(`Error de conexión con el Backend (${getApiUrl()}). Ingresa la URL de tu Backend abajo.`);
+        toast.error(`Error de red o CORS al conectar con ${getApiUrl()}. Verifica la URL de tu Backend abajo.`);
       } else {
-        toast.error(err.response?.data?.message || 'Credenciales inválidas');
+        const status = err.response.status;
+        const data = err.response.data;
+        const serverMsg = typeof data === 'object' && data?.message
+          ? (Array.isArray(data.message) ? data.message.join(', ') : data.message)
+          : null;
+
+        if (status === 401) {
+          toast.error(serverMsg || 'Credenciales inválidas. Revisa usuario y contraseña.');
+        } else if (status === 404) {
+          setShowApiConfig(true);
+          toast.error(`Error 404: Endpoint de API no encontrado en ${getApiUrl()}. Ingresa la URL de tu Backend abajo.`);
+        } else if (status >= 500) {
+          toast.error(`Error ${status} del servidor Backend. (${getApiUrl()})`);
+        } else {
+          toast.error(serverMsg || `Error de autenticación (${status})`);
+        }
       }
     } finally {
         setLoading(false);
@@ -408,6 +452,14 @@ export default function LoginPage() {
                     <span className="text-xs font-bold text-amber-600 dark:text-amber-300 flex items-center gap-1.5">
                       ⚙️ Configurar URL del Backend API
                     </span>
+                    <button
+                      type="button"
+                      onClick={() => handleTestConnection()}
+                      disabled={testingConnection}
+                      className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-300 font-bold text-[11px] rounded-lg transition-colors flex items-center gap-1 border border-amber-500/30"
+                    >
+                      {testingConnection ? '⏳ Probando...' : '⚡ Probar Conexión'}
+                    </button>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-amber-200/80">
                     Ingresa la URL pública de tu Backend en Railway para conectar la aplicación:
@@ -419,6 +471,13 @@ export default function LoginPage() {
                     placeholder="https://tu-backend.up.railway.app/api"
                     className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
                   />
+
+                  {connectionResult && (
+                    <div className={`p-2.5 rounded-lg text-xs font-medium border ${connectionResult.ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300'}`}>
+                      {connectionResult.message}
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
                     <button
                       type="button"
