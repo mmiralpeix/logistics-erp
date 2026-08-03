@@ -52,10 +52,25 @@ export class AllExceptionsFilter implements ExceptionFilter {
           message = 'El registro solicitado no fue encontrado';
           error = 'No encontrado';
           break;
+        case 'P2021':
+          status = HttpStatus.INTERNAL_SERVER_ERROR;
+          message = `La tabla no existe en la base de datos (${exception.meta?.table || 'desconocida'}). Ejecute npx prisma db push.`;
+          error = 'Tabla no encontrada';
+          break;
+        case 'P1001':
+          status = HttpStatus.SERVICE_UNAVAILABLE;
+          message = 'No se pudo conectar con el servidor de la base de datos en Railway. Verifique DATABASE_URL.';
+          error = 'Sin conexión a Base de Datos';
+          break;
+        case 'P1000':
+          status = HttpStatus.UNAUTHORIZED;
+          message = 'Autenticación fallida con el servidor de base de datos.';
+          error = 'Error de credenciales DB';
+          break;
         default:
           status = HttpStatus.INTERNAL_SERVER_ERROR;
-          message = 'Error de base de datos';
-          error = 'Error interno';
+          message = `Error de base de datos (${exception.code}: ${exception.message})`;
+          error = 'Error interno DB';
       }
       this.logger.error(`Prisma ${exception.code}: ${exception.message}`, exception.stack);
     } else if (exception instanceof Prisma.PrismaClientValidationError) {
