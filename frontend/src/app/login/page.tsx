@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { authApi } from '@/lib/api';
+import { authApi, getApiUrl } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth';
 import { Truck, Eye, EyeOff, Lock, Mail, Sun, Moon, ShieldCheck, Award, ArrowRight, UserCheck, Scale, MapPin, UserPlus, Phone, User } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
@@ -81,7 +81,7 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       if (!err.response) {
-        toast.error('Error de conexión: No se pudo conectar al servidor API backend. Verifique la URL de Railway.');
+        toast.error(`Error de conexión a ${getApiUrl()}: No se pudo conectar al servidor Backend. Verifica NEXT_PUBLIC_API_URL en Railway.`);
       } else {
         toast.error(err.response?.data?.message || 'Credenciales inválidas');
       }
