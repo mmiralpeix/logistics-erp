@@ -1022,3 +1022,62 @@ model ReportSchedule {
 
   @@map("report_schedules")
 }
+
+enum AlertSeverity {
+  INFORMACION
+  ADVERTENCIA
+  CRITICA
+  EMERGENCIA
+}
+
+enum AlertCategory {
+  DOCUMENTACION
+  MANTENIMIENTO
+  NEUMATICOS
+  CHOFERES
+  COMBUSTIBLE
+  FACTURACION
+  GPS
+  INVENTARIO
+}
+
+model AlertRecord {
+  id             String        @id @default(cuid())
+  codigo         String        @unique
+  categoria      AlertCategory
+  severidad      AlertSeverity
+  titulo         String
+  mensaje        String
+  moduloOrigen   String
+  entidadId      String?
+  metaDataJson   Json?
+
+  isResolved     Boolean       @default(false)
+  resolvedAt     DateTime?
+  resolvedBy     String?
+  resolucionNota String?
+
+  isSilenced     Boolean       @default(false)
+  silencedUntil  DateTime?
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([categoria])
+  @@index([severidad])
+  @@index([isResolved])
+  @@map("alert_records")
+}
+
+model UserAlertPreference {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  severidadMinima AlertSeverity @default(INFORMACION)
+  emailNotify     Boolean       @default(true)
+  systemNotify    Boolean       @default(true)
+  categoriasMuted Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("user_alert_preferences")
+}

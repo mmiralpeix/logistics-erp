@@ -51,6 +51,16 @@ export const dashboardApi = {
   getVehicleConsumptionChart: () => api.get('/dashboard/vehicle-consumption'),
 };
 
+export const alertsApi = {
+  getActiveAlerts: (params?: any) => api.get('/alerts/active', { params }),
+  getStats: () => api.get('/alerts/stats'),
+  evaluateAll: () => api.post('/alerts/evaluate-all'),
+  resolveAlert: (id: string, nota?: string) => api.patch(`/alerts/${id}/resolve`, { nota }),
+  silenceAlert: (id: string, dias?: number) => api.patch(`/alerts/${id}/silence`, { dias }),
+  getPreferences: () => api.get('/alerts/preferences'),
+  updatePreferences: (data: any) => api.patch('/alerts/preferences', data),
+};
+
 export const clientsApi = {
   getAll: (params?: any) => api.get('/clients', { params }),
   getOne: (id: string) => api.get(`/clients/${id}`),
