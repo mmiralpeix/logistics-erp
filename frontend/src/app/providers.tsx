@@ -10,9 +10,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000, // 5 minutos de frescura en memoria (Navegación en 0ms)
-            gcTime: 30 * 60 * 1000, // 30 minutos en caché de memoria
-            refetchOnWindowFocus: false, // Evitar parpadeos al cambiar de pestaña
+            staleTime: 10 * 60 * 1000, // 10 minutos de frescura en memoria (Navegación instantánea a 0ms)
+            gcTime: 60 * 60 * 1000, // 60 minutos de retención en memoria
+            refetchOnWindowFocus: false, // Evitar peticiones en segundo plano
             refetchOnReconnect: false,
             retry: 1,
           },
