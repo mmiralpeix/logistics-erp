@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { maintenanceApi, vehiclesApi, sparePartsApi, tiresApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
@@ -22,7 +23,15 @@ import { TireInspectionModal } from '@/components/maintenance/tires/TireInspecti
 import { TireTimelineModal } from '@/components/maintenance/tires/TireTimelineModal';
 
 export default function MaintenancePage() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<'orders' | 'health' | 'costs' | 'inventory' | 'tires'>('orders');
+
+  useEffect(() => {
+    if (tabParam && ['orders', 'health', 'costs', 'inventory', 'tires'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [tabParam]);
   const [showModal, setShowModal] = useState(false);
   const [showSpareModal, setShowSpareModal] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);

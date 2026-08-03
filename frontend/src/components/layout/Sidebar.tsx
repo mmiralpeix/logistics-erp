@@ -10,7 +10,7 @@ import {
 import {
   LayoutDashboard, Users, Truck, UserCheck, MapPin, Wrench, Droplet,
   FileText, Receipt, BarChart2, Satellite, Settings,
-  ChevronRight, LogOut, Shield, Package, Building2, X, AlertTriangle, LineChart
+  ChevronRight, LogOut, Shield, Package, Building2, X, AlertTriangle, LineChart, CircleDot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +24,7 @@ const navItems = [
   { href: '/carriers', icon: Building2, label: 'Operadores', description: 'Transportistas externos' },
   { href: '/trips', icon: MapPin, label: 'Viajes', description: 'Planificación multidía' },
   { href: '/maintenance', icon: Wrench, label: 'Mantenimiento', description: 'Preventivo y correctivo' },
+  { href: '/tires', icon: CircleDot, label: 'Neumáticos', description: 'Control y rendimiento' },
   { href: '/consumables', icon: Droplet, label: 'Consumibles', description: 'Diésel, Urea y fluidos' },
   { href: '/dangerous-goods', icon: Package, label: 'C. Peligrosas', description: 'Decreto 779/95' },
   { href: '/documents', icon: FileText, label: 'Documentos', description: 'Gestión documental' },
