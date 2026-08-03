@@ -35,4 +35,27 @@ export class HealthController {
       version: '1.0.0',
     };
   }
+
+  @Public()
+  @Get('import')
+  @ApiOperation({ summary: 'Restaurar volcado completo de datos demo desde neon_dump.json' })
+  async triggerImport() {
+    try {
+      const { execSync } = require('child_process');
+      const path = require('path');
+      const importScriptPath = path.join(process.cwd(), 'prisma', 'import_railway.js');
+      execSync(`node "${importScriptPath}"`, { stdio: 'inherit' });
+      return {
+        status: 'ok',
+        message: '🎉 Datos completos importados exitosamente en Railway PostgreSQL.',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (err: any) {
+      return {
+        status: 'error',
+        message: `Error ejecutando restauración de datos: ${err?.message || String(err)}`,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
 }
