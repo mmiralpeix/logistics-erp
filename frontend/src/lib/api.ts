@@ -247,6 +247,8 @@ export const carriersApi = {
   createDriver: (carrierId: string, data: any) => api.post(`/carriers/${carrierId}/drivers`, data),
   updateDriver: (driverId: string, data: any) => api.patch(`/carriers/drivers/${driverId}`, data),
   removeDriver: (driverId: string) => api.delete(`/carriers/drivers/${driverId}`),
+  getSummary360: (id: string) => api.get(`/carriers/${id}/summary-360`),
+  createSettlement: (id: string, data: { tripIds: string[]; retencionPct?: number }) => api.post(`/carriers/${id}/settlement`, data),
 };
 
 export const mfaApi = {

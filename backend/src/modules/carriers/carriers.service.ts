@@ -167,4 +167,81 @@ export class CarriersService {
       data: { isActive: false },
     });
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPEDIENTE 360° & LIQUIDACIÓN DE FLETES
+  // ═══════════════════════════════════════════════════════════════
+
+  async getSummary360(carrierId: string) {
+    const carrier = await this.prisma.carrier.findUnique({
+      where: { id: carrierId },
+      include: {
+        vehicles: { where: { isActive: true }, orderBy: { patente: 'asc' } },
+        drivers: { where: { isActive: true }, orderBy: { lastName: 'asc' } },
+        _count: { select: { trips: true } },
+      },
+    });
+
+    if (!carrier) throw new NotFoundException('Operador logístico no encontrado');
+
+    const trips = await this.prisma.trip.findMany({
+      where: { carrierId },
+      orderBy: { fechaSalidaProgramada: 'desc' },
+      take: 20,
+      include: { client: true, carrierVehicle: true, carrierDriver: true, costs: true },
+    });
+
+    const totalFletePactado = trips.reduce((sum, t) => sum + (t.subcontractorFee || t.tarifaAcordada || 0), 0);
+    const totalViajesCompletados = trips.filter((t) => t.status === 'FINALIZADO' as any).length;
+
+    return {
+      carrier,
+      trips,
+      stats: {
+        totalViajes: trips.length,
+        totalViajesCompletados,
+        totalFletePactado,
+        totalVehiculosActivos: carrier.vehicles.length,
+        totalChoferesActivos: carrier.drivers.length,
+      },
+    };
+  }
+
+  async createSettlement(carrierId: string, tripIds: string[], retencionPct: number = 5) {
+    const carrier = await this.findOne(carrierId);
+    const trips = await this.prisma.trip.findMany({
+      where: { id: { in: tripIds }, carrierId },
+      include: { client: true, carrierVehicle: true },
+    });
+
+    const subtotalFlete = trips.reduce((sum, t) => sum + (t.subcontractorFee || t.tarifaAcordada || 0), 0);
+    const montoRetencion = subtotalFlete * (retencionPct / 100);
+    const netoALiquidar = subtotalFlete - montoRetencion;
+
+    return {
+      numeroLiquidacion: `LIQ-OP-${Date.now().toString().slice(-6)}`,
+      fechaEmision: new Date(),
+      carrier: {
+        id: carrier.id,
+        razonSocial: carrier.razonSocial,
+        cuit: carrier.cuit,
+      },
+      resumen: {
+        cantidadViajes: trips.length,
+        subtotalFlete,
+        retencionPct,
+        montoRetencion,
+        netoALiquidar,
+      },
+      trips: trips.map((t) => ({
+        id: t.id,
+        numero: t.numero,
+        origen: t.origen,
+        destino: t.destino,
+        fecha: t.fechaSalidaProgramada,
+        fletePactado: t.subcontractorFee || t.tarifaAcordada || 0,
+        vehiculoPatente: t.carrierVehicle?.patente || 'S/D',
+      })),
+    };
+  }
 }
