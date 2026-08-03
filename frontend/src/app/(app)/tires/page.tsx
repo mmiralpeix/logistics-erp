@@ -138,55 +138,73 @@ export default function TiresPage() {
         />
 
         {/* Tire Cards Grid */}
-        {isLoadingTires ? (
-          <div className="flex items-center justify-center h-48 card">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Cargando inventario de neumáticos...</p>
+        {(() => {
+          const tireList: any[] = Array.isArray(tiresData)
+            ? tiresData
+            : Array.isArray(tiresData?.data)
+            ? tiresData.data
+            : Array.isArray(tiresData?.data?.data)
+            ? tiresData.data.data
+            : [];
+
+          if (isLoadingTires) {
+            return (
+              <div className="flex items-center justify-center h-48 card">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Cargando inventario de neumáticos...</p>
+                </div>
+              </div>
+            );
+          }
+
+          if (!tireList || tireList.length === 0) {
+            return (
+              <div className="card p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+                <CircleDot className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+                <p className="font-extrabold text-base text-slate-800 dark:text-slate-200">
+                  No se encontraron neumáticos registrados o coincidentes
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                  Ajustá los filtros de búsqueda o hacé clic en "Registrar Neumático" para dar de alta unidades en stock o instaladas.
+                </p>
+                <button
+                  onClick={() => {
+                    setTireSearch('');
+                    setTireStatus('');
+                    setTireTipo('');
+                    setTireVehicleId('');
+                  }}
+                  className="btn-secondary text-xs px-4 py-2 mt-2 inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Restablecer Filtros
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tireList.map((tire: any) => (
+                <TireCard
+                  key={tire.id}
+                  tire={tire}
+                  onInstall={(t) => setInstallTireModal({ tire: t, mode: 'install' })}
+                  onDismount={(t) => setInstallTireModal({ tire: t, mode: 'dismount' })}
+                  onRotate={(t) => setAxleMapVehicleId(t.vehicleId || vehicles?.[0]?.id)}
+                  onRetread={(t) => setRetreadTireModal({ tire: t, mode: t.status === 'EN_RECAPADO' ? 'receive' : 'send' })}
+                  onInspection={(t) => setInspectionTire(t)}
+                  onViewHistory={(t) => setTimelineTireId(t.id)}
+                  onEdit={(t) => {
+                    setEditTireData(t);
+                    setShowTireModal(true);
+                  }}
+                  onShowQR={(t) => setTimelineTireId(t.id)}
+                />
+              ))}
             </div>
-          </div>
-        ) : !tiresData?.data || tiresData.data.length === 0 ? (
-          <div className="card p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
-            <CircleDot className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
-            <p className="font-extrabold text-base text-slate-800 dark:text-slate-200">
-              No se encontraron neumáticos registrados o coincidentes
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-              Ajustá los filtros de búsqueda o hacé clic en "Registrar Neumático" para dar de alta unidades en stock o instaladas.
-            </p>
-            <button
-              onClick={() => {
-                setTireSearch('');
-                setTireStatus('');
-                setTireTipo('');
-                setTireVehicleId('');
-              }}
-              className="btn-secondary text-xs px-4 py-2 mt-2 inline-flex items-center gap-1.5"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Restablecer Filtros
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tiresData.data.map((tire: any) => (
-              <TireCard
-                key={tire.id}
-                tire={tire}
-                onInstall={(t) => setInstallTireModal({ tire: t, mode: 'install' })}
-                onDismount={(t) => setInstallTireModal({ tire: t, mode: 'dismount' })}
-                onRotate={(t) => setAxleMapVehicleId(t.vehicleId || vehicles?.[0]?.id)}
-                onRetread={(t) => setRetreadTireModal({ tire: t, mode: t.status === 'EN_RECAPADO' ? 'receive' : 'send' })}
-                onInspection={(t) => setInspectionTire(t)}
-                onViewHistory={(t) => setTimelineTireId(t.id)}
-                onEdit={(t) => {
-                  setEditTireData(t);
-                  setShowTireModal(true);
-                }}
-                onShowQR={(t) => setTimelineTireId(t.id)}
-              />
-            ))}
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* MODALS */}
