@@ -58,4 +58,25 @@ export class HealthController {
       };
     }
   }
+
+  @Public()
+  @Get('seed')
+  @ApiOperation({ summary: 'Generar datos masivos completos de prueba (MasterSeed)' })
+  async triggerMasterSeed() {
+    try {
+      const { MasterSeed } = require('../../prisma/master-seed');
+      await MasterSeed.run(this.prisma);
+      return {
+        status: 'ok',
+        message: '🎉 Sembrado masivo de datos demo (Vehículos, Choferes, Viajes, Mantenimiento, Neumáticos, Facturas) completado exitosamente.',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (err: any) {
+      return {
+        status: 'error',
+        message: `Error ejecutando sembrado masivo: ${err?.message || String(err)}`,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
 }
