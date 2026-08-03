@@ -40,6 +40,7 @@ export function TireModal({ tire, onClose, onSave }: TireModalProps) {
       toast.success(isEdit ? 'Neumático actualizado' : 'Neumático registrado exitosamente');
       qc.invalidateQueries({ queryKey: ['maintenance-tires'] });
       qc.invalidateQueries({ queryKey: ['maintenance-tires-kpis'] });
+      qc.invalidateQueries({ queryKey: ['tire-detail-timeline'] });
       onSave?.();
       onClose();
     },

@@ -387,7 +387,7 @@ export default function MaintenancePage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <CircleDot className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Tires (Gestión de Neumáticos)
+            <CircleDot className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Gestión de Neumáticos
             {tireKpis?.lowDepthAlertCount > 0 && (
               <span className="px-1.5 py-0.2 bg-red-500 text-white font-extrabold text-[10px] rounded-full animate-pulse">
                 {tireKpis.lowDepthAlertCount}

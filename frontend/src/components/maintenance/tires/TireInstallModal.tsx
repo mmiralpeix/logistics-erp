@@ -41,7 +41,9 @@ export function TireInstallModal({
     onSuccess: () => {
       toast.success(`Neumático ${tire.codigoInterno} montado en vehículo`);
       qc.invalidateQueries({ queryKey: ['maintenance-tires'] });
+      qc.invalidateQueries({ queryKey: ['maintenance-tires-kpis'] });
       qc.invalidateQueries({ queryKey: ['vehicle-axle-positions'] });
+      qc.invalidateQueries({ queryKey: ['tire-detail-timeline'] });
       onSave?.();
       onClose();
     },
@@ -55,7 +57,9 @@ export function TireInstallModal({
     onSuccess: () => {
       toast.success(`Neumático ${tire.codigoInterno} desmontado a depósito`);
       qc.invalidateQueries({ queryKey: ['maintenance-tires'] });
+      qc.invalidateQueries({ queryKey: ['maintenance-tires-kpis'] });
       qc.invalidateQueries({ queryKey: ['vehicle-axle-positions'] });
+      qc.invalidateQueries({ queryKey: ['tire-detail-timeline'] });
       onSave?.();
       onClose();
     },

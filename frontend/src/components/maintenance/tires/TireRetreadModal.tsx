@@ -31,6 +31,7 @@ export function TireRetreadModal({ tire, mode = 'send', onClose, onSave }: TireR
       toast.success(`Neumático ${tire.codigoInterno} enviado a recapado`);
       qc.invalidateQueries({ queryKey: ['maintenance-tires'] });
       qc.invalidateQueries({ queryKey: ['maintenance-tires-kpis'] });
+      qc.invalidateQueries({ queryKey: ['tire-detail-timeline'] });
       onSave?.();
       onClose();
     },
@@ -45,6 +46,7 @@ export function TireRetreadModal({ tire, mode = 'send', onClose, onSave }: TireR
       toast.success(`Neumático ${tire.codigoInterno} recibido post-recapado`);
       qc.invalidateQueries({ queryKey: ['maintenance-tires'] });
       qc.invalidateQueries({ queryKey: ['maintenance-tires-kpis'] });
+      qc.invalidateQueries({ queryKey: ['tire-detail-timeline'] });
       onSave?.();
       onClose();
     },

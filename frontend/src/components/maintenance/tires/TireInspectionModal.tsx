@@ -29,6 +29,7 @@ export function TireInspectionModal({ tire, onClose, onSave }: TireInspectionMod
       toast.success(`Inspección de ${tire.codigoInterno} registrada`);
       qc.invalidateQueries({ queryKey: ['maintenance-tires'] });
       qc.invalidateQueries({ queryKey: ['maintenance-tires-kpis'] });
+      qc.invalidateQueries({ queryKey: ['tire-detail-timeline'] });
       onSave?.();
       onClose();
     },
