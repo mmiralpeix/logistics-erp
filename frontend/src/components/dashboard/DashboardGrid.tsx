@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { UserWidgetItem, WIDGET_CATALOG } from '@/lib/dashboard-widgets.registry';
 import { ArrowUp, ArrowDown, EyeOff, Maximize2, Minimize2, Trash2, Plus, Move } from 'lucide-react';
 
@@ -17,7 +18,52 @@ export function DashboardGrid({
   onOpenAddModal,
   childrenMap,
 }: DashboardGridProps) {
-  const visibleWidgets = widgets.filter((w) => w.visible).sort((a, b) => a.order - b.order);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const updated = [...visibleWidgets];
+    const [movedItem] = updated.splice(draggedIndex, 1);
+    updated.splice(targetIndex, 0, movedItem);
+
+    // Recalculate order numbers
+    const newWidgets = widgets.map((w) => {
+      const idx = updated.findIndex((u) => u.id === w.id);
+      if (idx !== -1) {
+        return { ...w, order: idx + 1 };
+      }
+      return w;
+    });
+
+    onUpdateWidgets(newWidgets);
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   const handleMove = (index: number, direction: 'up' | 'down') => {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
@@ -72,20 +118,39 @@ export function DashboardGrid({
           const content = childrenMap[w.widgetType];
           if (!content) return null;
 
+          const isBeingDragged = draggedIndex === index;
+          const isDragTarget = dragOverIndex === index && draggedIndex !== index;
+
           return (
             <div
               key={w.id}
+              draggable={isEditing}
+              onDragStart={(e) => isEditing && handleDragStart(e, index)}
+              onDragOver={(e) => isEditing && handleDragOver(e, index)}
+              onDrop={(e) => isEditing && handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
               className={`${getWidthClass(w.width)} transition-all relative ${
-                isEditing ? 'ring-2 ring-blue-500/50 rounded-2xl p-1 bg-blue-50/20 dark:bg-blue-950/20' : ''
+                isEditing ? 'cursor-grab active:cursor-grabbing hover:shadow-xl' : ''
+              } ${
+                isBeingDragged ? 'opacity-40 scale-95 border-2 border-dashed border-blue-500' : ''
+              } ${
+                isDragTarget ? 'ring-4 ring-blue-500 rounded-2xl scale-[1.02] bg-blue-100/50 dark:bg-blue-900/50' : ''
+              } ${
+                isEditing && !isBeingDragged && !isDragTarget
+                  ? 'ring-2 ring-blue-500/50 rounded-2xl p-1 bg-blue-50/20 dark:bg-blue-950/20'
+                  : ''
               }`}
             >
               {/* Editing Controls Overlay Bar */}
               {isEditing && (
-                <div className="bg-slate-900/90 text-white px-3 py-1.5 rounded-xl mb-2 flex items-center justify-between shadow-lg text-xs animate-fade-in backdrop-blur-sm z-10">
+                <div className="bg-slate-900/90 text-white px-3 py-1.5 rounded-xl mb-2 flex items-center justify-between shadow-lg text-xs animate-fade-in backdrop-blur-sm z-10 cursor-grab">
                   <div className="flex items-center gap-2">
-                    <Move className="w-3.5 h-3.5 text-blue-400" />
-                    <span className="font-extrabold text-[11px] truncate max-w-[140px]">
+                    <Move className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+                    <span className="font-extrabold text-[11px] truncate max-w-[140px]" title="Arrastrá para reordenar">
                       {catalogItem?.title || w.widgetType}
+                    </span>
+                    <span className="text-[9px] bg-blue-500/30 text-blue-300 px-1.5 py-0.5 rounded font-mono">
+                      Arrastrá
                     </span>
                   </div>
 
