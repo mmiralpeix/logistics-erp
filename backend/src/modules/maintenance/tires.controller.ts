@@ -11,7 +11,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 
 @ApiTags('Maintenance — Tires')
 @ApiBearerAuth('JWT')
-@Controller('maintenance/tires')
+@Controller(['maintenance/tires', 'tires'])
 export class TiresController {
   constructor(private tiresService: TiresService) {}
 
