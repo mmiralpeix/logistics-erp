@@ -167,6 +167,12 @@ export default function VehiclesPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelected360Id(vehicle.id)}
+                            onMouseEnter={() =>
+                              qc.prefetchQuery({
+                                queryKey: ['vehicle-summary-360', vehicle.id],
+                                queryFn: () => vehiclesApi.getSummary360(vehicle.id).then((r) => r.data),
+                              })
+                            }
                             className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-100"
                           >
                             <Eye className="w-3.5 h-3.5" /> Ficha 360°
