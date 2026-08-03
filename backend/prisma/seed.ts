@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, VehicleType, VehicleStatus, TripStatus, MaintenanceType, MaintenanceStatus, DocumentType, InvoiceStatus, InvoiceType, DangerousGoodsClass } from '@prisma/client';
+import { PrismaClient, UserRole, VehicleType, VehicleStatus, TripStatus, MaintenanceType, MaintenanceStatus, DocumentType, InvoiceStatus, InvoiceType, DangerousGoodsClass, TireType, TireStatus, CertificationStatus, AlertCategory, AlertSeverity } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -1051,6 +1051,437 @@ async function main() {
       { driverId: driver2.id, tipo: 'SANCION', descripcion: 'Infracción de tránsito - exceso de velocidad', fecha: addDays(now, -15), lugar: 'Ruta 3 Km 1320', costoEstimado: 15000, resolucion: 'Multa pagada por la empresa - descuento en próximo sueldo' },
     ],
   });
+
+  // ============================
+  // CERTIFICACIONES (CERTIFICATIONS)
+  // ============================
+  await prisma.certification.deleteMany({});
+  const cert1 = await prisma.certification.create({
+    data: {
+      numeroCertificado: 1001,
+      clientId: clientLitio.id,
+      contractId: contractLitio.id,
+      numeroOC: 'OC-LMA-2024-089',
+      periodo: 'Julio 2026',
+      fechaEmision: addDays(now, -10),
+      fechaAprobacion: addDays(now, -5),
+      cantidadViajes: 12,
+      toneladasExcedentes: 24.5,
+      montoTotal: 4850000,
+      estado: CertificationStatus.APROBADO,
+      diasEnGestion: 5,
+      observaciones: 'Certificación de servicios de transporte de Litio correspondiente a la primera quincena de Julio.',
+    },
+  });
+
+  const cert2 = await prisma.certification.create({
+    data: {
+      numeroCertificado: 1002,
+      clientId: client1.id,
+      periodo: 'Julio 2026',
+      fechaEmision: addDays(now, -2),
+      cantidadViajes: 8,
+      toneladasExcedentes: 0,
+      montoTotal: 1480000,
+      estado: CertificationStatus.EN_REVISION,
+      diasEnGestion: 2,
+      observaciones: 'Certificación pendiente de validación por jefe de balanza Cerro Negro.',
+    },
+  });
+
+  console.log('✅ Certificaciones de Clientes creadas');
+
+  // ============================
+  // TERCEROS / CARRIERS
+  // ============================
+  await prisma.carrierDriver.deleteMany({});
+  await prisma.carrierVehicle.deleteMany({});
+  await prisma.carrier.deleteMany({});
+
+  const carrier1 = await prisma.carrier.create({
+    data: {
+      razonSocial: 'Logística Express Patagónica S.A.',
+      cuit: '30-71554433-2',
+      telefono: '0297-448-9000',
+      email: 'despacho@logisticaexpress.com.ar',
+      contacto: 'Roberto Gómez',
+      domicilio: 'Ruta 3 Km 1200',
+      ciudad: 'Comodoro Rivadavia',
+      provincia: 'Chubut',
+      isActive: true,
+      notas: 'Subcontratista homologado para cargas generales y minería',
+      vehicles: {
+        create: [
+          { patente: 'AA 123 BB', tipo: VehicleType.CAMION, marca: 'Scania', modelo: 'R450' },
+          { patente: 'CC 456 DD', tipo: VehicleType.SEMIRREMOLQUE, marca: 'Randon', modelo: 'Sider 14.5m' },
+        ],
+      },
+      drivers: {
+        create: [
+          { firstName: 'Oscar', lastName: 'Gutiérrez', dni: '25112233', telefono: '0297-154-112233' },
+          { firstName: 'Facundo', lastName: 'Ríos', dni: '31445566', telefono: '0297-154-445566' },
+        ],
+      },
+    },
+  });
+
+  const carrier2 = await prisma.carrier.create({
+    data: {
+      razonSocial: 'TransAndina Minera S.R.L.',
+      cuit: '30-69887766-1',
+      telefono: '0387-422-5500',
+      email: 'operaciones@transandina.com',
+      contacto: 'Ing. Marcos Paz',
+      domicilio: 'Av. Chile 550',
+      ciudad: 'Salta',
+      provincia: 'Salta',
+      isActive: true,
+      vehicles: {
+        create: [
+          { patente: 'EE 789 FF', tipo: VehicleType.TRACTOR, marca: 'Volvo', modelo: 'FH 540' },
+          { patente: 'GG 012 HH', tipo: VehicleType.CARRETON, marca: 'Vulcano', modelo: 'Carretón 80 Tn' },
+        ],
+      },
+      drivers: {
+        create: [
+          { firstName: 'Gonzalo', lastName: 'Mendoza', dni: '29887766', telefono: '0387-154-887766' },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ Transportistas Terceros creados');
+
+  // ============================
+  // NEUMÁTICOS Y MOVIMIENTOS
+  // ============================
+  await prisma.tireInspection.deleteMany({});
+  await prisma.tireRetread.deleteMany({});
+  await prisma.tireMovement.deleteMany({});
+  await prisma.tire.deleteMany({});
+
+  const tire1 = await prisma.tire.create({
+    data: {
+      codigoInterno: 'NEU-0001',
+      codigoQR: 'QR-NEU-0001',
+      numeroSerie: 'SN-MICH-9901',
+      marca: 'Michelin',
+      modelo: 'X Multi Z',
+      medida: '295/80 R22.5',
+      tipo: TireType.DIRECCIONAL,
+      status: TireStatus.INSTALADO,
+      fechaCompra: past(6),
+      precioCompra: 420000,
+      profundidadInicialMm: 16.0,
+      profundidadActualMm: 12.5,
+      presionRecomendadaPsi: 110,
+      presionActualPsi: 108,
+      kilometrosRecorridos: 34500,
+      vehicleId: vehicle1.id,
+      posicion: '1-DIRECCIONAL-IZQ',
+    },
+  });
+
+  const tire2 = await prisma.tire.create({
+    data: {
+      codigoInterno: 'NEU-0002',
+      codigoQR: 'QR-NEU-0002',
+      numeroSerie: 'SN-MICH-9902',
+      marca: 'Michelin',
+      modelo: 'X Multi Z',
+      medida: '295/80 R22.5',
+      tipo: TireType.DIRECCIONAL,
+      status: TireStatus.INSTALADO,
+      fechaCompra: past(6),
+      precioCompra: 420000,
+      profundidadInicialMm: 16.0,
+      profundidadActualMm: 12.8,
+      presionRecomendadaPsi: 110,
+      presionActualPsi: 110,
+      kilometrosRecorridos: 34500,
+      vehicleId: vehicle1.id,
+      posicion: '1-DIRECCIONAL-DER',
+    },
+  });
+
+  const tire3 = await prisma.tire.create({
+    data: {
+      codigoInterno: 'NEU-0003',
+      codigoQR: 'QR-NEU-0003',
+      numeroSerie: 'SN-BS-5501',
+      marca: 'Bridgestone',
+      modelo: 'M729',
+      medida: '295/80 R22.5',
+      tipo: TireType.TRACCION,
+      status: TireStatus.EN_DEPOSITO,
+      fechaCompra: past(3),
+      precioCompra: 390000,
+      profundidadInicialMm: 18.0,
+      profundidadActualMm: 18.0,
+      presionRecomendadaPsi: 110,
+      presionActualPsi: 110,
+      kilometrosRecorridos: 0,
+    },
+  });
+
+  const tire4 = await prisma.tire.create({
+    data: {
+      codigoInterno: 'NEU-0004',
+      codigoQR: 'QR-NEU-0004',
+      numeroSerie: 'SN-GOO-3311',
+      marca: 'Goodyear',
+      modelo: 'KMAX S',
+      medida: '295/80 R22.5',
+      tipo: TireType.TRACCION,
+      status: TireStatus.EN_RECAPADO,
+      fechaCompra: past(18),
+      precioCompra: 360000,
+      profundidadInicialMm: 16.0,
+      profundidadActualMm: 3.5,
+      presionRecomendadaPsi: 110,
+      kilometrosRecorridos: 115000,
+      cantidadRecapados: 1,
+    },
+  });
+
+  await prisma.tireMovement.create({
+    data: {
+      tireId: tire1.id,
+      vehicleId: vehicle1.id,
+      tipoMovimiento: 'MONTAJE',
+      posicionDestino: '1-DIRECCIONAL-IZQ',
+      kilometrajeVehiculo: 110730,
+      profundidadMm: 16.0,
+      presionPsi: 110,
+      motivo: 'Montaje de neumático nuevo en eje direccional',
+      costo: 5000,
+      usuario: 'Taller Central',
+    },
+  });
+
+  await prisma.tireInspection.create({
+    data: {
+      tireId: tire1.id,
+      vehicleId: vehicle1.id,
+      fecha: past(1),
+      inspector: 'Técnico Juan Pérez',
+      profundidadMm: 12.5,
+      presionPsi: 108,
+      estadoVisual: 'BUENO',
+      resultado: 'APROBADO',
+      observaciones: 'Desgaste parejo y correcto inflado',
+    },
+  });
+
+  await prisma.tireRetread.create({
+    data: {
+      tireId: tire4.id,
+      empresaRecapadora: 'Bandag Patagónica S.A.',
+      numeroRecapado: 2,
+      fechaEnvio: addDays(now, -10),
+      costo: 125000,
+      profundidadNuevaMm: 16.5,
+      garantiaMeses: 6,
+      status: 'EN_PROCESO',
+      observaciones: 'Envío para segundo recape banda tracción',
+    },
+  });
+
+  console.log('✅ Neumáticos e Inspecciones creados');
+
+  // ============================
+  // REGISTRO DE TURNOS Y CAPACITACIONES CHOFERES
+  // ============================
+  await prisma.driverShiftLog.deleteMany({});
+  await prisma.driverTraining.deleteMany({});
+
+  await prisma.driverShiftLog.createMany({
+    data: [
+      {
+        driverId: driver1.id,
+        tipoRegistro: 'TURNO_TRABAJO',
+        fechaInicio: past(1),
+        diasTrabajados: 14,
+        diasDescansados: 0,
+        excedido: false,
+        notas: 'En turno activo 21x7 en yacimiento Cerro Negro',
+      },
+      {
+        driverId: driver2.id,
+        tipoRegistro: 'DESCANSO',
+        fechaInicio: addDays(now, -5),
+        fechaFin: addDays(now, 2),
+        diasTrabajados: 21,
+        diasDescansados: 7,
+        excedido: false,
+        notas: 'Franco en domicilio Trelew',
+      },
+    ],
+  });
+
+  await prisma.driverTraining.createMany({
+    data: [
+      {
+        driverId: driver1.id,
+        tipo: 'Manejo Defensivo en Alta Montaña y Nieve',
+        fecha: past(4),
+        vencimiento: future(8),
+        entidad: 'CESVI Argentina',
+        aprobado: true,
+        notas: 'Habilitación requerida para tramos Puna y Paso Jama',
+      },
+      {
+        driverId: driver1.id,
+        tipo: 'Inducción de Seguridad Yacimiento Cerro Negro',
+        fecha: past(2),
+        vencimiento: future(10),
+        entidad: 'Goldcorp / Minera Santa Cruz',
+        aprobado: true,
+      },
+    ],
+  });
+
+  console.log('✅ Turnos y Capacitaciones de Choferes creados');
+
+  // ============================
+  // GEOCERCAS GPS
+  // ============================
+  await prisma.geofence.deleteMany({});
+  await prisma.geofence.createMany({
+    data: [
+      {
+        nombre: 'Base Operativa Comodoro Rivadavia',
+        descripcion: 'Playa principal de estacionamiento, taller y depósito central',
+        coordinates: { lat: -45.8645, lon: -67.4915 },
+        radio: 500,
+        isActive: true,
+      },
+      {
+        nombre: 'Yacimiento Cerro Negro',
+        descripcion: 'Balanza de recepción y zona de descarga mina',
+        coordinates: { lat: -45.2167, lon: -68.1167 },
+        radio: 1500,
+        isActive: true,
+      },
+      {
+        nombre: 'Salar de Olaroz - Planta Jujuy',
+        descripcion: 'Zona de carga de carbonato y salmuera de litio',
+        coordinates: { lat: -23.4000, lon: -66.7000 },
+        radio: 2000,
+        isActive: true,
+      },
+    ],
+  });
+
+  console.log('✅ Geocercas GPS creadas');
+
+  // ============================
+  // PLANTILLAS Y REGISTROS DE REPORTES
+  // ============================
+  await prisma.reportSchedule.deleteMany({});
+  await prisma.reportSaved.deleteMany({});
+  await prisma.reportTemplate.deleteMany({});
+
+  const tpl1 = await prisma.reportTemplate.create({
+    data: {
+      nombre: 'Resumen Ejecutivo Semanal de Operaciones',
+      descripcion: 'Informe de KPIs de viajes, toneladas movilizadas, consumo diésel y margen bruto',
+      categoria: 'OPERACIONES',
+      configJson: { theme: 'blue', showKpiSummary: true, showFleetChart: true, showFuelChart: true },
+      isDefault: true,
+    },
+  });
+
+  const tpl2 = await prisma.reportTemplate.create({
+    data: {
+      nombre: 'Reporte Financiero y Margen por Cliente',
+      descripcion: 'Detalle de tarifas, costos operativos, excedentes y rentabilidad por cuenta',
+      categoria: 'FINANZAS',
+      configJson: { theme: 'emerald', showFinancialChart: true, showKpiSummary: true },
+      isDefault: false,
+    },
+  });
+
+  await prisma.reportSaved.create({
+    data: {
+      templateId: tpl1.id,
+      titulo: 'Informe Operativo Cierre Quincenal Julio 2026',
+      categoria: 'OPERACIONES',
+      periodoFrom: past(1),
+      periodoTo: new Date(),
+      resumenIA: 'Operación con cumplimiento del 98.4% en entregas. Consumo promedio de 1.34 km/l.',
+      favorito: true,
+      creadoPor: 'Carlos Rodríguez',
+    },
+  });
+
+  await prisma.reportSchedule.create({
+    data: {
+      titulo: 'Envío Automático Lunes - KPIs Operativos',
+      categoria: 'OPERACIONES',
+      frecuencia: 'SEMANAL',
+      destinatarios: 'gerencia@logistics.com, operaciones@logistics.com',
+      formato: 'PDF',
+      isActive: true,
+      proximoEnvio: addDays(now, 3),
+    },
+  });
+
+  console.log('✅ Plantillas y Reportes creados');
+
+  // ============================
+  // CENTRO DE ALERTAS
+  // ============================
+  await prisma.alertRecord.deleteMany({});
+  await prisma.alertRecord.createMany({
+    data: [
+      {
+        codigo: 'ALT-DOC-001',
+        categoria: AlertCategory.DOCUMENTACION,
+        severidad: AlertSeverity.ADVERTENCIA,
+        titulo: 'Vencimiento de VTV Próximo - Vehículo MN 012 OP',
+        mensaje: 'La Inspección Técnica Vehicular de la camioneta Ford F-4000 vence en 15 días.',
+        moduloOrigen: 'VEHICULOS',
+        entidadId: vehicle4.id,
+        isResolved: false,
+      },
+      {
+        codigo: 'ALT-CHO-002',
+        categoria: AlertCategory.CHOFERES,
+        severidad: AlertSeverity.CRITICA,
+        titulo: 'Examen Psicofísico Vencido - Chofer Eduardo Campos',
+        mensaje: 'El certificado psicofísico del conductor venció hace 5 días. Requiere renovación urgente.',
+        moduloOrigen: 'CHOFERES',
+        entidadId: driver2.id,
+        isResolved: false,
+      },
+      {
+        codigo: 'ALT-FLT-003',
+        categoria: AlertCategory.COMBUSTIBLE,
+        severidad: AlertSeverity.ADVERTENCIA,
+        titulo: 'Desvío Anómalo de Consumo Diésel - Patente EF 456 GH',
+        mensaje: 'Consumo de 0.95 km/l en ruta Trelew detectado (25% inferior a la media histórica).',
+        moduloOrigen: 'COMBUSTIBLE',
+        entidadId: vehicle2.id,
+        isResolved: false,
+      },
+      {
+        codigo: 'ALT-NEU-004',
+        categoria: AlertCategory.NEUMATICOS,
+        severidad: AlertSeverity.CRITICA,
+        titulo: 'Neumático con Profundidad Límite (3.5mm) - NEU-0004',
+        mensaje: 'Neumático enviado a recape Bandag por llegar al mínimo legal de seguridad.',
+        moduloOrigen: 'NEUMATICOS',
+        entidadId: tire4.id,
+        isResolved: true,
+        resolvedAt: addDays(now, -2),
+        resolvedBy: 'Taller Central',
+        resolucionNota: 'Neumático retirado de vehículo y enviado a recapadora Bandag.',
+      },
+    ],
+  });
+
+  console.log('✅ Alertas del Sistema creadas');
 
   // ============================
   // CONFIGURACIÓN DEL SISTEMA

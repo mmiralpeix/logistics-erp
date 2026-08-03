@@ -37,8 +37,13 @@ async function restore() {
         continue;
       }
 
+      const count = await prisma[tableName] ? await prisma[tableName].count() : 0;
+      if (count > 0) {
+        console.log(`[Railway Migration] Tabla "${tableName}" ya tiene ${count} registros. Preservando datos existentes.`);
+        continue;
+      }
+
       console.log(`[Railway Migration] Importando ${rows.length} registros en la tabla "${tableName}"...`);
-      await prisma.$executeRawUnsafe(`TRUNCATE TABLE "public"."${tableName}" CASCADE;`);
 
       const columns = Object.keys(rows[0]);
       const colNames = columns.map(c => `"${c}"`).join(', ');
