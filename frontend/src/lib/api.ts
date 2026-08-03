@@ -178,6 +178,14 @@ export const certificationsApi = {
   remove: (id: string) => api.delete(`/certifications/${id}`),
 };
 
+export const analyticsApi = {
+  getKpis: (params?: any) => api.get('/analytics/kpis', { params }),
+  getComparative: (params?: any) => api.get('/analytics/comparative', { params }),
+  getPredictive: () => api.get('/analytics/predictions'),
+  getVehicleRanking: () => api.get('/analytics/vehicle-ranking'),
+  exportAnalyticsExcel: () => api.get('/analytics/export', { responseType: 'blob' }),
+};
+
 export const reportsApi = {
   getTemplates: () => api.get('/reports/templates'),
   createTemplate: (data: any) => api.post('/reports/templates', data),

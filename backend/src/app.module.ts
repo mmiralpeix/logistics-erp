@@ -24,6 +24,7 @@ import { DangerousGoodsModule } from './modules/dangerous-goods/dangerous-goods.
 import { CertificationsModule } from './modules/certifications/certifications.module';
 import { MailModule } from './modules/mail/mail.module';
 import { CarriersModule } from './modules/carriers/carriers.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -55,6 +56,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     AlertsModule,
     DangerousGoodsModule,
     CarriersModule,
+    AnalyticsModule,
   ],
   providers: [
     {

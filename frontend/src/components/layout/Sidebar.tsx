@@ -6,12 +6,14 @@ import { useLayoutStore } from '@/lib/layoutStore';
 import {
   LayoutDashboard, Users, Truck, UserCheck, MapPin, Wrench, Droplet,
   FileText, Receipt, BarChart2, Satellite, Settings,
-  ChevronRight, LogOut, Shield, Package, Building2, X
+  ChevronRight, LogOut, Shield, Package, Building2, X, AlertTriangle, LineChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', description: 'Resumen ejecutivo' },
+  { href: '/alerts', icon: AlertTriangle, label: 'Alertas ERP', description: 'Centro de riesgos' },
+  { href: '/analytics', icon: LineChart, label: 'BI & Analítica', description: 'Inteligencia empresarial' },
   { href: '/clients', icon: Users, label: 'Clientes', description: 'Gestión de clientes' },
   { href: '/vehicles', icon: Truck, label: 'Vehículos', description: 'Flota propia y tercerizada' },
   { href: '/drivers', icon: UserCheck, label: 'Conductores', description: 'Personal de conducción' },
