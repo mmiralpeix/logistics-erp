@@ -3,11 +3,12 @@
 - **Git Push Reminder**: Al finalizar la sesión o concluir una tarea importante, recuerda siempre al usuario hacer commit y push del repositorio actualizado a Git (`git status`, `git add`, `git commit`, `git push`).
 - **Autosave Git (Cada 1 hora)**: Cada 1 hora durante la sesión activa, verifica si existen modificaciones en el proyecto (`git status`). **Únicamente si hay cambios o nuevos archivos**, ejecuta automáticamente `git add .`, un `git commit` descriptivo y `git push`. Si no hay cambios, no realiza ninguna acción.
 
-## Git Workflow Rule
-Whenever the user requests "GIT" or asks to save/sync changes:
-1. Always run `git add .` (or `git add -A`).
-2. Always run `git commit -m "<descriptive message>"`.
-3. Always run `git push` to ensure all commits are pushed to the remote repository so the user can pull them on other machines (e.g. desktop PC).
+## Pre-Production & Master Branching Strategy (Regla Base Obligatoria)
+1. **Rama de Trabajo (`preproduction`)**: Todos los cambios y desarrollos solicitados se aplican y pushean ÚNICAMENTE a la rama `preproduction` (`git push origin preproduction`). **Queda estrictamente prohibido pushear directamente a `master`**.
+2. **Merge a Master**: Únicamente cuando el usuario pruebe o dé su confirmación/OK explícito ("haz el merge", "aprobado", etc.), se realizará el merge de `preproduction` a `master` (`git checkout master`, `git merge preproduction`, `git push origin master`) y se volverá a posicionar la sesión en `preproduction`.
+3. **Comandos de Guardado/Sync**:
+   - Siempre verificar estar en `preproduction`.
+   - Ejecutar `git add .`, `git commit -m "<mensaje descriptivo>"` y `git push origin preproduction`.
 
 ## Multi-Agent Skills Integration & JIT Dynamic Skill Router (`aas-stack.json`)
 1. **Dynamic Skill Selection**: Subagents must inspect `aas-stack.json` to identify skills relevant to their domain before executing tasks.
