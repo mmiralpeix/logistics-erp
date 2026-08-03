@@ -184,6 +184,8 @@ export const usersApi = {
   create: (data: any) => api.post('/users', data),
   update: (id: string, data: any) => api.patch(`/users/${id}`, data),
   toggle: (id: string) => api.patch(`/users/${id}/toggle`),
+  getDashboardConfig: () => api.get('/users/me/dashboard-config'),
+  updateDashboardConfig: (config: any) => api.patch('/users/me/dashboard-config', config),
 };
 
 export const dangerousGoodsApi = {
