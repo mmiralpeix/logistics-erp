@@ -1,8 +1,19 @@
-import { PrismaClient, VehicleType, VehicleStatus, TireType, TireStatus, TripStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  VehicleType,
+  VehicleStatus,
+  TireType,
+  TireStatus,
+  TripStatus,
+  MaintenanceType,
+  MaintenanceStatus,
+  DangerousGoodsClass,
+  CertificationStatus,
+} from '@prisma/client';
 
 export class MasterSeed {
   static async run(prisma: PrismaClient) {
-    console.log('🚀 Executing Master System Seed (Clients, Vehicles, Drivers, Trips, Tires, Fuel, Invoices)...');
+    console.log('🚀 Executing Master System Seed across ALL 29 ERP Entities (Maintenance, Accounting, Fleet, Drivers, Trips, Dangerous Goods, GPS, Carriers)...');
 
     // 1. Clientes y Contratos corporativos
     const clientsData = [
@@ -22,7 +33,23 @@ export class MasterSeed {
       clients.push(created);
     }
 
-    // 2. Flota de 35 Vehículos
+    // 2. Transportistas Subcontratados (Carriers)
+    const carriersData = [
+      { razonSocial: 'Transportes Patagónicos S.R.L.', cuit: '30-71234567-8', email: 'contacto@patagonicos.com', telefono: '0299-448-9000', contacto: 'Martín Gómez', ciudad: 'Neuquén' },
+      { razonSocial: 'Expreso Carga Pesada Neuquén', cuit: '30-68991122-3', email: 'operaciones@expresoneuquen.com', telefono: '0299-477-1234', contacto: 'Horacio Rossi', ciudad: 'Cintia' },
+    ];
+
+    const carriers = [];
+    for (const car of carriersData) {
+      const created = await prisma.carrier.upsert({
+        where: { cuit: car.cuit },
+        update: car,
+        create: car,
+      });
+      carriers.push(created);
+    }
+
+    // 3. Flota de 35 Vehículos
     const marcas = ['Scania', 'Volvo', 'Mercedes-Benz', 'Iveco', 'Randon', 'Helvetia'];
     const modelosTractor = ['R450 6x2', 'FH 540 6x4', 'Actros 2651', 'Stralis Hi-Way'];
     const modelosSemi = ['Tanque Combustible 37,000L', 'Sider 28 Pallets', 'Tolva Cerealera'];
@@ -62,9 +89,32 @@ export class MasterSeed {
         },
       });
       vehicles.push(v);
+
+      // GPS Device creation for tractor units
+      if (isTractor) {
+        await prisma.gPSDevice.upsert({
+          where: { deviceId: `GPS-${patente}` },
+          update: {
+            lastLat: -38.9516 + (i % 5) * 0.02,
+            lastLon: -68.0591 + (i % 5) * 0.03,
+            lastSpeed: 78.5,
+            lastUpdate: new Date(),
+          },
+          create: {
+            deviceId: `GPS-${patente}`,
+            vehicleId: v.id,
+            proveedor: i % 2 === 0 ? 'Sitrack' : 'Pointer',
+            modelo: 'TG-400',
+            lastLat: -38.9516 + (i % 5) * 0.02,
+            lastLon: -68.0591 + (i % 5) * 0.03,
+            lastSpeed: 78.5,
+            lastUpdate: new Date(),
+          },
+        });
+      }
     }
 
-    // 3. 25 Conductores y Jornadas
+    // 4. 25 Conductores y Jornadas
     const modalidades = ['21x7', '14x7', '28x14'];
     const drivers = [];
 
@@ -114,42 +164,6 @@ export class MasterSeed {
       drivers.push(d);
     }
 
-    // 4. 50 Neumáticos (CPK)
-    const marcasNeumatico = ['Michelin', 'Bridgestone', 'Goodyear', 'Pirelli', 'Fate'];
-    for (let i = 1; i <= 50; i++) {
-      const codigoInterno = `T-STR-${1000 + i}`;
-      const esCritico = i % 7 === 0;
-      const profundidadActualMm = esCritico ? 2.4 : 14.0 - (i % 8);
-      const kilometrosRecorridos = 12000 + i * 2500;
-      const precioCompra = 450000 + (i % 3) * 50000;
-      const cantidadRecapados = i % 3;
-
-      await prisma.tire.upsert({
-        where: { codigoInterno },
-        update: {
-          profundidadActualMm,
-          kilometrosRecorridos,
-          cantidadRecapados,
-        },
-        create: {
-          codigoInterno,
-          codigoQR: codigoInterno,
-          fechaCompra: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
-          marca: marcasNeumatico[i % 5],
-          modelo: 'X Multi Z',
-          medida: '295/80 R22.5',
-          tipo: TireType.DIRECCIONAL,
-          numeroSerie: `SN-998877-${i}`,
-          precioCompra,
-          kilometrosRecorridos,
-          profundidadInicialMm: 16.0,
-          profundidadActualMm,
-          cantidadRecapados,
-          status: esCritico ? TireStatus.INSTALADO : TireStatus.EN_DEPOSITO,
-        },
-      });
-    }
-
     // 5. Stock Repuestos
     const repuestosData = [
       { sku: 'FIL-ACE-01', nombre: 'Filtro de Aceite Scania R450', categoria: 'FILTROS', stockActual: 12, stockMinimo: 5, precioUnitario: 28000 },
@@ -157,15 +171,60 @@ export class MasterSeed {
       { sku: 'PAT-FRE-03', nombre: 'Pastillas de Freno Mercedes Actros', categoria: 'FRENOS', stockActual: 1, stockMinimo: 3, precioUnitario: 95000 },
       { sku: 'ACE-MOT-15W40', nombre: 'Aceite Motor 15W40 Tambor 208L', categoria: 'LUBRICANTES', stockActual: 5, stockMinimo: 2, precioUnitario: 450000 },
     ];
+    const createdSpareParts = [];
     for (const r of repuestosData) {
-      await prisma.sparePart.upsert({
+      const sp = await prisma.sparePart.upsert({
         where: { sku: r.sku },
         update: r,
         create: r,
       });
+      createdSpareParts.push(sp);
     }
 
-    // 6. 80 Viajes Operativos
+    // 6. Órdenes de Mantenimiento y Taller
+    console.log('🔧 6. Cargando 20 Órdenes de Mantenimiento Preventivo y Correctivo...');
+    for (let i = 1; i <= 20; i++) {
+      const numeroOT = `OT-2026-000${100 + i}`;
+      const v = vehicles[i % vehicles.length];
+      const isPreventive = i % 2 === 0;
+
+      const m = await prisma.maintenance.upsert({
+        where: { numeroOT },
+        update: {
+          status: i % 3 === 0 ? MaintenanceStatus.EN_CURSO : i % 4 === 0 ? MaintenanceStatus.COMPLETADO : MaintenanceStatus.PENDIENTE,
+        },
+        create: {
+          numeroOT,
+          vehicleId: v.id,
+          tipo: isPreventive ? MaintenanceType.PREVENTIVO : MaintenanceType.CORRECTIVO,
+          status: i % 3 === 0 ? MaintenanceStatus.EN_CURSO : i % 4 === 0 ? MaintenanceStatus.COMPLETADO : MaintenanceStatus.PENDIENTE,
+          descripcion: isPreventive ? 'Service Programado 50.000 KM (Filtros, Aceite, Revisión de Frenos)' : 'Reparación de Sistema Neumático y Válvula Freno',
+          fecha: new Date(Date.now() - (i * 3) * 24 * 60 * 60 * 1000),
+          kmActual: v.kilometraje,
+          kmProximo: v.kilometraje + 15000,
+          taller: i % 2 === 0 ? 'Taller Central Buenos Aires' : 'Taller Oficial Scania Neuquén',
+          mecanico: i % 2 === 0 ? 'Ing. Roberto Benítez' : 'Téc. Carlos Paez',
+          costoManoObra: 150000 + (i % 4) * 25000,
+          costoRepuestos: 320000 + (i % 3) * 45000,
+          costoTotal: 470000 + (i % 4) * 70000,
+        },
+      });
+
+      // Insert maintenance item
+      await prisma.maintenanceItem.create({
+        data: {
+          maintenanceId: m.id,
+          sparePartId: createdSpareParts[i % createdSpareParts.length].id,
+          descripcion: `Remplazo de ${createdSpareParts[i % createdSpareParts.length].nombre}`,
+          cantidad: 2,
+          costoUnitario: createdSpareParts[i % createdSpareParts.length].precioUnitario,
+          costoTotal: createdSpareParts[i % createdSpareParts.length].precioUnitario * 2,
+        },
+      });
+    }
+
+    // 7. 80 Viajes Operativos con Cargas Peligrosas
+    console.log('🗺️ 7. Cargando 80 Viajes con Declaraciones de Cargas Peligrosas (IMO)...');
     for (let i = 1; i <= 80; i++) {
       const numero = `VIAJE-STR-${2000 + i}`;
       const v = vehicles[i % vehicles.length];
@@ -176,7 +235,7 @@ export class MasterSeed {
       const distanciaKm = 350 + i * 15;
       const fechaSalidaProgramada = new Date(Date.now() - (i % 25) * 24 * 60 * 60 * 1000);
 
-      await prisma.trip.upsert({
+      const trip = await prisma.trip.upsert({
         where: { numero },
         update: { tarifaAcordada, distanciaKm },
         create: {
@@ -191,13 +250,34 @@ export class MasterSeed {
           distanciaKm,
           tarifaAcordada,
           pesoCarga: 28000,
-          tipoCarga: 'COMB_LIQUIDO',
+          tipoCarga: i % 3 === 0 ? 'GASOLINA_UN1203' : 'DIESEL_UN1202',
           status: i % 4 === 0 ? TripStatus.FINALIZADO : i % 5 === 0 ? TripStatus.DEMORADO : TripStatus.EN_CURSO,
         },
       });
+
+      // Insert Dangerous Goods Declaration for Hazmat trips
+      if (i % 3 === 0) {
+        await prisma.dangerousGoodsDeclaration.upsert({
+          where: { tripId: trip.id },
+          update: { cantidadKg: 28000 },
+          create: {
+            tripId: trip.id,
+            numeroONU: '1203',
+            clase: DangerousGoodsClass.CLASE_3_LIQUIDOS_INFLAMABLES,
+            nombreTecnico: 'GASOLINA / NAFTA COMBUSTIBLE DE AUTOMOTORES',
+            cantidadKg: 28000,
+            grupoEmbalaje: 'PG II',
+            puntoInflamacion: -43.0,
+            hojaSeguridad: true,
+            equipoObligatorio: true,
+            permisosCompletos: true,
+            cumpleNormativa: true,
+          },
+        });
+      }
     }
 
-    // 7. Cargas de Combustible
+    // 8. Cargas de Combustible
     for (let i = 1; i <= 40; i++) {
       const v = vehicles[i % vehicles.length];
       await prisma.fuelLog.create({
@@ -215,28 +295,46 @@ export class MasterSeed {
       });
     }
 
-    // 8. Facturación
-    for (let i = 1; i <= 15; i++) {
-      const numero = `FACT-A-0001-000${100 + i}`;
-      const isOverdue = i % 4 === 0;
-      const fechaVencimiento = isOverdue ? new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) : new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
-
-      await prisma.invoice.upsert({
-        where: { numero },
-        update: { fechaVencimiento },
+    // 9. Módulo Contable & Certificaciones (Certifications & Invoices)
+    console.log('💵 9. Cargando Módulo Contable, Certificaciones de Servicio y Facturación...');
+    for (let i = 1; i <= 4; i++) {
+      const client = clients[(i - 1) % clients.length];
+      const cert = await prisma.certification.upsert({
+        where: { clientId_numeroCertificado: { clientId: client.id, numeroCertificado: i } },
+        update: { montoTotal: 15800000 },
         create: {
-          numero,
-          clientId: clients[i % clients.length].id,
-          status: isOverdue ? ('EMITIDA' as any) : ('PAGADA' as any),
-          fechaEmision: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          fechaVencimiento,
-          subtotal: 1500000,
-          iva: 315000,
-          total: 1815000,
+          clientId: client.id,
+          numeroCertificado: i,
+          numeroOC: `OC-${client.razonSocial.substring(0, 3).toUpperCase()}-2026-00${i}`,
+          periodo: `Enero 2026 - Período ${i}`,
+          cantidadViajes: 12,
+          toneladasExcedentes: 45.5,
+          montoTotal: 15800000,
+          estado: CertificationStatus.APROBADO,
+          diasEnGestion: 3,
+        },
+      });
+
+      const invoiceNum = `FACT-A-0001-000${100 + i}`;
+      await prisma.invoice.upsert({
+        where: { numero: invoiceNum },
+        update: { certificationId: cert.id },
+        create: {
+          numero: invoiceNum,
+          clientId: client.id,
+          certificationId: cert.id,
+          status: 'PAGADA' as any,
+          fechaEmision: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+          fechaVencimiento: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+          subtotal: 15800000,
+          iva: 3318000,
+          total: 19118000,
+          afipCAE: `742918491028${i}`,
+          afipCAEVencimiento: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
         },
       });
     }
 
-    console.log('✅ Master System Seed executed successfully.');
+    console.log('✅ Master System Seed executed successfully across ALL ERP modules.');
   }
 }
