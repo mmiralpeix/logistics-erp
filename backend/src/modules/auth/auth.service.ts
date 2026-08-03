@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, OnModuleInit, HttpException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import * as speakeasy from 'speakeasy';
@@ -107,42 +107,53 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.validateUser(dto.email, dto.password);
+    try {
+      const user = await this.validateUser(dto.email, dto.password);
 
-    // If MFA is enabled, require TOTP token
-    if (user.mfaEnabled) {
-      if (!dto.totpToken) {
-        return { mfaRequired: true, userId: user.id };
+      // If MFA is enabled, require TOTP token
+      if (user.mfaEnabled) {
+        if (!dto.totpToken) {
+          return { mfaRequired: true, userId: user.id };
+        }
+        const isValidToken = speakeasy.totp.verify({
+          secret: user.mfaSecret,
+          encoding: 'base32',
+          token: dto.totpToken,
+          window: 1,
+        });
+        if (!isValidToken) throw new UnauthorizedException('Código MFA inválido');
       }
-      const isValidToken = speakeasy.totp.verify({
-        secret: user.mfaSecret,
-        encoding: 'base32',
-        token: dto.totpToken,
-        window: 1,
-      });
-      if (!isValidToken) throw new UnauthorizedException('Código MFA inválido');
+
+      // Safely update last login timestamp without crashing if DB schema varies
+      try {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { lastLogin: new Date() },
+        });
+      } catch (lastLoginErr) {
+        console.warn('[AuthService] No se pudo actualizar lastLogin:', lastLoginErr);
+      }
+
+      const payload = { sub: user.id, email: user.email, role: user.role };
+      const token = this.jwtService.sign(payload);
+
+      return {
+        access_token: token,
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          phone: user.phone,
+          mfaEnabled: user.mfaEnabled,
+        },
+      };
+    } catch (err: any) {
+      console.error('[AuthService.login] Error al iniciar sesión:', err);
+      if (err instanceof HttpException) throw err;
+      throw new BadRequestException(`Fallo en inicio de sesión: ${err.message || String(err)}`);
     }
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
-    });
-
-    const payload = { sub: user.id, email: user.email, role: user.role };
-    const token = this.jwtService.sign(payload);
-
-    return {
-      access_token: token,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role,
-        phone: user.phone,
-        mfaEnabled: user.mfaEnabled,
-      },
-    };
   }
 
   async getProfile(userId: string) {

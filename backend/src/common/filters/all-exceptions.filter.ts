@@ -79,12 +79,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error = 'Datos inválidos';
       this.logger.error(`Prisma Validation: ${exception.message}`);
     } else {
-      // Unknown errors — log full details but don't expose them
       status = HttpStatus.INTERNAL_SERVER_ERROR;
-      message = 'Error interno del servidor';
+      const detailMsg = exception instanceof Error ? exception.message : String(exception);
+      message = `Error interno del servidor: ${detailMsg}`;
       error = 'Internal Server Error';
       this.logger.error(
-        `Unhandled exception on ${request.method} ${request.url}`,
+        `Unhandled exception on ${request.method} ${request.url}: ${detailMsg}`,
         exception instanceof Error ? exception.stack : String(exception),
       );
     }
