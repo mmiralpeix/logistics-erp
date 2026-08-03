@@ -7,7 +7,7 @@ import { TiresController } from './tires.controller';
 import { TiresService } from './tires.service';
 
 @Module({
-  controllers: [SparePartsController, MaintenanceController, TiresController],
+  controllers: [TiresController, SparePartsController, MaintenanceController],
   providers: [MaintenanceService, SparePartsService, TiresService],
   exports: [MaintenanceService, SparePartsService, TiresService],
 })
