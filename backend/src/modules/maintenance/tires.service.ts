@@ -24,10 +24,12 @@ export class TiresService {
     const skip = (p - 1) * l;
 
     const where: any = {};
-    if (status) where.status = status;
-    if (tipo) where.tipo = tipo;
-    if (vehicleId) where.vehicleId = vehicleId;
-    if (minProfundidad) where.profundidadActualMm = { lte: Number(minProfundidad) };
+    if (status && String(status).trim() !== '' && String(status) !== 'undefined') where.status = status;
+    if (tipo && String(tipo).trim() !== '' && String(tipo) !== 'undefined') where.tipo = tipo;
+    if (vehicleId && String(vehicleId).trim() !== '' && String(vehicleId) !== 'undefined') where.vehicleId = vehicleId;
+    if (minProfundidad && String(minProfundidad).trim() !== '' && String(minProfundidad) !== 'undefined') {
+      where.profundidadActualMm = { lte: Number(minProfundidad) };
+    }
 
     if (search) {
       where.OR = [
