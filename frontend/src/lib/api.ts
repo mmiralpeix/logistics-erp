@@ -5,33 +5,40 @@ export const getApiUrl = () => {
   if (typeof window !== 'undefined') {
     // 1. Manual user override stored in LocalStorage
     const override = localStorage.getItem('NEXT_PUBLIC_API_URL');
-    if (override) return override;
+    if (override) {
+      const clean = override.trim().replace(/\/+$/, '');
+      return clean.endsWith('/api') ? clean : `${clean}/api`;
+    }
 
     const hostname = window.location.hostname;
     const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
 
-    // 2. Build-time environment variable
+    // 2. Build-time or Runtime environment variable
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
     if (envUrl) {
       if (!isLocal) {
         if (!envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-          return envUrl;
+          const clean = envUrl.trim().replace(/\/+$/, '');
+          return clean.endsWith('/api') ? clean : `${clean}/api`;
         }
       } else {
-        return envUrl;
+        const clean = envUrl.trim().replace(/\/+$/, '');
+        return clean.endsWith('/api') ? clean : `${clean}/api`;
       }
     }
 
     // 3. In Production deployment (Railway, Custom Domain, Cloud)
     if (!isLocal) {
-      // Use relative endpoint '/api' which leverages Next.js same-origin rewrites/proxies
-      return '/api';
+      return `${window.location.protocol}//${window.location.host}/api`;
     }
   }
 
   // 4. Default for Server-Side Rendering (SSR) or Local Development
   const envUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (envUrl && !envUrl.includes('localhost')) return envUrl;
+  if (envUrl && !envUrl.includes('localhost')) {
+    const clean = envUrl.trim().replace(/\/+$/, '');
+    return clean.endsWith('/api') ? clean : `${clean}/api`;
+  }
   return 'http://localhost:3001/api';
 };
 
@@ -41,7 +48,19 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  config.baseURL = getApiUrl();
+  const currentBase = getApiUrl().trim().replace(/\/+$/, '');
+  let path = config.url || '';
+
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  if (path.startsWith('/api/')) {
+    path = path.substring(4);
+  }
+
+  config.baseURL = currentBase;
+  config.url = path;
+
   const token = Cookies.get('auth_token') || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;

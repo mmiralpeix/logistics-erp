@@ -398,7 +398,7 @@ export default function LoginPage() {
                   }}
                   className="text-[11px] text-slate-500 hover:text-blue-500 underline transition-colors flex items-center gap-1"
                 >
-                  ⚙️ {showApiConfig ? 'Ocultar Servidor API' : `Servidor API (${getApiUrl().replace(/\/api$/, '')})`}
+                  ⚙️ {showApiConfig ? 'Ocultar Servidor API' : `Servidor API (${getApiUrl()})`}
                 </button>
               </div>
 
