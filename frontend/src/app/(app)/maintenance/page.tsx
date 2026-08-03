@@ -1,17 +1,28 @@
 'use client';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { maintenanceApi, vehiclesApi, sparePartsApi } from '@/lib/api';
+import { maintenanceApi, vehiclesApi, sparePartsApi, tiresApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatDate, formatMoney, MAINTENANCE_STATUS_MAP } from '@/lib/utils';
-import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search, Package, Layers, Image as ImageIcon } from 'lucide-react';
+import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search, Package, Layers, Image as ImageIcon, CircleDot, LayoutGrid } from 'lucide-react';
 import { WorkOrderModal } from '@/components/maintenance/WorkOrderModal';
 import { MaintenanceHealthCard } from '@/components/maintenance/MaintenanceHealthCard';
 import { SparePartModal } from '@/components/maintenance/SparePartModal';
 import toast from 'react-hot-toast';
 
+// Tires Submodule Components
+import { TireKPIs } from '@/components/maintenance/tires/TireKPIs';
+import { TireFilters } from '@/components/maintenance/tires/TireFilters';
+import { TireCard } from '@/components/maintenance/tires/TireCard';
+import { VehicleAxleMapModal } from '@/components/maintenance/tires/VehicleAxleMapModal';
+import { TireModal } from '@/components/maintenance/tires/TireModal';
+import { TireInstallModal } from '@/components/maintenance/tires/TireInstallModal';
+import { TireRetreadModal } from '@/components/maintenance/tires/TireRetreadModal';
+import { TireInspectionModal } from '@/components/maintenance/tires/TireInspectionModal';
+import { TireTimelineModal } from '@/components/maintenance/tires/TireTimelineModal';
+
 export default function MaintenancePage() {
-  const [activeTab, setActiveTab] = useState<'orders' | 'health' | 'costs' | 'inventory'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'health' | 'costs' | 'inventory' | 'tires'>('orders');
   const [showModal, setShowModal] = useState(false);
   const [showSpareModal, setShowSpareModal] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -21,6 +32,20 @@ export default function MaintenancePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [spareCategory, setSpareCategory] = useState('');
   const [spareSearch, setSpareSearch] = useState('');
+
+  // Tires Submodule States
+  const [tireSearch, setTireSearch] = useState('');
+  const [tireStatus, setTireStatus] = useState('');
+  const [tireTipo, setTireTipo] = useState('');
+  const [tireVehicleId, setTireVehicleId] = useState('');
+  const [showTireModal, setShowTireModal] = useState(false);
+  const [editTireData, setEditTireData] = useState<any>(null);
+  const [installTireModal, setInstallTireModal] = useState<{ tire: any; mode: 'install' | 'dismount'; vehicleId?: string; posicion?: string } | null>(null);
+  const [retreadTireModal, setRetreadTireModal] = useState<{ tire: any; mode: 'send' | 'receive' } | null>(null);
+  const [inspectionTire, setInspectionTire] = useState<any>(null);
+  const [timelineTireId, setTimelineTireId] = useState<string | null>(null);
+  const [axleMapVehicleId, setAxleMapVehicleId] = useState<string | null>(null);
+  const [isExportingTires, setIsExportingTires] = useState(false);
 
   const qc = useQueryClient();
 
@@ -55,6 +80,29 @@ export default function MaintenancePage() {
     queryFn: () => sparePartsApi.getAll({ categoria: spareCategory || undefined }).then((r) => r.data),
   });
 
+  // Tires Queries
+  const { data: tireKpis, isLoading: isLoadingTireKpis } = useQuery({
+    queryKey: ['maintenance-tires-kpis'],
+    queryFn: () => tiresApi.getKPIs().then((r) => r.data),
+    enabled: activeTab === 'tires',
+  });
+
+  const { data: tiresData, isLoading: isLoadingTires } = useQuery({
+    queryKey: ['maintenance-tires', tireSearch, tireStatus, tireTipo, tireVehicleId],
+    queryFn: () =>
+      tiresApi
+        .getAll({
+          search: tireSearch,
+          status: tireStatus === 'CRITICO' ? undefined : tireStatus || undefined,
+          minProfundidad: tireStatus === 'CRITICO' ? 3.0 : undefined,
+          tipo: tireTipo || undefined,
+          vehicleId: tireVehicleId || undefined,
+          limit: 100,
+        })
+        .then((r) => r.data),
+    enabled: activeTab === 'tires',
+  });
+
   // Mutations
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: any) => maintenanceApi.update(id, data),
@@ -81,7 +129,7 @@ export default function MaintenancePage() {
 
   const createSpareMutation = useMutation({
     mutationFn: (data: any) => sparePartsApi.create(data),
-    onSuccess: (res: any) => {
+    onSuccess: () => {
       toast.success('Artículo guardado en inventario');
       setSpareCategory('');
       setSpareSearch('');
@@ -130,6 +178,42 @@ export default function MaintenancePage() {
     setShowModal(true);
   };
 
+  const handleExportTiresCSV = async () => {
+    try {
+      setIsExportingTires(true);
+      const res = await tiresApi.exportReport({
+        search: tireSearch,
+        status: tireStatus === 'CRITICO' ? undefined : tireStatus || undefined,
+        minProfundidad: tireStatus === 'CRITICO' ? 3.0 : undefined,
+        tipo: tireTipo || undefined,
+        vehicleId: tireVehicleId || undefined,
+      });
+      const rows = res.data;
+      if (!rows || rows.length === 0) {
+        toast.error('No hay datos de neumáticos para exportar');
+        return;
+      }
+
+      const headers = Object.keys(rows[0]).join(',');
+      const csvContent =
+        'data:text/csv;charset=utf-8,' +
+        [headers, ...rows.map((row: any) => Object.values(row).map((v) => `"${v}"`).join(','))].join('\n');
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `reporte_neumaticos_flota_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Reporte de neumáticos descargado exitosamente');
+    } catch (err: any) {
+      toast.error('Error al exportar reporte de neumáticos');
+    } finally {
+      setIsExportingTires(false);
+    }
+  };
+
   const filteredOrders = data?.data?.filter((m: any) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -158,17 +242,39 @@ export default function MaintenancePage() {
     <div>
       <Header
         title="Mantenimiento & Salud de Flota"
-        subtitle="Gestión de Órdenes de Trabajo (OT), mantenimientos preventivos y salud de vehículos"
+        subtitle="Gestión de Órdenes de Trabajo (OT), mantenimientos preventivos, inventario de repuestos y gestión de neumáticos"
         actions={
-          <button
-            onClick={() => {
-              setEditData(null);
-              setShowModal(true);
-            }}
-            className="btn-primary"
-          >
-            <Plus className="w-4 h-4" /> Nueva Orden de Trabajo (OT)
-          </button>
+          activeTab === 'tires' ? (
+            <button
+              onClick={() => {
+                setEditTireData(null);
+                setShowTireModal(true);
+              }}
+              className="btn-primary"
+            >
+              <Plus className="w-4 h-4" /> Alta de Neumático
+            </button>
+          ) : activeTab === 'inventory' ? (
+            <button
+              onClick={() => {
+                setEditSpareData(null);
+                setShowSpareModal(true);
+              }}
+              className="btn-primary"
+            >
+              <Plus className="w-4 h-4" /> Nuevo Repuesto / Artículo
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setEditData(null);
+                setShowModal(true);
+              }}
+              className="btn-primary"
+            >
+              <Plus className="w-4 h-4" /> Nueva Orden de Trabajo (OT)
+            </button>
+          )
         }
       />
 
@@ -225,10 +331,10 @@ export default function MaintenancePage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-medium">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6 text-sm font-medium overflow-x-auto">
           <button
             onClick={() => setActiveTab('orders')}
-            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors shrink-0 ${
               activeTab === 'orders'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -239,7 +345,7 @@ export default function MaintenancePage() {
 
           <button
             onClick={() => setActiveTab('health')}
-            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors shrink-0 ${
               activeTab === 'health'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -250,7 +356,7 @@ export default function MaintenancePage() {
 
           <button
             onClick={() => setActiveTab('costs')}
-            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors shrink-0 ${
               activeTab === 'costs'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -261,7 +367,7 @@ export default function MaintenancePage() {
 
           <button
             onClick={() => setActiveTab('inventory')}
-            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors ${
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors shrink-0 ${
               activeTab === 'inventory'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -270,6 +376,22 @@ export default function MaintenancePage() {
             <Package className="w-4 h-4" /> Inventario
             {Array.isArray(spareParts) && spareParts.some((p: any) => p.stockActual <= p.stockMinimo) && (
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('tires')}
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors shrink-0 ${
+              activeTab === 'tires'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <CircleDot className="w-4 h-4 text-purple-600 dark:text-purple-400" /> Tires (Gestión de Neumáticos)
+            {tireKpis?.lowDepthAlertCount > 0 && (
+              <span className="px-1.5 py-0.2 bg-red-500 text-white font-extrabold text-[10px] rounded-full animate-pulse">
+                {tireKpis.lowDepthAlertCount}
+              </span>
             )}
           </button>
         </div>
@@ -283,355 +405,415 @@ export default function MaintenancePage() {
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Buscar por N° OT, Patente, Taller..."
+                  placeholder="Buscar por N° OT, patente, taller..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="input pl-9 text-sm w-full"
+                  className="input pl-9"
                 />
               </div>
 
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="input w-full sm:w-52 text-sm"
-              >
-                <option value="">Todos los estados</option>
-                {Object.entries(MAINTENANCE_STATUS_MAP).map(([key, val]) => (
-                  <option key={key} value={key}>
-                    {val.label}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Estado:</span>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="input py-1.5 text-xs font-semibold"
+                >
+                  <option value="">Todos los Estados</option>
+                  <option value="PENDIENTE">PENDIENTE</option>
+                  <option value="EN_CURSO">EN CURSO</option>
+                  <option value="COMPLETADO">COMPLETADO</option>
+                  <option value="CANCELADO">CANCELADO</option>
+                </select>
+              </div>
             </div>
 
-            {/* Table */}
+            {/* Orders Table */}
             <div className="card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="table-header">
-                    <th className="px-4 py-3 text-left">N° OT</th>
-                    <th className="px-4 py-3 text-left">Vehículo</th>
-                    <th className="px-4 py-3 text-left">Tipo</th>
-                    <th className="px-4 py-3 text-left">Trabajos / Descripción</th>
-                    <th className="px-4 py-3 text-left">Estado</th>
-                    <th className="px-4 py-3 text-left">Taller / Proveedor</th>
-                    <th className="px-4 py-3 text-left">Costo Total</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={8} className="text-center py-12 text-slate-500">
-                        Cargando Órdenes de Trabajo...
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="table-header">
+                      <th className="px-4 py-3 text-left">N° OT</th>
+                      <th className="px-4 py-3 text-left">Vehículo</th>
+                      <th className="px-4 py-3 text-left">Tipo</th>
+                      <th className="px-4 py-3 text-left">Descripción / Trabajos</th>
+                      <th className="px-4 py-3 text-left">Taller</th>
+                      <th className="px-4 py-3 text-left">Fechas</th>
+                      <th className="px-4 py-3 text-left">Costo Total</th>
+                      <th className="px-4 py-3 text-left">Estado</th>
+                      <th className="px-4 py-3 text-right">Acciones</th>
                     </tr>
-                  ) : filteredOrders?.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center py-12 text-slate-500">
-                        No se encontraron registros de mantenimiento.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredOrders?.map((m: any) => {
-                      const st = MAINTENANCE_STATUS_MAP[m.status] || { label: m.status, cls: 'badge-gray' };
-                      return (
-                        <tr key={m.id} className="table-row">
-                          <td className="px-4 py-3">
-                            <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded">
-                              {m.numeroOT || 'OT-MANUAL'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="font-medium text-slate-900 dark:text-white">{m.vehicle?.patente}</p>
-                            <p className="text-xs text-slate-500">{m.vehicle?.marca} {m.vehicle?.modelo}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className={m.tipo === 'PREVENTIVO' ? 'badge badge-blue' : 'badge badge-yellow'}>
-                              {m.tipo}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="text-slate-800 dark:text-slate-300 font-medium max-w-xs truncate">
-                              {m.descripcion}
-                            </p>
-                            {m.items && m.items.length > 0 && (
-                              <p className="text-[11px] text-slate-500">
-                                {m.items.length} repuesto(s) registrado(s)
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={9} className="text-center py-12 text-slate-500">
+                          Cargando Órdenes de Trabajo...
+                        </td>
+                      </tr>
+                    ) : !filteredOrders || filteredOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="text-center py-12 text-slate-500">
+                          No se encontraron Órdenes de Trabajo
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredOrders.map((ot: any) => {
+                        const statusBadge = MAINTENANCE_STATUS_MAP[ot.status] || {
+                          cls: 'badge-gray',
+                          label: ot.status,
+                        };
+                        return (
+                          <tr key={ot.id} className="table-row">
+                            <td className="px-4 py-3 font-mono font-bold text-slate-900 dark:text-white">
+                              {ot.numeroOT}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="font-semibold text-slate-900 dark:text-white">
+                                {ot.vehicle?.patente}
+                              </span>
+                              <p className="text-xs text-slate-500">
+                                {ot.vehicle?.marca} {ot.vehicle?.modelo}
                               </p>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <select
-                              value={m.status}
-                              onChange={(e) => updateMutation.mutate({ id: m.id, status: e.target.value })}
-                              className="text-xs bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded px-2 py-1 font-medium text-slate-800 dark:text-slate-200"
-                            >
-                              {Object.entries(MAINTENANCE_STATUS_MAP).map(([k, v]) => (
-                                <option key={k} value={k}>
-                                  {v.label}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
-                            {m.taller || 'Taller Central'}
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                            {formatMoney(m.costoTotal)}
-                          </td>
-                          <td className="px-4 py-3 text-right space-x-2">
-                            <button
-                              onClick={() => handleEdit(m)}
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`¿Eliminar Orden de Trabajo ${m.numeroOT || ''}?`)) {
-                                  deleteOTMutation.mutate(m.id);
-                                }
-                              }}
-                              className="text-xs font-semibold text-rose-600 hover:underline"
-                            >
-                              Eliminar
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span
+                                className={`badge text-xs font-semibold ${
+                                  ot.tipo === 'CORRECTO' || ot.tipo === 'CORRECTIVO'
+                                    ? 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                                    : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                                }`}
+                              >
+                                {ot.tipo}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 max-w-xs">
+                              <p className="font-medium text-slate-800 dark:text-slate-200 line-clamp-1">
+                                {ot.descripcion}
+                              </p>
+                              {ot.repuestosUtilizados && ot.repuestosUtilizados.length > 0 && (
+                                <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">
+                                  Repuestos: {ot.repuestosUtilizados.map((r: any) => `${r.nombre} (x${r.cantidad})`).join(', ')}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-slate-700 dark:text-slate-300 font-medium">
+                              {ot.taller || 'Taller Central'}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-slate-500">
+                              <p>Inicio: {formatDate(ot.fechaInicio)}</p>
+                              {ot.fechaFin && <p>Fin: {formatDate(ot.fechaFin)}</p>}
+                            </td>
+                            <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
+                              {formatMoney(ot.costoTotal)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={statusBadge.cls}>{statusBadge.label}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => handleEdit(ot)}
+                                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                                  title="Editar OT"
+                                >
+                                  <Wrench className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`¿Eliminar la Orden de Trabajo ${ot.numeroOT}?`)) {
+                                      deleteOTMutation.mutate(ot.id);
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors"
+                                  title="Eliminar OT"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: HEALTH STATUS */}
+        {/* TAB 2: HEALTH */}
         {activeTab === 'health' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {vehicles?.map((v: any) => {
-              const costData = costsByVehicle?.find((c: any) => c.vehicleId === v.id);
-              return (
-                <MaintenanceHealthCard
-                  key={v.id}
-                  vehicle={v}
-                  costData={costData}
-                  onNewOT={handleNewForVehicle}
-                />
-              );
-            })}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {vehicles?.map((v: any) => (
+              <MaintenanceHealthCard
+                key={v.id}
+                vehicle={v}
+                costData={costsByVehicle?.find((c: any) => c.vehicleId === v.id)}
+                onNewOT={(vId) => handleNewForVehicle(vId)}
+              />
+            ))}
           </div>
         )}
 
         {/* TAB 3: COSTS */}
         {activeTab === 'costs' && (
           <div className="card overflow-hidden">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 font-bold text-sm">
+              Análisis de Costos Acumulados por Vehículo ($/Km)
+            </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="table-header">
-                  <th className="px-4 py-3 text-left">Patente</th>
-                  <th className="px-4 py-3 text-left">Vehículo</th>
-                  <th className="px-4 py-3 text-left">Kilometraje Odómetro</th>
-                  <th className="px-4 py-3 text-left">Costo Mantenimiento Acumulado</th>
-                  <th className="px-4 py-3 text-left">Costo Promedio por KM ($/Km)</th>
+                  <th className="px-4 py-3 text-left">Patente / Vehículo</th>
+                  <th className="px-4 py-3 text-left">Tipo</th>
+                  <th className="px-4 py-3 text-left">Km Acumulados</th>
+                  <th className="px-4 py-3 text-left">Total OTs Completadas</th>
+                  <th className="px-4 py-3 text-left">Costo Mantenimiento ($)</th>
+                  <th className="px-4 py-3 text-right">Costo / Km ($/Km)</th>
                 </tr>
               </thead>
               <tbody>
-                {costsByVehicle?.map((c: any) => (
-                  <tr key={c.vehicleId} className="table-row">
-                    <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
-                      {c.vehicle?.patente}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                      {c.vehicle?.marca} {c.vehicle?.modelo}
-                    </td>
-                    <td className="px-4 py-3 text-slate-800 dark:text-slate-300">
-                      {(c.vehicle?.kilometraje || 0).toLocaleString('es-AR')} km
-                    </td>
-                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                      {formatMoney(c._sum?.costoTotal || 0)}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-blue-600 dark:text-blue-400">
-                      ${c.costPerKm || 0} / km
-                    </td>
-                  </tr>
-                ))}
+                {costsByVehicle?.map((row: any) => {
+                  const cpk = row.kilometraje > 0 ? row.costoTotal / row.kilometraje : 0;
+                  return (
+                    <tr key={row.vehicleId} className="table-row">
+                      <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
+                        {row.patente}
+                        <p className="text-xs text-slate-500 font-normal">{row.marca} {row.modelo}</p>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        {row.tipo}
+                      </td>
+                      <td className="px-4 py-3 font-mono">
+                        {row.kilometraje?.toLocaleString() || 0} km
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-blue-600 dark:text-blue-400">
+                        {row.totalOTs} OTs
+                      </td>
+                      <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
+                        {formatMoney(row.costoTotal)}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        ${cpk.toFixed(2)} / km
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
 
-        {/* TAB 4: INVENTORY / PAÑOL */}
+        {/* TAB 4: INVENTORY */}
         {activeTab === 'inventory' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
-              <div className="flex flex-wrap gap-3 items-center w-full sm:w-auto">
-                <div className="relative w-full sm:w-64">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Buscar repuesto, SKU, marca..."
-                    value={spareSearch}
-                    onChange={(e) => setSpareSearch(e.target.value)}
-                    className="input pl-9 text-sm w-full"
-                  />
-                </div>
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar por repuesto, SKU, marca..."
+                  value={spareSearch}
+                  onChange={(e) => setSpareSearch(e.target.value)}
+                  className="input pl-9"
+                />
+              </div>
 
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-xs text-slate-500 font-medium whitespace-nowrap">Categoría:</span>
                 <select
                   value={spareCategory}
                   onChange={(e) => setSpareCategory(e.target.value)}
-                  className="input w-44 text-sm"
+                  className="input py-1.5 text-xs font-semibold"
                 >
-                  <option value="">Todas las categorías</option>
-                  <option value="FILTROS">Filtros</option>
-                  <option value="LUBRICANTES">Lubricantes</option>
-                  <option value="FRENOS">Frenos</option>
-                  <option value="NEUMATICOS">Neumáticos</option>
-                  <option value="CORREAS">Correas</option>
-                  <option value="SISTEMA_ELECTRICO">Sistema Eléctrico</option>
-                  <option value="VALVULAS_CISTERNA">Válvulas Cisterna</option>
-                  <option value="SUSPENSION">Suspensión</option>
-                  <option value="VARIOS">Varios</option>
+                  <option value="">Todas las Categorías</option>
+                  <option value="FILTROS">FILTROS</option>
+                  <option value="ACEITES_LUBRICANTES">ACEITES Y LUBRICANTES</option>
+                  <option value="FRENOS">FRENOS</option>
+                  <option value="SUSPENSION_DIRECCION">SUSPENSIÓN Y DIRECCIÓN</option>
+                  <option value="MOTOR_TRANSMISION">MOTOR Y TRANSMISIÓN</option>
+                  <option value="SISTEMA_ELECTRICO">SISTEMA ELÉCTRICO</option>
+                  <option value="NEUMATICOS_ACCESORIOS">NEUMÁTICOS Y ACCESORIOS</option>
+                  <option value="ACCESORIOS_VARIOS">ACCESORIOS VARIOS</option>
                 </select>
               </div>
-
-              <button
-                onClick={() => {
-                  setEditSpareData(null);
-                  setShowSpareModal(true);
-                }}
-                className="btn-primary"
-              >
-                <Plus className="w-4 h-4" /> Nuevo Artículo
-              </button>
             </div>
 
             <div className="card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="table-header">
-                    <th className="px-4 py-3 text-left">Foto</th>
-                    <th className="px-4 py-3 text-left">SKU</th>
-                    <th className="px-4 py-3 text-left">Repuesto / Insumo</th>
-                    <th className="px-4 py-3 text-left">Categoría</th>
-                    <th className="px-4 py-3 text-left">Stock Actual</th>
-                    <th className="px-4 py-3 text-left">Ubicación</th>
-                    <th className="px-4 py-3 text-left">Compatibilidad</th>
-                    <th className="px-4 py-3 text-left">Precio Unitario</th>
-                    <th className="px-4 py-3 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoadingSpares ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-12 text-slate-500">
-                        Cargando inventario...
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="table-header">
+                      <th className="px-4 py-3 text-left">SKU / Código</th>
+                      <th className="px-4 py-3 text-left">Artículo / Repuesto</th>
+                      <th className="px-4 py-3 text-left">Categoría</th>
+                      <th className="px-4 py-3 text-left">Stock Actual</th>
+                      <th className="px-4 py-3 text-left">Ubicación</th>
+                      <th className="px-4 py-3 text-left">Precio Unitario</th>
+                      <th className="px-4 py-3 text-left">Compatibilidad</th>
+                      <th className="px-4 py-3 text-right">Acciones</th>
                     </tr>
-                  ) : filteredSpareParts?.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="text-center py-12 text-slate-500">
-                        No se encontraron artículos en el inventario.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredSpareParts?.map((p: any) => {
-                      const isLowStock = p.stockActual <= p.stockMinimo;
-                      return (
-                        <tr key={p.id} className="table-row">
-                          <td className="px-4 py-3">
-                            {p.imagenUrl ? (
-                              <button
-                                type="button"
-                                onClick={() => setPreviewImage(p.imagenUrl)}
-                                className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:scale-105 transition-transform"
-                                title="Haga clic para ampliar foto de referencia"
-                              >
-                                <img
-                                  src={p.imagenUrl}
-                                  alt={p.nombre}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                                />
-                              </button>
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 bg-slate-50 dark:bg-slate-800/50">
-                                <ImageIcon className="w-4 h-4 opacity-50" />
+                  </thead>
+                  <tbody>
+                    {isLoadingSpares ? (
+                      <tr>
+                        <td colSpan={8} className="text-center py-12 text-slate-500">
+                          Cargando inventario de repuestos...
+                        </td>
+                      </tr>
+                    ) : filteredSpareParts.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="text-center py-12 text-slate-500">
+                          No se encontraron artículos de repuestos
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredSpareParts.map((spare: any) => {
+                        const isLow = spare.stockActual <= spare.stockMinimo;
+                        return (
+                          <tr key={spare.id} className="table-row">
+                            <td className="px-4 py-3 font-mono font-bold text-slate-900 dark:text-white">
+                              {spare.sku}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <p className="font-semibold text-slate-900 dark:text-white">{spare.nombre}</p>
+                                  {spare.descripcion && (
+                                    <p className="text-xs text-slate-500 line-clamp-1">{spare.descripcion}</p>
+                                  )}
+                                </div>
+                                {spare.fotoUrl && (
+                                  <button
+                                    onClick={() => setPreviewImage(spare.fotoUrl)}
+                                    className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
+                                    title="Ver foto de referencia"
+                                  >
+                                    <ImageIcon className="w-4 h-4" />
+                                  </button>
+                                )}
                               </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs font-bold text-slate-900 dark:text-white">
-                            {p.sku}
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="font-semibold text-slate-900 dark:text-white">{p.nombre}</p>
-                            {p.notas && <p className="text-xs text-slate-500">{p.notas}</p>}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="badge badge-gray">{p.categoria}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`font-bold text-sm ${
-                                  isLowStock ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                                }`}
-                              >
-                                {p.stockActual} u.
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="badge badge-gray text-xs font-semibold">{spare.categoria}</span>
+                            </td>
+                            <td className="px-4 py-3 font-bold">
+                              <span className={isLow ? 'text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1' : 'text-slate-800 dark:text-slate-200'}>
+                                {isLow && <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />}
+                                {spare.stockActual} {spare.unidadMedida || 'unid'}
                               </span>
-                              {isLowStock && (
-                                <span className="badge badge-red flex items-center gap-1 text-[10px]">
-                                  <AlertTriangle className="w-3 h-3" /> Bajo Stock (Mín: {p.stockMinimo})
-                                </span>
+                              {isLow && (
+                                <p className="text-[10px] text-rose-500 font-normal">Mínimo: {spare.stockMinimo}</p>
                               )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
-                            {p.ubicacion || 'Depósito Principal'}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="badge badge-blue text-[11px] font-mono">
-                              {p.marcasCompatibles || 'TODAS LAS MARCAS'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                            {formatMoney(p.precioUnitario)}
-                          </td>
-                          <td className="px-4 py-3 text-right space-x-2">
-                            <button
-                              onClick={() => {
-                                setEditSpareData(p);
-                                setShowSpareModal(true);
-                              }}
-                              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`¿Eliminar artículo ${p.sku} (${p.nombre})?`)) {
-                                  deleteSpareMutation.mutate(p.id);
-                                }
-                              }}
-                              className="text-xs font-semibold text-rose-600 hover:underline"
-                            >
-                              Eliminar
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400 font-medium">
+                              {spare.ubicacion || 'Depósito Central'}
+                            </td>
+                            <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">
+                              {formatMoney(spare.precioUnitario)}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-slate-500 max-w-xs truncate">
+                              {spare.marcasCompatibles || 'Universal / Multimarca'}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  onClick={() => {
+                                    setEditSpareData(spare);
+                                    setShowSpareModal(true);
+                                  }}
+                                  className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                                  title="Editar Repuesto"
+                                >
+                                  <Wrench className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`¿Eliminar el artículo ${spare.nombre} (${spare.sku})?`)) {
+                                      deleteSpareMutation.mutate(spare.id);
+                                    }
+                                  }}
+                                  className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded transition-colors"
+                                  title="Eliminar Repuesto"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB 5: TIRES — GESTIÓN INTEGRAL DE NEUMÁTICOS */}
+        {activeTab === 'tires' && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Real-time Tire KPIs & CPK Metrics */}
+            <TireKPIs kpis={tireKpis} isLoading={isLoadingTireKpis} />
+
+            {/* Filter Bar */}
+            <TireFilters
+              search={tireSearch}
+              onSearchChange={setTireSearch}
+              status={tireStatus}
+              onStatusChange={setTireStatus}
+              tipo={tireTipo}
+              onTipoChange={setTireTipo}
+              vehicleId={tireVehicleId}
+              onVehicleIdChange={setTireVehicleId}
+              vehicles={vehicles}
+              onOpenAxleMap={() => setAxleMapVehicleId(vehicles?.[0]?.id || '')}
+              onExport={handleExportTiresCSV}
+              isExporting={isExportingTires}
+            />
+
+            {/* Tire Cards Grid */}
+            {isLoadingTires ? (
+              <div className="text-center py-16 text-slate-500 dark:text-slate-400 font-medium">
+                Cargando inventario de neumáticos...
+              </div>
+            ) : !tiresData?.data || tiresData.data.length === 0 ? (
+              <div className="card p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+                <CircleDot className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
+                <p className="font-extrabold text-base text-slate-700 dark:text-slate-300">
+                  No se encontraron neumáticos con los filtros seleccionados
+                </p>
+                <p className="text-xs text-slate-400">
+                  Ajustá los criterios de búsqueda o registrá un nuevo neumático activo.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {tiresData.data.map((tire: any) => (
+                  <TireCard
+                    key={tire.id}
+                    tire={tire}
+                    onInstall={(t) => setInstallTireModal({ tire: t, mode: 'install' })}
+                    onDismount={(t) => setInstallTireModal({ tire: t, mode: 'dismount' })}
+                    onRotate={(t) => setAxleMapVehicleId(t.vehicleId || vehicles?.[0]?.id)}
+                    onRetread={(t) => setRetreadTireModal({ tire: t, mode: t.status === 'EN_RECAPADO' ? 'receive' : 'send' })}
+                    onInspection={(t) => setInspectionTire(t)}
+                    onViewHistory={(t) => setTimelineTireId(t.id)}
+                    onEdit={(t) => { setEditTireData(t); setShowTireModal(true); }}
+                    onShowQR={(t) => setTimelineTireId(t.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Modals */}
+      {/* MODALS */}
       {showModal && (
         <WorkOrderModal
           initialData={editData}
@@ -662,6 +844,67 @@ export default function MaintenancePage() {
               updateSpareMutation.mutate({ id: editSpareData.id, ...data });
             } else {
               createSpareMutation.mutate(data);
+            }
+          }}
+        />
+      )}
+
+      {/* Tires Submodule Modals */}
+      {showTireModal && (
+        <TireModal
+          tire={editTireData}
+          onClose={() => {
+            setShowTireModal(false);
+            setEditTireData(null);
+          }}
+        />
+      )}
+
+      {installTireModal && (
+        <TireInstallModal
+          tire={installTireModal.tire}
+          vehicles={vehicles}
+          mode={installTireModal.mode}
+          initialPosition={installTireModal.posicion}
+          initialVehicleId={installTireModal.vehicleId}
+          onClose={() => setInstallTireModal(null)}
+        />
+      )}
+
+      {retreadTireModal && (
+        <TireRetreadModal
+          tire={retreadTireModal.tire}
+          mode={retreadTireModal.mode}
+          onClose={() => setRetreadTireModal(null)}
+        />
+      )}
+
+      {inspectionTire && (
+        <TireInspectionModal
+          tire={inspectionTire}
+          onClose={() => setInspectionTire(null)}
+        />
+      )}
+
+      {timelineTireId && (
+        <TireTimelineModal
+          tireId={timelineTireId}
+          onClose={() => setTimelineTireId(null)}
+        />
+      )}
+
+      {axleMapVehicleId && (
+        <VehicleAxleMapModal
+          vehicles={vehicles}
+          initialVehicleId={axleMapVehicleId}
+          onClose={() => setAxleMapVehicleId(null)}
+          onMountTire={(vId, pos) => {
+            const unassignedTire = tiresData?.data?.find((t: any) => t.status === 'EN_DEPOSITO');
+            if (unassignedTire) {
+              setAxleMapVehicleId(null);
+              setInstallTireModal({ tire: unassignedTire, mode: 'install', vehicleId: vId, posicion: pos });
+            } else {
+              toast.error('No hay neumáticos en depósito para montar. Registre o desmonte uno primero.');
             }
           }}
         />

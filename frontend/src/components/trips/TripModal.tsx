@@ -84,7 +84,7 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
     enabled: !!selectedClientId,
   });
 
-  const activeContract = clientContracts?.find((c: any) => c.id === selectedContractId) || clientContracts?.[0];
+  const activeContract = selectedContractId ? clientContracts?.find((c: any) => c.id === selectedContractId) : undefined;
 
   const baseRate = activeContract?.tarifaBase || 0;
   const minWeightKg = activeContract?.pesoMinimoKg || 30000;
@@ -96,12 +96,20 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   const calculatedTotalRate = activeContract ? baseRate + excessAmount : null;
 
   useEffect(() => {
-    if (activeContract && calculatedTotalRate !== null) {
-      const roundedRate = Math.round(calculatedTotalRate);
-      const roundedExcessAmount = Math.round(excessAmount);
-      setValue('tarifaAcordada', roundedRate);
-      setValue('pesoExcedenteKg', Math.round(excessKg));
-      setValue('montoExcedente', roundedExcessAmount);
+    if (activeContract) {
+      if (calculatedTotalRate !== null) {
+        const roundedRate = Math.round(calculatedTotalRate);
+        const roundedExcessAmount = Math.round(excessAmount);
+        setValue('tarifaAcordada', roundedRate);
+        setValue('pesoExcedenteKg', Math.round(excessKg));
+        setValue('montoExcedente', roundedExcessAmount);
+      }
+      if (activeContract.numero) {
+        const ocFormatted = activeContract.numero.startsWith('OC')
+          ? activeContract.numero
+          : `OC N°${activeContract.numero}`;
+        setValue('numeroOCCliente', ocFormatted);
+      }
     }
   }, [selectedContractId, pesoCargaKg, activeContract, calculatedTotalRate, excessAmount, excessKg, setValue]);
 
@@ -247,6 +255,8 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
             register={register}
             watch={watch}
             pesoCargaKg={pesoCargaKg}
+            activeContract={activeContract}
+            selectedContractId={selectedContractId}
           />
 
           <FinancialsSection

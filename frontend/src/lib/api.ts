@@ -82,6 +82,12 @@ export const driversApi = {
   getExpiring: () => api.get('/drivers/expiring-licenses'),
   getAvailable: (date?: string) => api.get('/drivers/available', { params: { date } }),
   addTraining: (id: string, data: any) => api.post(`/drivers/${id}/trainings`, data),
+  getSchedule: (params?: any) => api.get('/drivers/schedule', { params }),
+  getScheduleKpis: () => api.get('/drivers/schedule/kpis'),
+  recordShiftEvent: (id: string, data: any) => api.post(`/drivers/${id}/shift-event`, data),
+  getShiftHistory: (id: string) => api.get(`/drivers/${id}/shift-history`),
+  updateScheduleConfig: (id: string, data: any) => api.patch(`/drivers/${id}/schedule-config`, data),
+  exportScheduleReport: (params?: any) => api.get('/drivers/schedule/export', { params }),
 };
 
 export const tripsApi = {
@@ -114,6 +120,24 @@ export const sparePartsApi = {
   update: (id: string, data: any) => api.patch(`/maintenance/spare-parts/${id}`, data),
   adjustStock: (id: string, delta: number) => api.patch(`/maintenance/spare-parts/${id}/stock`, { delta }),
   remove: (id: string) => api.delete(`/maintenance/spare-parts/${id}`),
+  getLowStock: () => api.get('/maintenance/spare-parts/low-stock'),
+};
+
+export const tiresApi = {
+  getAll: (params?: any) => api.get('/maintenance/tires', { params }),
+  getKPIs: () => api.get('/maintenance/tires/kpis'),
+  getVehiclePositions: (vehicleId: string) => api.get(`/maintenance/tires/vehicle/${vehicleId}/positions`),
+  getOne: (id: string) => api.get(`/maintenance/tires/${id}`),
+  create: (data: any) => api.post('/maintenance/tires', data),
+  update: (id: string, data: any) => api.patch(`/maintenance/tires/${id}`, data),
+  install: (id: string, data: any) => api.post(`/maintenance/tires/${id}/install`, data),
+  dismount: (id: string, data: any) => api.post(`/maintenance/tires/${id}/dismount`, data),
+  rotate: (data: any) => api.post('/maintenance/tires/rotate', data),
+  sendToRetread: (id: string, data: any) => api.post(`/maintenance/tires/${id}/retread`, data),
+  receiveFromRetread: (id: string, data: any) => api.post(`/maintenance/tires/${id}/retread/receive`, data),
+  recordInspection: (id: string, data: any) => api.post(`/maintenance/tires/${id}/inspection`, data),
+  retire: (id: string, motivo: string) => api.post(`/maintenance/tires/${id}/retire`, { motivo }),
+  exportReport: (params?: any) => api.get('/maintenance/tires/export', { params }),
 };
 
 export const consumablesApi = {
