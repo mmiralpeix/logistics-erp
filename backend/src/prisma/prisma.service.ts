@@ -12,14 +12,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       const clientCount = await this.client.count();
       const driverCount = await this.driver.count();
       const carrierCount = await this.carrier.count();
-      const tireCount = await this.tire.count();
+      const vehicleCount = await this.vehicle.count();
+      const tripCount = await this.trip.count();
       const alertCount = await this.alertRecord.count();
 
-      if (clientCount < 5 || driverCount < 4 || carrierCount === 0 || tireCount === 0 || alertCount === 0) {
-        this.logger.log('🌱 Base de datos incompleta o sin registros iniciales. Ejecutando MasterSeed automático...');
+      if (clientCount < 50 || driverCount < 50 || carrierCount < 50 || vehicleCount < 50 || tripCount < 50 || alertCount < 50) {
+        this.logger.log('🌱 [PrismaService] Base de datos con menos de 50 registros por entidad. Ejecutando MasterSeed masivo...');
         await runMasterSeed(this);
       } else {
-        this.logger.log(`✅ Base de datos activa y poblada (${clientCount} clientes, ${driverCount} choferes, ${carrierCount} terceros).`);
+        this.logger.log(`✅ Base de datos completamente sembrada (${clientCount} clientes, ${driverCount} choferes, ${carrierCount} terceros, ${vehicleCount} vehículos, ${tripCount} viajes).`);
       }
     } catch (err) {
       this.logger.error('Error durante la verificación/sembrado automático:', err);
