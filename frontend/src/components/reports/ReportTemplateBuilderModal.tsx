@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { X, Image as ImageIcon, Palette, Layout, BarChart2, PieChart, LineChart, Shield, Check } from 'lucide-react';
+import { X, Image as ImageIcon, Palette, Layout, BarChart2, PieChart, LineChart, Shield, Check, Upload, Trash2, Edit3 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export interface ReportConfig {
   companyLogo: string;
@@ -13,6 +14,16 @@ export interface ReportConfig {
   showFleetChart: boolean;
   showFuelChart: boolean;
   showTireChart: boolean;
+  // Non-numeric editable text blocks
+  customNotes?: string;
+  sectionTripsTitle?: string;
+  sectionMaintenanceTitle?: string;
+  sectionTiresTitle?: string;
+  signatureLeftTitle?: string;
+  signatureLeftSubtitle?: string;
+  signatureRightTitle?: string;
+  signatureRightSubtitle?: string;
+  footerText?: string;
 }
 
 interface Props {
@@ -22,7 +33,18 @@ interface Props {
 }
 
 export function ReportTemplateBuilderModal({ initialConfig, onClose, onApply }: Props) {
-  const [config, setConfig] = useState<ReportConfig>(initialConfig);
+  const [config, setConfig] = useState<ReportConfig>({
+    customNotes: 'Se adjuntan los registros operativos y estados contables para revisión mensual.',
+    sectionTripsTitle: 'Anexo I: Detalle Operativo de Viajes & Fletes',
+    sectionMaintenanceTitle: 'Anexo II: Mantenimiento & Salud de Vehículos',
+    sectionTiresTitle: 'Anexo III: Gestión de Neumáticos & Métrica CPK',
+    signatureLeftTitle: 'Firma Responsable Operativo',
+    signatureLeftSubtitle: 'Jefe de Operaciones LogisticsPro',
+    signatureRightTitle: 'Firma Gerencia General',
+    signatureRightSubtitle: 'Aprobación Corporativa',
+    footerText: 'LogisticsPro ERP — Documento Confidencial de Gestión Integral',
+    ...initialConfig,
+  });
 
   const THEMES = [
     { id: 'blue', label: 'Azul Corporativo', bg: 'bg-blue-600', text: 'text-blue-600' },
@@ -31,15 +53,33 @@ export function ReportTemplateBuilderModal({ initialConfig, onClose, onApply }: 
     { id: 'purple', label: 'Púrpura Logístico', bg: 'bg-purple-600', text: 'text-purple-600' },
   ];
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, key: 'companyLogo' | 'clientLogo') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Seleccione un archivo de imagen válido (PNG, JPG, SVG)');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setConfig((prev) => ({ ...prev, [key]: dataUrl }));
+        toast.success(`Logo ${key === 'companyLogo' ? 'de Empresa' : 'de Cliente'} cargado`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal max-w-2xl animate-fade-in">
+      <div className="modal max-w-3xl animate-fade-in">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
           <div className="flex items-center gap-3">
             <Palette className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">Diseñador & Personalizador de Reporte Visual</h2>
-              <p className="text-xs text-slate-500">Configura logotipos, tema de color y módulos gráficos ejecutivos</p>
+              <p className="text-xs text-slate-500">Configurá logotipos, textos tipiables, temas de color y módulos ejecutivos</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg">
@@ -49,34 +89,113 @@ export function ReportTemplateBuilderModal({ initialConfig, onClose, onApply }: 
 
         <div className="p-6 space-y-6 text-xs overflow-y-auto max-h-[80vh]">
           {/* Section 1: Branding & Logos */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-              <ImageIcon className="w-4 h-4 text-blue-600" /> Identidad Visual & Logotipos
+          <div className="space-y-4">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-2">
+              <ImageIcon className="w-4 h-4 text-blue-600" /> Identidad Visual & Logotipos Directos (URL o Archivo)
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="label">URL Logo Empresa Transportista</label>
-                <input
-                  type="text"
-                  value={config.companyLogo}
-                  onChange={(e) => setConfig({ ...config, companyLogo: e.target.value })}
-                  className="input font-mono"
-                  placeholder="https://ejemplo.com/logo-empresa.png"
-                />
+              {/* Company Logo */}
+              <div className="space-y-2 card p-3 border border-slate-200 dark:border-slate-800">
+                <label className="label font-bold flex items-center justify-between">
+                  <span>Logo Empresa Transportista</span>
+                  {config.companyLogo && (
+                    <button
+                      type="button"
+                      onClick={() => setConfig({ ...config, companyLogo: '' })}
+                      className="text-[10px] text-rose-500 flex items-center gap-1 hover:underline"
+                    >
+                      <Trash2 className="w-3 h-3" /> Quitar Logo
+                    </button>
+                  )}
+                </label>
+
+                {config.companyLogo ? (
+                  <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <img src={config.companyLogo} alt="Logo Empresa" className="h-10 max-w-[120px] object-contain" />
+                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Cargado
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-slate-400 italic">Sin logotipo seleccionado</div>
+                )}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <label className="btn-secondary text-[11px] py-1.5 px-3 flex items-center gap-1.5 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Subir desde PC</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'companyLogo')}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    value={config.companyLogo}
+                    onChange={(e) => setConfig({ ...config, companyLogo: e.target.value })}
+                    className="input font-mono text-[11px] py-1 flex-1"
+                    placeholder="o pegar URL https://..."
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="label">URL Logo Cliente Empresarial (Opcional)</label>
-                <input
-                  type="text"
-                  value={config.clientLogo}
-                  onChange={(e) => setConfig({ ...config, clientLogo: e.target.value })}
-                  className="input font-mono"
-                  placeholder="https://ejemplo.com/logo-cliente.png"
-                />
+              {/* Client Logo */}
+              <div className="space-y-2 card p-3 border border-slate-200 dark:border-slate-800">
+                <label className="label font-bold flex items-center justify-between">
+                  <span>Logo Cliente / Co-branding (Opcional)</span>
+                  {config.clientLogo && (
+                    <button
+                      type="button"
+                      onClick={() => setConfig({ ...config, clientLogo: '' })}
+                      className="text-[10px] text-rose-500 flex items-center gap-1 hover:underline"
+                    >
+                      <Trash2 className="w-3 h-3" /> Quitar Logo
+                    </button>
+                  )}
+                </label>
+
+                {config.clientLogo ? (
+                  <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <img src={config.clientLogo} alt="Logo Cliente" className="h-10 max-w-[120px] object-contain" />
+                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                      <Check className="w-3 h-3" /> Cargado
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-slate-400 italic">Sin logotipo cliente</div>
+                )}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <label className="btn-secondary text-[11px] py-1.5 px-3 flex items-center gap-1.5 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Subir desde PC</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'clientLogo')}
+                      className="hidden"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    value={config.clientLogo}
+                    onChange={(e) => setConfig({ ...config, clientLogo: e.target.value })}
+                    className="input font-mono text-[11px] py-1 flex-1"
+                    placeholder="o pegar URL https://..."
+                  />
+                </div>
               </div>
             </div>
+          </div>
+
+          {/* Section 2: Non-Numeric Editable Texts */}
+          <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 pb-2">
+              <Edit3 className="w-4 h-4 text-emerald-600" /> Apartados de Texto Editables / Tipiables
+            </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -101,9 +220,52 @@ export function ReportTemplateBuilderModal({ initialConfig, onClose, onApply }: 
                 />
               </div>
             </div>
+
+            <div>
+              <label className="label">Notas, Observaciones & Términos Personalizables</label>
+              <textarea
+                rows={2}
+                value={config.customNotes || ''}
+                onChange={(e) => setConfig({ ...config, customNotes: e.target.value })}
+                className="input w-full leading-relaxed"
+                placeholder="Escribí aquí observaciones ejecutivas, condiciones o notas aclaratorias..."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Título Firma Izquierda</label>
+                <input
+                  type="text"
+                  value={config.signatureLeftTitle || ''}
+                  onChange={(e) => setConfig({ ...config, signatureLeftTitle: e.target.value })}
+                  className="input font-semibold"
+                />
+              </div>
+
+              <div>
+                <label className="label">Título Firma Derecha</label>
+                <input
+                  type="text"
+                  value={config.signatureRightTitle || ''}
+                  onChange={(e) => setConfig({ ...config, signatureRightTitle: e.target.value })}
+                  className="input font-semibold"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="label">Texto Nota al Pie (Pie de Página)</label>
+              <input
+                type="text"
+                value={config.footerText || ''}
+                onChange={(e) => setConfig({ ...config, footerText: e.target.value })}
+                className="input font-mono text-[11px]"
+              />
+            </div>
           </div>
 
-          {/* Section 2: Color Theme */}
+          {/* Section 3: Color Theme */}
           <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <Palette className="w-4 h-4 text-purple-600" /> Paleta de Colores de Presentación
@@ -113,6 +275,7 @@ export function ReportTemplateBuilderModal({ initialConfig, onClose, onApply }: 
               {THEMES.map((th) => (
                 <button
                   key={th.id}
+                  type="button"
                   onClick={() => setConfig({ ...config, theme: th.id as any })}
                   className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all text-left ${
                     config.theme === th.id
@@ -127,7 +290,7 @@ export function ReportTemplateBuilderModal({ initialConfig, onClose, onApply }: 
             </div>
           </div>
 
-          {/* Section 3: Visual Graphic Modules */}
+          {/* Section 4: Visual Graphic Modules */}
           <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <Layout className="w-4 h-4 text-emerald-600" /> Módulos Gráficos Habilitados en la Plantilla
@@ -231,3 +394,4 @@ export function ReportTemplateBuilderModal({ initialConfig, onClose, onApply }: 
     </div>
   );
 }
+

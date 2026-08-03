@@ -31,6 +31,20 @@ export default function ReportsPage() {
   const [previewModal, setPreviewModal] = useState<{ reportData: any; config: any } | null>(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [reportConfig, setReportConfig] = useState<ReportConfig>(defaultConfig);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+
+  const handleSelectTemplate = (template: any) => {
+    setSelectedTemplate(template);
+    const cfg = template.configJson || template.filtrosJson || {};
+    setReportConfig((prev) => ({
+      ...prev,
+      reportTitle: template.nombre || prev.reportTitle,
+      reportSubtitle: template.descripcion || prev.reportSubtitle,
+      ...cfg,
+    }));
+    setActiveTab('builder');
+    toast.success(`Plantilla "${template.nombre || 'Personalizada'}" cargada y aplicada exitosamente`);
+  };
 
   const handleDownloadTripsExcel = async () => {
     try {
@@ -142,7 +156,7 @@ export default function ReportsPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <FileText className="w-4 h-4" /> Generador de Consultas
+            <FileText className="w-4 h-4" /> Generador de Consultas & Diseñador
           </button>
 
           <button
@@ -154,7 +168,7 @@ export default function ReportsPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-500" /> Reporte Visual Corporativo (PDF)
+            <Sparkles className="w-4 h-4 text-amber-500" /> Reporte Visual Corporativo (PDF / Tipiable)
           </button>
 
           <button
@@ -185,6 +199,8 @@ export default function ReportsPage() {
         {/* TAB 1: BUILDER */}
         {activeTab === 'builder' && (
           <ReportBuilder
+            selectedTemplate={selectedTemplate}
+            onClearTemplate={() => setSelectedTemplate(null)}
             onOpenPreview={(reportData, config) => setPreviewModal({ reportData, config })}
           />
         )}
@@ -201,10 +217,7 @@ export default function ReportsPage() {
         {/* TAB 3: TEMPLATES & SAVED */}
         {activeTab === 'templates' && (
           <ReportTemplatesList
-            onSelectTemplate={(template) => {
-              setActiveTab('builder');
-              toast.success(`Plantilla "${template.nombre}" cargada en el diseñador`);
-            }}
+            onSelectTemplate={handleSelectTemplate}
           />
         )}
 
@@ -236,3 +249,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+

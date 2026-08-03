@@ -1,11 +1,13 @@
 'use client';
+import { useState } from 'react';
 import { ReportConfig } from './ReportTemplateBuilderModal';
 import { formatMoney } from '@/lib/utils';
-import { Printer, Download, ArrowLeft, Building2, Truck, ShieldAlert, Fuel, Award } from 'lucide-react';
+import { Printer, ArrowLeft, Upload, Edit3, Check, Trash2, FileText, Sparkles } from 'lucide-react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
+import toast from 'react-hot-toast';
 
 interface Props {
   config: ReportConfig;
@@ -15,7 +17,23 @@ interface Props {
 
 const COLORS = ['#2563EB', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
-export function ReportVisualViewer({ config, data, onBack }: Props) {
+export function ReportVisualViewer({ config: initialConfig, data, onBack }: Props) {
+  // Local state to allow typing and modifying non-numeric sections on the fly
+  const [localConfig, setLocalConfig] = useState<ReportConfig>({
+    customNotes: 'Se adjuntan los registros operativos y estados contables para revisión mensual.',
+    sectionTripsTitle: 'Anexo I: Detalle Operativo de Viajes & Fletes',
+    sectionMaintenanceTitle: 'Anexo II: Mantenimiento & Salud de Vehículos',
+    sectionTiresTitle: 'Anexo III: Gestión de Neumáticos & Métrica CPK',
+    signatureLeftTitle: 'Firma Responsable Operativo',
+    signatureLeftSubtitle: 'Jefe de Operaciones LogisticsPro',
+    signatureRightTitle: 'Firma Gerencia General',
+    signatureRightSubtitle: 'Aprobación Corporativa',
+    footerText: 'LogisticsPro ERP — Documento Confidencial de Gestión Integral',
+    ...initialConfig,
+  });
+
+  const [isEditMode, setIsEditMode] = useState(true);
+
   const financialData = [
     { mes: 'Ene', facturacion: 14500000, costos: 9800000 },
     { mes: 'Feb', facturacion: 16200000, costos: 10500000 },
@@ -46,19 +64,48 @@ export function ReportVisualViewer({ config, data, onBack }: Props) {
   ];
 
   const themeClass =
-    config.theme === 'blue' ? 'border-t-blue-600' :
-    config.theme === 'emerald' ? 'border-t-emerald-600' :
-    config.theme === 'purple' ? 'border-t-purple-600' : 'border-t-slate-800';
+    localConfig.theme === 'blue' ? 'border-t-blue-600' :
+    localConfig.theme === 'emerald' ? 'border-t-emerald-600' :
+    localConfig.theme === 'purple' ? 'border-t-purple-600' : 'border-t-slate-800';
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, key: 'companyLogo' | 'clientLogo') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Seleccione un archivo de imagen válido');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      if (result) {
+        setLocalConfig((prev) => ({ ...prev, [key]: result }));
+        toast.success(`Logo ${key === 'companyLogo' ? 'Empresa' : 'Cliente'} actualizado`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Control Bar */}
-      <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm print:hidden">
         <button onClick={onBack} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5">
           <ArrowLeft className="w-4 h-4" /> Volver a Ajustes
         </button>
 
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsEditMode(!isEditMode)}
+            className={`btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 font-bold ${
+              isEditMode ? 'bg-amber-50 dark:bg-amber-950 text-amber-600 border-amber-300' : ''
+            }`}
+          >
+            <Edit3 className="w-4 h-4" />
+            <span>{isEditMode ? 'Edición Interactiva Activa' : 'Activar Edición de Textos'}</span>
+          </button>
+
           <button
             onClick={() => window.print()}
             className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5 shadow-md shadow-blue-600/20"
@@ -71,31 +118,76 @@ export function ReportVisualViewer({ config, data, onBack }: Props) {
       {/* Printable Visual Report Document */}
       <div className={`card p-8 bg-white dark:bg-slate-900 space-y-8 border-t-8 ${themeClass} shadow-xl max-w-5xl mx-auto print:shadow-none print:p-0 print:border-none`}>
         {/* Document Header with Branding Logos */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6">
-          <div className="flex items-center gap-4">
-            {config.companyLogo ? (
-              <img src={config.companyLogo} alt="Company Logo" className="h-12 object-contain" />
-            ) : (
-              <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white font-black text-xl flex items-center justify-center shadow-md">
-                LP
-              </div>
-            )}
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{config.reportTitle}</h1>
-              <p className="text-xs text-slate-500 font-medium">{config.reportSubtitle}</p>
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6 gap-4">
+          <div className="flex items-center gap-4 flex-1">
+            {/* Company Logo Section */}
+            <div className="relative group">
+              {localConfig.companyLogo ? (
+                <img src={localConfig.companyLogo} alt="Company Logo" className="h-12 object-contain" />
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white font-black text-xl flex items-center justify-center shadow-md">
+                  LP
+                </div>
+              )}
+              {isEditMode && (
+                <label className="absolute -bottom-2 -right-2 p-1 bg-white dark:bg-slate-800 text-blue-600 rounded-full border border-slate-200 dark:border-slate-700 shadow cursor-pointer print:hidden">
+                  <Upload className="w-3 h-3" />
+                  <input type="file" accept="image/*" onChange={(e) => handleLogoUpload(e, 'companyLogo')} className="hidden" />
+                </label>
+              )}
+            </div>
+
+            {/* Editable Title & Subtitle */}
+            <div className="flex-1 space-y-1">
+              {isEditMode ? (
+                <>
+                  <input
+                    type="text"
+                    value={localConfig.reportTitle}
+                    onChange={(e) => setLocalConfig({ ...localConfig, reportTitle: e.target.value })}
+                    className="w-full text-2xl font-black text-slate-900 dark:text-white border-b border-dashed border-blue-400 bg-transparent focus:outline-none focus:border-blue-600"
+                    placeholder="Título del Reporte"
+                  />
+                  <input
+                    type="text"
+                    value={localConfig.reportSubtitle}
+                    onChange={(e) => setLocalConfig({ ...localConfig, reportSubtitle: e.target.value })}
+                    className="w-full text-xs text-slate-500 font-medium border-b border-dashed border-slate-300 bg-transparent focus:outline-none"
+                    placeholder="Subtítulo del Reporte"
+                  />
+                </>
+              ) : (
+                <>
+                  <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{localConfig.reportTitle}</h1>
+                  <p className="text-xs text-slate-500 font-medium">{localConfig.reportSubtitle}</p>
+                </>
+              )}
             </div>
           </div>
 
-          {config.clientLogo && (
-            <div className="text-right">
-              <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Preparado para</span>
-              <img src={config.clientLogo} alt="Client Logo" className="h-10 object-contain ml-auto" />
+          {/* Client Logo Section */}
+          <div className="text-right flex flex-col items-end">
+            <span className="text-[10px] font-black uppercase text-slate-400 block mb-1">Preparado para</span>
+            <div className="relative group">
+              {localConfig.clientLogo ? (
+                <img src={localConfig.clientLogo} alt="Client Logo" className="h-10 object-contain ml-auto" />
+              ) : (
+                <div className="text-xs font-bold text-slate-400 border border-dashed border-slate-300 px-2 py-1 rounded">
+                  + Logo Cliente
+                </div>
+              )}
+              {isEditMode && (
+                <label className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 cursor-pointer print:hidden hover:underline">
+                  <Upload className="w-3 h-3" /> Subir Logo
+                  <input type="file" accept="image/*" onChange={(e) => handleLogoUpload(e, 'clientLogo')} className="hidden" />
+                </label>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Module 1: KPI Summary */}
-        {config.showKpiSummary && (
+        {localConfig.showKpiSummary && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
               <span className="text-[10px] font-black uppercase text-slate-400">Facturación Total</span>
@@ -124,7 +216,7 @@ export function ReportVisualViewer({ config, data, onBack }: Props) {
         )}
 
         {/* Module 2: Financial Evolution Chart */}
-        {config.showFinancialChart && (
+        {localConfig.showFinancialChart && (
           <div className="space-y-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Evolución de Facturación vs Costos ($ ARS)</h3>
             <div className="h-64 card p-4">
@@ -145,7 +237,7 @@ export function ReportVisualViewer({ config, data, onBack }: Props) {
 
         {/* Module 3 & 4: Fleet Distribution & Fuel Efficiency */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {config.showFleetChart && (
+          {localConfig.showFleetChart && (
             <div className="space-y-3">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Distribución de Flota Pesada</h3>
               <div className="h-56 card p-4 flex items-center justify-center">
@@ -164,7 +256,7 @@ export function ReportVisualViewer({ config, data, onBack }: Props) {
             </div>
           )}
 
-          {config.showFuelChart && (
+          {localConfig.showFuelChart && (
             <div className="space-y-3">
               <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Tendencia de Eficiencia Diésel (km/l)</h3>
               <div className="h-56 card p-4">
@@ -183,7 +275,7 @@ export function ReportVisualViewer({ config, data, onBack }: Props) {
         </div>
 
         {/* Module 5: Tire Health Indicators */}
-        {config.showTireChart && (
+        {localConfig.showTireChart && (
           <div className="space-y-3">
             <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Estado & Salud de Neumáticos Críticos</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -205,12 +297,77 @@ export function ReportVisualViewer({ config, data, onBack }: Props) {
           </div>
         )}
 
+        {/* Custom Editable Notes & Observations Section */}
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+            <FileText className="w-4 h-4 text-blue-600" />
+            <span>Notas & Observaciones Ejecutivas (Editable)</span>
+          </div>
+
+          {isEditMode ? (
+            <textarea
+              rows={3}
+              value={localConfig.customNotes || ''}
+              onChange={(e) => setLocalConfig({ ...localConfig, customNotes: e.target.value })}
+              className="w-full text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl p-2.5 focus:outline-none focus:border-blue-600 font-medium leading-relaxed"
+              placeholder="Escribí observaciones o notas personalizadas..."
+            />
+          ) : (
+            <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium whitespace-pre-line">
+              {localConfig.customNotes}
+            </p>
+          )}
+        </div>
+
+        {/* Signatures Block with Editable Titles */}
+        <div className="pt-8 grid grid-cols-2 gap-12 border-t border-slate-200 dark:border-slate-700 text-center">
+          <div>
+            <div className="border-b border-slate-400 w-48 mx-auto mb-2" />
+            {isEditMode ? (
+              <input
+                type="text"
+                value={localConfig.signatureLeftTitle || ''}
+                onChange={(e) => setLocalConfig({ ...localConfig, signatureLeftTitle: e.target.value })}
+                className="text-center font-extrabold text-xs text-slate-800 dark:text-slate-200 border-b border-dashed border-slate-400 bg-transparent focus:outline-none"
+              />
+            ) : (
+              <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">{localConfig.signatureLeftTitle}</p>
+            )}
+            <p className="text-[10px] text-slate-400">{localConfig.signatureLeftSubtitle}</p>
+          </div>
+
+          <div>
+            <div className="border-b border-slate-400 w-48 mx-auto mb-2" />
+            {isEditMode ? (
+              <input
+                type="text"
+                value={localConfig.signatureRightTitle || ''}
+                onChange={(e) => setLocalConfig({ ...localConfig, signatureRightTitle: e.target.value })}
+                className="text-center font-extrabold text-xs text-slate-800 dark:text-slate-200 border-b border-dashed border-slate-400 bg-transparent focus:outline-none"
+              />
+            ) : (
+              <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200">{localConfig.signatureRightTitle}</p>
+            )}
+            <p className="text-[10px] text-slate-400">{localConfig.signatureRightSubtitle}</p>
+          </div>
+        </div>
+
         {/* Document Footer */}
         <div className="border-t border-slate-200 dark:border-slate-800 pt-4 flex justify-between text-[11px] text-slate-400">
-          <span>LogisticsPro ERP — Generado automáticamente</span>
+          {isEditMode ? (
+            <input
+              type="text"
+              value={localConfig.footerText || ''}
+              onChange={(e) => setLocalConfig({ ...localConfig, footerText: e.target.value })}
+              className="text-slate-400 border-b border-dashed border-slate-300 bg-transparent text-[11px] focus:outline-none w-2/3"
+            />
+          ) : (
+            <span>{localConfig.footerText}</span>
+          )}
           <span>Página 1 de 1</span>
         </div>
       </div>
     </div>
   );
 }
+
