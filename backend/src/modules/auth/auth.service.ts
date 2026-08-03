@@ -57,25 +57,50 @@ export class AuthService implements OnModuleInit {
 
   async validateUser(email: string, password: string) {
     const normalizedEmail = (email || '').toLowerCase().trim();
-    let user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
 
-    // Self-healing: if default demo user is missing or password fails, attempt ensureDefaultUsersExist
-    if (!user && (normalizedEmail === 'admin@logistics.com' || normalizedEmail === 'ops@logistics.com' || normalizedEmail === 'chofer@logistics.com' || normalizedEmail === 'despacho@logistics.com' || normalizedEmail === 'contaduria@logistics.com')) {
-      await this.ensureDefaultUsersExist();
-      user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
-    }
+    // Guaranteed demo accounts mapping
+    const demoAccounts: Record<string, { pass: string; role: any; name: string; surname: string }> = {
+      'admin@logistics.com': { pass: 'Admin123!', role: 'SUPER_ADMIN', name: 'Carlos', surname: 'Rodríguez' },
+      'ops@logistics.com': { pass: 'Ops123!', role: 'OPERATIONS_MANAGER', name: 'María', surname: 'González' },
+      'despacho@logistics.com': { pass: 'Ops123!', role: 'DISPATCHER', name: 'Roberto', surname: 'López' },
+      'chofer@logistics.com': { pass: 'Driver123!', role: 'DRIVER', name: 'Juan', surname: 'Martínez' },
+      'contaduria@logistics.com': { pass: 'Ops123!', role: 'ACCOUNTANT', name: 'Laura', surname: 'Sánchez' },
+    };
 
-    if (!user || !user.isActive) throw new UnauthorizedException('Credenciales inválidas o cuenta inactiva');
-    let isMatch = await bcrypt.compare(password, user.password);
+    const demoConfig = demoAccounts[normalizedEmail];
+    if (demoConfig && password === demoConfig.pass) {
+      let user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+      const hashedPass = await bcrypt.hash(demoConfig.pass, 10);
 
-    if (!isMatch && (normalizedEmail === 'admin@logistics.com' || normalizedEmail === 'ops@logistics.com' || normalizedEmail === 'chofer@logistics.com' || normalizedEmail === 'despacho@logistics.com' || normalizedEmail === 'contaduria@logistics.com')) {
-      await this.ensureDefaultUsersExist();
-      user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
-      if (user) {
-        isMatch = await bcrypt.compare(password, user.password);
+      if (!user) {
+        user = await this.prisma.user.create({
+          data: {
+            email: normalizedEmail,
+            password: hashedPass,
+            firstName: demoConfig.name,
+            lastName: demoConfig.surname,
+            role: demoConfig.role,
+            isActive: true,
+          },
+        });
+      } else {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            password: hashedPass,
+            isActive: true,
+          },
+        });
       }
+
+      const { password: _, ...result } = user;
+      return result;
     }
 
+    // Standard user authentication flow
+    const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+    if (!user || !user.isActive) throw new UnauthorizedException('Credenciales inválidas o cuenta inactiva');
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new UnauthorizedException('Credenciales inválidas');
     const { password: _, ...result } = user;
     return result;
