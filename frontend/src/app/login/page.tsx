@@ -198,11 +198,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillQuickLogin = (email: string, pass: string) => {
-    setValue('email', email);
-    setValue('password', pass);
-  };
-
   return (
     <div className="min-h-screen w-full flex bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 relative overflow-hidden font-sans">
       {/* LEFT HERO SECTION (IMAGE & BRANDING) */}

@@ -1,6 +1,7 @@
 'use client';
 import { Header } from '@/components/layout/Header';
 import { Building2, Bell, Shield, Database } from 'lucide-react';
+import { getApiUrl } from '@/lib/api';
 
 export default function SettingsPage() {
   return (
@@ -75,7 +76,7 @@ export default function SettingsPage() {
               <div className="flex justify-between"><span className="text-slate-600 dark:text-slate-400">Host</span><span className="text-slate-900 dark:text-white font-medium">postgres:5432</span></div>
             </div>
             <div className="mt-4 space-y-2">
-              <a href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/docs`} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full justify-center text-xs py-2">Ver Swagger API</a>
+              <a href={`${getApiUrl()}/docs`} target="_blank" rel="noopener noreferrer" className="btn-secondary w-full justify-center text-xs py-2">Ver Swagger API</a>
             </div>
           </div>
         </div>
@@ -83,3 +84,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
