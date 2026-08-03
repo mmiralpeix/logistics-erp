@@ -69,7 +69,20 @@ export class AuthService implements OnModuleInit {
 
     const demoConfig = demoAccounts[normalizedEmail];
     if (demoConfig && password === demoConfig.pass) {
-      let user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+      let user: any = null;
+      try {
+        user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
+      } catch (tableErr: any) {
+        console.warn('[AuthService] Tabla "users" no encontrada durante login. Auto-migrando esquema con prisma db push...', tableErr?.message || tableErr);
+        try {
+          const { execSync } = require('child_process');
+          execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+          user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } }).catch(() => null);
+        } catch (pushErr) {
+          console.error('[AuthService] Error auto-migrando esquema:', pushErr);
+        }
+      }
+
       const hashedPass = await bcrypt.hash(demoConfig.pass, 10);
 
       if (!user) {
