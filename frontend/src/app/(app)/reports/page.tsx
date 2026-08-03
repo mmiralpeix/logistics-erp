@@ -2,20 +2,35 @@
 import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { reportsApi } from '@/lib/api';
-import { FileText, BookOpen, Clock, Download, Sparkles, Printer, Layers } from 'lucide-react';
+import { FileText, BookOpen, Clock, Download, Palette, Printer, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-// Phase 4 Report Components
+// Report Components
 import { ReportBuilder } from '@/components/reports/ReportBuilder';
 import { ReportTemplatesList } from '@/components/reports/ReportTemplatesList';
 import { ReportSchedulesList } from '@/components/reports/ReportSchedulesList';
 import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
+import { ReportTemplateBuilderModal, ReportConfig } from '@/components/reports/ReportTemplateBuilderModal';
+import { ReportVisualViewer } from '@/components/reports/ReportVisualViewer';
+
+const defaultConfig: ReportConfig = {
+  companyLogo: '',
+  clientLogo: '',
+  reportTitle: 'Informe Ejecutivo de Operaciones & Flota',
+  reportSubtitle: 'Resumen Operativo, Consumo Diésel, Neumáticos y Finanzas',
+  theme: 'blue',
+  showKpiSummary: true,
+  showFinancialChart: true,
+  showFleetChart: true,
+  showFuelChart: true,
+  showTireChart: true,
+};
 
 export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<'builder' | 'templates' | 'schedules'>('builder');
-
-  // Preview Modal State
+  const [activeTab, setActiveTab] = useState<'builder' | 'templates' | 'schedules' | 'visual'>('builder');
   const [previewModal, setPreviewModal] = useState<{ reportData: any; config: any } | null>(null);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [reportConfig, setReportConfig] = useState<ReportConfig>(defaultConfig);
 
   const handleDownloadTripsExcel = async () => {
     try {
@@ -73,9 +88,18 @@ export default function ReportsPage() {
     <div>
       <Header
         title="Centro Profesional de Reportes Corporativos"
-        subtitle="Diseñador visual de informes, resumen por IA, biblioteca de plantillas y envíos automáticos"
+        subtitle="Diseñador visual de informes, personalizador de logotipos, biblioteca y envíos automáticos"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowConfigModal(true)}
+              className="btn-primary text-xs px-3.5 py-2 flex items-center gap-1.5 font-bold shadow-md shadow-blue-600/20"
+            >
+              <Palette className="w-4 h-4" />
+              <span>Diseñar Reporte Visual (Logos & Gráficos)</span>
+            </button>
+
             <button
               type="button"
               onClick={handleDownloadTripsExcel}
@@ -118,7 +142,19 @@ export default function ReportsPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <FileText className="w-4 h-4" /> Diseñador & Generador Visual
+            <FileText className="w-4 h-4" /> Generador de Consultas
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('visual')}
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors font-extrabold ${
+              activeTab === 'visual'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-500" /> Reporte Visual Corporativo (PDF)
           </button>
 
           <button
@@ -153,7 +189,16 @@ export default function ReportsPage() {
           />
         )}
 
-        {/* TAB 2: TEMPLATES & SAVED */}
+        {/* TAB 2: VISUAL CUSTOM REPORT */}
+        {activeTab === 'visual' && (
+          <ReportVisualViewer
+            config={reportConfig}
+            data={{}}
+            onBack={() => setShowConfigModal(true)}
+          />
+        )}
+
+        {/* TAB 3: TEMPLATES & SAVED */}
         {activeTab === 'templates' && (
           <ReportTemplatesList
             onSelectTemplate={(template) => {
@@ -163,9 +208,22 @@ export default function ReportsPage() {
           />
         )}
 
-        {/* TAB 3: SCHEDULES */}
+        {/* TAB 4: SCHEDULES */}
         {activeTab === 'schedules' && <ReportSchedulesList />}
       </div>
+
+      {/* CONFIG BUILDER MODAL */}
+      {showConfigModal && (
+        <ReportTemplateBuilderModal
+          initialConfig={reportConfig}
+          onClose={() => setShowConfigModal(false)}
+          onApply={(newCfg) => {
+            setReportConfig(newCfg);
+            setActiveTab('visual');
+            toast.success('Plantilla visual configurada exitosamente');
+          }}
+        />
+      )}
 
       {/* PRINT PREVIEW MODAL */}
       {previewModal && (
