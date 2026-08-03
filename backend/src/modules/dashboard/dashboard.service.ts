@@ -93,27 +93,26 @@ export class DashboardService {
 
   async getMonthlyChart() {
     const months = 6;
-    const data = [];
-    for (let i = months - 1; i >= 0; i--) {
+    const monthsPromises = Array.from({ length: months }, (_, idx) => {
+      const i = months - 1 - idx;
       const d = new Date();
       const start = new Date(d.getFullYear(), d.getMonth() - i, 1);
-      const end = new Date(d.getFullYear(), d.getMonth() - i + 1, 0);
+      const end = new Date(d.getFullYear(), d.getMonth() - i + 1, 0, 23, 59, 59, 999);
       const label = start.toLocaleString('es-AR', { month: 'short', year: 'numeric' });
 
-      const [revenue, trips, fuel] = await Promise.all([
+      return Promise.all([
         this.prisma.invoice.aggregate({ where: { createdAt: { gte: start, lte: end } }, _sum: { total: true } }),
         this.prisma.trip.count({ where: { status: TripStatus.FINALIZADO, fechaSalidaReal: { gte: start, lte: end } } }),
         this.prisma.fuelLog.aggregate({ where: { fecha: { gte: start, lte: end } }, _sum: { costoTotal: true } }),
-      ]);
-
-      data.push({
+      ]).then(([revenue, trips, fuel]) => ({
         mes: label,
         facturacion: revenue._sum.total || 0,
         viajes: trips,
         combustible: fuel._sum.costoTotal || 0,
-      });
-    }
-    return data;
+      }));
+    });
+
+    return Promise.all(monthsPromises);
   }
 
   async getExpiringAlerts() {
