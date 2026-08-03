@@ -431,11 +431,13 @@ async function runMasterSeed(prisma) {
         });
     }
     console.log('✅ 52+ Repuestos de Pañol y 52+ Mantenimientos creados');
-    // 9. COMBUSTIBLE & CONSUMIBLES (50+ Registros)
-    for (let i = 1; i <= 55; i++) {
+    // 9. COMBUSTIBLE & CONSUMIBLES (70+ Registros variados: Diésel, Urea, Aceite, Lubricantes)
+    const types = [client_1.ConsumableType.DIESEL, client_1.ConsumableType.UREA, client_1.ConsumableType.ACEITE_MOTOR, client_1.ConsumableType.LUBRICANTE, client_1.ConsumableType.ADITIVO, client_1.ConsumableType.OTRO];
+    for (let i = 1; i <= 70; i++) {
         const vehicle = allVehicles[(i - 1) % allVehicles.length];
-        const litros = 200 + (i % 10) * 20;
-        const precio = 1180;
+        const tipo = types[(i - 1) % types.length];
+        const litros = tipo === client_1.ConsumableType.DIESEL ? 250 + (i % 8) * 20 : tipo === client_1.ConsumableType.UREA ? 20 + (i % 5) * 5 : 8 + (i % 5) * 3;
+        const precio = tipo === client_1.ConsumableType.DIESEL ? 1180 : tipo === client_1.ConsumableType.UREA ? 850 : 4500;
         await prisma.fuelLog.create({
             data: {
                 vehicleId: vehicle.id,
@@ -444,15 +446,17 @@ async function runMasterSeed(prisma) {
                 precioPorLitro: precio,
                 costoTotal: litros * precio,
                 kmActual: 100000 + i * 1200,
-                proveedor: i % 2 === 0 ? 'YPF' : 'Shell',
-                tipoCombustible: 'DIESEL',
-                rendimientoKmL: i % 7 === 0 ? 0.92 : 1.35, // Desvío en el 7mo
+                proveedor: i % 2 === 0 ? 'YPF Serviclub' : 'Shell Flotas',
+                tipoConsumible: tipo,
+                tipoCombustible: String(tipo),
+                rendimientoKmL: tipo === client_1.ConsumableType.DIESEL ? (i % 7 === 0 ? 0.92 : 1.35) : null,
+                ratioUreaPorcentaje: tipo === client_1.ConsumableType.UREA ? (i % 6 === 0 ? 9.5 : 4.2) : null,
                 esDesvio: i % 7 === 0,
-                notas: i % 7 === 0 ? 'Alerta de consumo anómalo detectado' : 'Carga regular diésel grado 3',
+                notas: i % 7 === 0 ? `Alerta de consumo de ${tipo} fuera del rango estandar` : `Carga regular de ${tipo}`,
             },
         });
     }
-    console.log('✅ 55+ Registros de Carga de Combustible creados');
+    console.log('✅ 70+ Registros de Carga de Consumibles (Diésel, Urea, Aceite, Lubricantes) creados');
     // 10. NEUMÁTICOS, MOVIMIENTOS & RECAPES (50+ Registros)
     for (let i = 1; i <= 50; i++) {
         const codigoInterno = `NEU-AUDIT-${String(i).padStart(4, '0')}`;

@@ -12,7 +12,9 @@ export class ConsumablesService {
 
     const where: any = {};
     if (vehicleId) where.vehicleId = vehicleId;
-    if (tipoConsumible && tipoConsumible !== 'TODOS') where.tipoConsumible = tipoConsumible;
+    if (tipoConsumible && tipoConsumible !== 'TODOS') {
+      where.OR = [{ tipoConsumible }, { tipoCombustible: tipoConsumible }];
+    }
     if (from || to) {
       where.fecha = {};
       if (from) where.fecha.gte = new Date(from);
