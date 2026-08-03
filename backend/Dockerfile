@@ -33,4 +33,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node prisma/import_railway.js && node dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node prisma/import_railway.js && node prisma/compiled/seed.js && node dist/src/main.js"]
