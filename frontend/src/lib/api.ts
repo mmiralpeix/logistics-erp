@@ -70,6 +70,10 @@ export const clientsApi = {
   getHistory: (id: string) => api.get(`/clients/${id}/history`),
   getContracts: (id: string) => api.get(`/clients/${id}/contracts`),
   createContract: (id: string, data: any) => api.post(`/clients/${id}/contracts`, data),
+  getSummary360: (id: string) => api.get(`/clients/${id}/summary-360`),
+  getRates: (id: string) => api.get(`/clients/${id}/rates`),
+  addRate: (id: string, data: any) => api.post(`/clients/${id}/rates`, data),
+  removeRate: (rateId: string) => api.delete(`/clients/rates/${rateId}`),
 };
 
 export const vehiclesApi = {

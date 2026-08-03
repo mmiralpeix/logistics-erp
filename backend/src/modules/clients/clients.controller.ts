@@ -62,9 +62,34 @@ export class ClientsController {
 
   @Post(':id/contracts')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTANT)
-  @ApiOperation({ summary: 'Crear Órden de Compra / Contrato para el cliente' })
+  @ApiOperation({ summary: 'Crear o actualizar Orden de Compra / Contrato' })
   createContract(@Param('id') id: string, @Body() dto: any) {
     return this.clientsService.createContract(id, dto);
   }
-}
 
+  @Get(':id/summary-360')
+  @ApiOperation({ summary: 'Obtener expediente 360° completo del cliente' })
+  getSummary360(@Param('id') id: string) {
+    return this.clientsService.getSummary360(id);
+  }
+
+  @Get(':id/rates')
+  @ApiOperation({ summary: 'Listar tarifario acordado por tramo del cliente' })
+  getRates(@Param('id') id: string) {
+    return this.clientsService.getRates(id);
+  }
+
+  @Post(':id/rates')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.ACCOUNTANT)
+  @ApiOperation({ summary: 'Agregar tarifa por tramo al cliente' })
+  addRate(@Param('id') id: string, @Body() dto: any) {
+    return this.clientsService.addRate(id, dto);
+  }
+
+  @Delete('rates/:rateId')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER)
+  @ApiOperation({ summary: 'Eliminar tarifa por tramo' })
+  removeRate(@Param('rateId') rateId: string) {
+    return this.clientsService.removeRate(rateId);
+  }
+}

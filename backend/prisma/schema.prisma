@@ -178,16 +178,39 @@ model Client {
   categoriaCliente  String   @default("STANDARD")
   isActive          Boolean  @default(true)
   notas             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  limiteCredito      Float    @default(0)
+  diasCredito        Int      @default(30)
+  saldoActual        Float    @default(0)
+  bloqueadoPorRiesgo Boolean  @default(false)
+  scoring            String   @default("A")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   contacts ClientContact[]
   contracts Contract[]
   trips     Trip[]
   invoices  Invoice[]
   certifications Certification[]
+  rates     ClientRate[]
 
   @@map("clients")
+}
+
+model ClientRate {
+  id                  String   @id @default(cuid())
+  clientId            String
+  origen              String
+  destino             String
+  tipoCarga           String?
+  tarifaBase          Float
+  costoPorTnExcedente Float?   @default(0)
+  horasEsperaLibres   Float?   @default(2)
+  createdAt           DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("client_rates")
 }
 
 model ClientContact {
