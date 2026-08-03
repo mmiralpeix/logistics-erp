@@ -786,38 +786,56 @@ export default function MaintenancePage() {
             />
 
             {/* Tire Cards Grid */}
-            {isLoadingTires ? (
-              <div className="text-center py-16 text-slate-500 dark:text-slate-400 font-medium">
-                Cargando inventario de neumáticos...
-              </div>
-            ) : !tiresData?.data || tiresData.data.length === 0 ? (
-              <div className="card p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
-                <CircleDot className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
-                <p className="font-extrabold text-base text-slate-700 dark:text-slate-300">
-                  No se encontraron neumáticos con los filtros seleccionados
-                </p>
-                <p className="text-xs text-slate-400">
-                  Ajustá los criterios de búsqueda o registrá un nuevo neumático activo.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {tiresData.data.map((tire: any) => (
-                  <TireCard
-                    key={tire.id}
-                    tire={tire}
-                    onInstall={(t) => setInstallTireModal({ tire: t, mode: 'install' })}
-                    onDismount={(t) => setInstallTireModal({ tire: t, mode: 'dismount' })}
-                    onRotate={(t) => setAxleMapVehicleId(t.vehicleId || vehicles?.[0]?.id)}
-                    onRetread={(t) => setRetreadTireModal({ tire: t, mode: t.status === 'EN_RECAPADO' ? 'receive' : 'send' })}
-                    onInspection={(t) => setInspectionTire(t)}
-                    onViewHistory={(t) => setTimelineTireId(t.id)}
-                    onEdit={(t) => { setEditTireData(t); setShowTireModal(true); }}
-                    onShowQR={(t) => setTimelineTireId(t.id)}
-                  />
-                ))}
-              </div>
-            )}
+            {(() => {
+              const tireList: any[] = Array.isArray(tiresData)
+                ? tiresData
+                : Array.isArray(tiresData?.data)
+                ? tiresData.data
+                : Array.isArray(tiresData?.data?.data)
+                ? tiresData.data.data
+                : [];
+
+              if (isLoadingTires) {
+                return (
+                  <div className="text-center py-16 text-slate-500 dark:text-slate-400 font-medium">
+                    Cargando inventario de neumáticos...
+                  </div>
+                );
+              }
+
+              if (!tireList || tireList.length === 0) {
+                return (
+                  <div className="card p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+                    <CircleDot className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
+                    <p className="font-extrabold text-base text-slate-700 dark:text-slate-300">
+                      No se encontraron neumáticos con los filtros seleccionados
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Ajustá los criterios de búsqueda o registrá un nuevo neumático activo.
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tireList.map((tire: any) => (
+                    <TireCard
+                      key={tire.id}
+                      tire={tire}
+                      onInstall={(t) => setInstallTireModal({ tire: t, mode: 'install' })}
+                      onDismount={(t) => setInstallTireModal({ tire: t, mode: 'dismount' })}
+                      onRotate={(t) => setAxleMapVehicleId(t.vehicleId || vehicles?.[0]?.id)}
+                      onRetread={(t) => setRetreadTireModal({ tire: t, mode: t.status === 'EN_RECAPADO' ? 'receive' : 'send' })}
+                      onInspection={(t) => setInspectionTire(t)}
+                      onViewHistory={(t) => setTimelineTireId(t.id)}
+                      onEdit={(t) => { setEditTireData(t); setShowTireModal(true); }}
+                      onShowQR={(t) => setTimelineTireId(t.id)}
+                    />
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
