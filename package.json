@@ -13,8 +13,8 @@
     "test:agents": "powershell -ExecutionPolicy Bypass -File ./.agents/scripts/run-tests.ps1",
     "electron": "electron .",
     "build:backend": "cd backend && npm install && npm run build",
-    "build:frontend": "cd frontend && npm run build",
-    "build": "cd backend && npm install && npm run build",
+    "build:frontend": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install && npm run build",
     "start": "node backend/dist/src/main.js || node dist/src/main.js",
     "dist:win": "npm run build && electron-builder --win --x64",
     "dist:preview": "electron-builder --win --x64 --dir"

@@ -4,7 +4,11 @@ import Cookies from 'js-cookie';
 export const getApiUrl = () => {
   if (typeof window !== 'undefined') {
     const override = localStorage.getItem('NEXT_PUBLIC_API_URL');
-    if (override) return override;
+    if (override && (override.includes('ff4a') || override.includes('logistics-erp-production'))) {
+      localStorage.removeItem('NEXT_PUBLIC_API_URL');
+    } else if (override) {
+      return override;
+    }
 
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
     if (envUrl && !envUrl.includes('localhost')) {
