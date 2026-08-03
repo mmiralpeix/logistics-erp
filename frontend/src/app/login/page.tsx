@@ -38,6 +38,10 @@ export default function LoginPage() {
   const [totpCode, setTotpCode] = useState('');
   const [mfaLoading, setMfaLoading] = useState(false);
 
+  // Manual API URL Config Panel
+  const [showApiConfig, setShowApiConfig] = useState(false);
+  const [customApiUrlInput, setCustomApiUrlInput] = useState('');
+
   // Self-Registration State
   const [regForm, setRegForm] = useState({
     firstName: '',
@@ -48,13 +52,42 @@ export default function LoginPage() {
     phone: '',
   });
   const [regLoading, setRegLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { email: 'admin@logistics.com', password: 'Admin123!' },
   });
 
+  const fillQuickLogin = (email: string, pass: string) => {
+    setValue('email', email);
+    setValue('password', pass);
+  };
+
+  const handleSaveApiUrl = () => {
+    if (!customApiUrlInput) return;
+    let url = customApiUrlInput.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    if (!url.endsWith('/api')) {
+      url = url.replace(/\/+$/, '') + '/api';
+    }
+    localStorage.setItem('NEXT_PUBLIC_API_URL', url);
+    toast.success(`URL de API actualizada: ${url}`);
+    setShowApiConfig(false);
+    window.location.reload();
+  };
+
+  const handleResetApiUrl = () => {
+    localStorage.removeItem('NEXT_PUBLIC_API_URL');
+    toast.success('URL restablecida por defecto');
+    setShowApiConfig(false);
+    window.location.reload();
+  };
+
   const onSubmit = async (data: FormData) => {
+    setLoading(true);
     try {
       const res = await authApi.login(data.email, data.password);
       
@@ -81,10 +114,14 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       if (!err.response) {
-        toast.error(`Error de conexión a ${getApiUrl()}: No se pudo conectar al servidor Backend. Verifica NEXT_PUBLIC_API_URL en Railway.`);
+        setCustomApiUrlInput(getApiUrl());
+        setShowApiConfig(true);
+        toast.error(`Error de conexión con el Backend (${getApiUrl()}). Ingresa la URL de tu Backend abajo.`);
       } else {
         toast.error(err.response?.data?.message || 'Credenciales inválidas');
       }
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -355,6 +392,56 @@ export default function LoginPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Config Servidor API Button */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomApiUrlInput(getApiUrl());
+                    setShowApiConfig(!showApiConfig);
+                  }}
+                  className="text-[11px] text-slate-500 hover:text-blue-500 underline transition-colors flex items-center gap-1"
+                >
+                  ⚙️ {showApiConfig ? 'Ocultar Servidor API' : `Servidor API (${getApiUrl().replace(/\/api$/, '')})`}
+                </button>
+              </div>
+
+              {showApiConfig && (
+                <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 backdrop-blur-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-300 flex items-center gap-1.5">
+                      ⚙️ Configurar URL del Backend API
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-amber-200/80">
+                    Ingresa la URL pública de tu Backend en Railway para conectar la aplicación:
+                  </p>
+                  <input
+                    type="text"
+                    value={customApiUrlInput}
+                    onChange={(e) => setCustomApiUrlInput(e.target.value)}
+                    placeholder="https://tu-backend.up.railway.app/api"
+                    className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveApiUrl}
+                      className="flex-1 py-1.5 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-lg transition-colors shadow-sm"
+                    >
+                      Guardar URL y Reintentar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetApiUrl}
+                      className="py-1.5 px-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-xs rounded-lg transition-colors"
+                    >
+                      Restablecer
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Main Login Form */}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
