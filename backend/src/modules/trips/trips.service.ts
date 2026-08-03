@@ -531,4 +531,82 @@ export class TripsService {
       trips: createdTrips,
     };
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPEDIENTE 360° & RENDICIÓN DE GASTOS
+  // ═══════════════════════════════════════════════════════════════
+
+  async getSummary360(tripId: string) {
+    const trip = await this.prisma.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        vehicle: true,
+        trailer: true,
+        driver: true,
+        client: true,
+        contract: true,
+        certification: true,
+        costs: true,
+        checkpoints: { orderBy: { orden: 'asc' } },
+        dangerousGoods: true,
+        carrier: true,
+        carrierVehicle: true,
+        carrierDriver: true,
+        fuelLogs: { orderBy: { fecha: 'desc' } },
+      },
+    });
+
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    const costoPeajes = trip.costs.filter((c) => c.categoria === 'PEAJES').reduce((sum, c) => sum + c.monto, 0);
+    const costoViaticos = trip.costs.filter((c) => c.categoria === 'VIATICOS').reduce((sum, c) => sum + c.monto, 0);
+    const costoCombustible = trip.fuelLogs.reduce((sum, f) => sum + f.costoTotal, 0);
+    const costoDirectoTotal = trip.costs.reduce((sum, c) => sum + c.monto, 0) + costoCombustible;
+
+    const tarifa = trip.subcontractorFee || trip.tarifaAcordada || 0;
+    const margenBruto = tarifa > 0 ? (((tarifa - costoDirectoTotal) / tarifa) * 100).toFixed(1) : '0';
+
+    return {
+      trip,
+      financials: {
+        tarifa,
+        costoPeajes,
+        costoViaticos,
+        costoCombustible,
+        costoDirectoTotal,
+        margenBrutoPct: Number(margenBruto),
+      },
+    };
+  }
+
+  async addTripCost(tripId: string, dto: { categoria: string; descripcion: string; monto: number; comprobante?: string }) {
+    const trip = await this.prisma.trip.findUnique({ where: { id: tripId } });
+    if (!trip) throw new NotFoundException('Viaje no encontrado');
+
+    const cost = await this.prisma.tripCost.create({
+      data: {
+        tripId,
+        categoria: dto.categoria,
+        descripcion: dto.descripcion,
+        monto: Number(dto.monto),
+        comprobante: dto.comprobante || null,
+      },
+    });
+
+    // Recalcular costos del viaje
+    const allCosts = await this.prisma.tripCost.findMany({ where: { tripId } });
+    const totalCostos = allCosts.reduce((sum, c) => sum + c.monto, 0);
+    const tarifa = trip.tarifaAcordada || 0;
+    const margenBruto = tarifa > 0 ? (tarifa - totalCostos) / tarifa : 0;
+
+    await this.prisma.trip.update({
+      where: { id: tripId },
+      data: {
+        costoTotal: totalCostos,
+        margenBruto,
+      },
+    });
+
+    return cost;
+  }
 }

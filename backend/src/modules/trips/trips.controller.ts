@@ -69,7 +69,13 @@ export class TripsController {
   @Post(':id/costs')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Agregar costo al viaje' })
-  addCost(@Param('id') id: string, @Body() body: AddTripCostDto) { return this.tripsService.addCost(id, body); }
+  addCost(@Param('id') id: string, @Body() body: any) { return this.tripsService.addTripCost(id, body); }
+
+  @Get(':id/summary-360')
+  @ApiOperation({ summary: 'Obtener expediente 360° y bitácora digital del viaje' })
+  getSummary360(@Param('id') id: string) {
+    return this.tripsService.getSummary360(id);
+  }
 
   @Patch(':id/reschedule')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)

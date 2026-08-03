@@ -116,6 +116,7 @@ export const tripsApi = {
   addCost: (id: string, data: any) => api.post(`/trips/${id}/costs`, data),
   getGantt: (from: string, to: string) => api.get('/trips/gantt', { params: { from, to } }),
   reschedule: (id: string, newDeparture: string, reason: string) => api.patch(`/trips/${id}/reschedule`, { newDeparture, reason }),
+  getSummary360: (id: string) => api.get(`/trips/${id}/summary-360`),
 };
 
 export const maintenanceApi = {
