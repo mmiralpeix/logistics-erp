@@ -114,4 +114,72 @@ export class VehiclesService {
       where: { isActive: true, status: VehicleStatus.DISPONIBLE, id: { notIn: busyIds } },
     });
   }
+
+  // Actualizar Odómetro / Horómetro
+  async updateOdometer(id: string, kilometraje: number, horasMotor?: number) {
+    await this.findOne(id);
+    return this.prisma.vehicle.update({
+      where: { id },
+      data: {
+        kilometraje: Number(kilometraje),
+        ...(horasMotor !== undefined ? { horasMotor: Number(horasMotor) } : {}),
+      },
+    });
+  }
+
+  // Expediente 360° Completo del Vehículo
+  async getSummary360(id: string) {
+    const vehicle = await this.prisma.vehicle.findUnique({
+      where: { id },
+      include: {
+        documents: { orderBy: { createdAt: 'desc' } },
+        maintenances: {
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+          include: { items: { include: { sparePart: true } } },
+        },
+        fuelLogs: {
+          orderBy: { fecha: 'desc' },
+          take: 15,
+        },
+        tires: {
+          where: { status: 'INSTALADO' },
+          include: { retreads: true, inspections: { orderBy: { fecha: 'desc' }, take: 1 } },
+        },
+        gpsDevice: true,
+      },
+    });
+
+    if (!vehicle) throw new NotFoundException('Vehículo no encontrado');
+
+    const trips = await this.prisma.trip.findMany({
+      where: { vehicleId: id },
+      orderBy: { fechaSalidaProgramada: 'desc' },
+      take: 10,
+      include: { driver: true, client: true, costs: true },
+    });
+
+    const totalKmsRecorridos = trips.reduce((sum, t) => sum + (t.distanciaKm || 150), 0) || 1;
+    const totalGastoCombustible = vehicle.fuelLogs.reduce((sum, f) => sum + f.costoTotal, 0);
+    const totalLitrosCombustible = vehicle.fuelLogs.reduce((sum, f) => sum + f.litros, 0);
+    const totalGastoMantenimiento = vehicle.maintenances.reduce((sum, m) => sum + (m.costoTotal || 0), 0);
+
+    const promedioKmL = totalLitrosCombustible > 0 ? (totalKmsRecorridos / totalLitrosCombustible).toFixed(2) : '3.20';
+    const kmProximoService = Math.ceil(vehicle.kilometraje / 15000) * 15000 + 15000;
+    const kmRestantesService = Math.max(0, kmProximoService - vehicle.kilometraje);
+
+    return {
+      vehicle,
+      trips,
+      metrics: {
+        totalKmsRecorridos,
+        totalGastoCombustible,
+        totalGastoMantenimiento,
+        promedioKmL: Number(promedioKmL),
+        kmProximoService,
+        kmRestantesService,
+        serviceStatus: kmRestantesService <= 1000 ? 'CRITICO' : kmRestantesService <= 2500 ? 'ADVERTENCIA' : 'NORMAL',
+      },
+    };
+  }
 }

@@ -85,6 +85,8 @@ export const vehiclesApi = {
   remove: (id: string) => api.delete(`/vehicles/${id}`),
   getExpiring: () => api.get('/vehicles/expiring'),
   getAvailable: (date?: string) => api.get('/vehicles/available', { params: { date } }),
+  getSummary360: (id: string) => api.get(`/vehicles/${id}/summary-360`),
+  updateOdometer: (id: string, data: { kilometraje: number; horasMotor?: number }) => api.patch(`/vehicles/${id}/odometer`, data),
 };
 
 export const driversApi = {

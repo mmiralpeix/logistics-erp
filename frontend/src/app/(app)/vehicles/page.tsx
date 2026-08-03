@@ -4,9 +4,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { vehiclesApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatDate, VEHICLE_STATUS_MAP, VEHICLE_TYPE_MAP, getExpiryBadge } from '@/lib/utils';
-import { Plus, Search, Truck, Edit2, Trash2, Eye, Container } from 'lucide-react';
+import {
+  Plus, Search, Truck, Edit2, Trash2, Eye, Gauge, Wrench, ShieldAlert, ShieldCheck
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { VehicleModal } from '@/components/vehicles/VehicleModal';
+import { VehicleDetailDrawer } from '@/components/vehicles/VehicleDetailDrawer';
+import { OdometerModal } from '@/components/vehicles/OdometerModal';
 
 const STATUS_FILTERS = ['', 'DISPONIBLE', 'EN_VIAJE', 'EN_MANTENIMIENTO', 'FUERA_DE_SERVICIO'];
 
@@ -24,6 +28,8 @@ export default function VehiclesPage() {
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
+  const [selected360Id, setSelected360Id] = useState<string | null>(null);
+  const [odometerVehicle, setOdometerVehicle] = useState<any>(null);
   const [editing, setEditing] = useState<any>(null);
   const qc = useQueryClient();
 
@@ -41,7 +47,7 @@ export default function VehiclesPage() {
   return (
     <div>
       <Header
-        title="Gestión de Flota Pesada y Equipos"
+        title="Gestión de Flota Pesada, Equipos & Ficha 360°"
         subtitle={`${data?.total || 0} equipos registrados en sistema`}
         actions={
           <button onClick={() => { setEditing(null); setShowModal(true); }} className="btn-primary">
@@ -85,124 +91,136 @@ export default function VehiclesPage() {
         </div>
 
         {/* Table */}
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden shadow-sm">
           <table className="w-full text-sm">
             <thead>
               <tr className="table-header">
                 <th className="px-4 py-3 text-left">Dominio / Equipo</th>
                 <th className="px-4 py-3 text-left">Tipo & Especificaciones</th>
                 <th className="px-4 py-3 text-left">Estado</th>
-                <th className="px-4 py-3 text-left">Kilometraje</th>
+                <th className="px-4 py-3 text-left">Kilometraje / Service</th>
                 <th className="px-4 py-3 text-left">Seguro</th>
-                <th className="px-4 py-3 text-left">ITV / RTO</th>
-                <th className="px-4 py-3 text-left">RUTA / INTI</th>
-                <th className="px-4 py-3 text-right">Acciones</th>
+                <th className="px-4 py-3 text-left">ITV / VTV</th>
+                <th className="px-4 py-3 text-right">Acciones 360°</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={8} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando flota...</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando flota de vehículos...</td></tr>
               ) : data?.data?.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-12 text-slate-500 dark:text-slate-400">
-                  <Truck className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                  <p>No se encontraron equipos registrados para este filtro</p>
+                <tr><td colSpan={7} className="text-center py-12 text-slate-500 dark:text-slate-400">
+                  <Truck className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-slate-600" />
+                  <p>No se encontraron equipos registrados</p>
                 </td></tr>
-              ) : data?.data?.map((v: any) => {
-                const st = VEHICLE_STATUS_MAP[v.status] || { label: v.status, cls: 'badge-gray' };
-                const seguro = getExpiryBadge(v.vencimientoSeguro);
-                const itv = getExpiryBadge(v.vencimientoITV);
-                const ruta = getExpiryBadge(v.vencimientoRUTA);
-                const estanqueidad = v.vencimientoEstanqueidad ? getExpiryBadge(v.vencimientoEstanqueidad) : null;
+              ) : (
+                data?.data?.map((vehicle: any) => {
+                  const kmProximoService = Math.ceil(vehicle.kilometraje / 15000) * 15000 + 15000;
+                  const kmRestantes = Math.max(0, kmProximoService - vehicle.kilometraje);
 
-                return (
-                  <tr key={v.id} className="table-row">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-slate-100 dark:bg-slate-700/60 rounded-lg flex items-center justify-center flex-shrink-0">
-                          {['CARRETON', 'EQUIPO_ESPECIAL'].includes(v.tipo) ? (
-                            <Container className="w-4 h-4 text-amber-600 dark:text-yellow-400" />
-                          ) : ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CISTERNA', 'BATEA'].includes(v.tipo) ? (
-                            <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          ) : (
-                            <Truck className="w-4 h-4 text-emerald-600 dark:text-green-400" />
+                  return (
+                    <tr key={vehicle.id} className="table-row">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-black text-slate-900 dark:text-white text-base">{vehicle.patente}</span>
+                          {vehicle.isThirdParty && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-purple-100 text-purple-700">Tercero</span>
                           )}
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-900 dark:text-white uppercase">{v.patente}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{v.marca} {v.modelo} ({v.anio})</p>
+                        <p className="text-xs text-slate-500 font-medium">{vehicle.marca} {vehicle.modelo} ({vehicle.anio})</p>
+                      </td>
+
+                      <td className="px-4 py-3 text-xs">
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{VEHICLE_TYPE_MAP[vehicle.tipo] || vehicle.tipo}</span>
+                        <p className="text-slate-500">{vehicle.capacidadKg ? `${(vehicle.capacidadKg / 1000).toFixed(1)} Tn` : 'N/A'}</p>
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
+                          vehicle.status === 'DISPONIBLE' ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700' :
+                          vehicle.status === 'EN_VIAJE' ? 'bg-blue-100 dark:bg-blue-950 text-blue-700' :
+                          'bg-amber-100 dark:bg-amber-950 text-amber-700'
+                        }`}>
+                          {VEHICLE_STATUS_MAP[vehicle.status]?.label || vehicle.status}
+                        </span>
+                      </td>
+
+                      <td className="px-4 py-3 text-xs">
+                        <span className="font-extrabold text-slate-900 dark:text-white">{vehicle.kilometraje?.toLocaleString()} km</span>
+                        <p className="text-[11px] text-slate-500">Service en ~{kmRestantes.toLocaleString()} km</p>
+                      </td>
+
+                      <td className="px-4 py-3 text-xs">
+                        {(() => {
+                          const b = getExpiryBadge(vehicle.vencimientoSeguro);
+                          return <span className={b.cls}>{b.label}</span>;
+                        })()}
+                      </td>
+
+                      <td className="px-4 py-3 text-xs">
+                        {(() => {
+                          const b = getExpiryBadge(vehicle.vencimientoITV);
+                          return <span className={b.cls}>{b.label}</span>;
+                        })()}
+                      </td>
+
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setSelected360Id(vehicle.id)}
+                            className="btn-secondary py-1 px-2.5 text-xs flex items-center gap-1 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-100"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Ficha 360°
+                          </button>
+
+                          <button
+                            onClick={() => setOdometerVehicle(vehicle)}
+                            title="Actualizar Odómetro"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                          >
+                            <Gauge className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => { setEditing(vehicle); setShowModal(true); }}
+                            title="Editar Equipo"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => { if (confirm('¿Eliminar este equipo?')) deleteMutation.mutate(vehicle.id); }}
+                            title="Eliminar Equipo"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{VEHICLE_TYPE_MAP[v.tipo] || v.tipo}</p>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                        {v.capacidadKg && <span>{(v.capacidadKg / 1000).toFixed(0)} Tn</span>}
-                        {v.capacidadM3 && <span>· {v.capacidadM3} m³</span>}
-                        {v.cantidadEjes && <span>· {v.cantidadEjes} ejes</span>}
-                        {v.cantidadCompartimentos && <span>· {v.cantidadCompartimentos} comp.</span>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3"><span className={st.cls}>{st.label}</span></td>
-                    <td className="px-4 py-3"><span className="text-slate-800 dark:text-slate-300">{v.kilometraje ? `${v.kilometraje.toLocaleString('es-AR')} km` : '-'}</span></td>
-                    <td className="px-4 py-3">
-                      <div>
-                        <span className={seguro.cls}>{seguro.label}</span>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(v.vencimientoSeguro)}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div>
-                        <span className={itv.cls}>{itv.label}</span>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(v.vencimientoITV)}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div>
-                        {estanqueidad ? (
-                          <>
-                            <span className={estanqueidad.cls}>INTI: {estanqueidad.label}</span>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(v.vencimientoEstanqueidad)}</p>
-                          </>
-                        ) : (
-                          <>
-                            <span className={ruta.cls}>{ruta.label}</span>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(v.vencimientoRUTA)}</p>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <a href={`/vehicles/${v.id}`} className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded transition-colors" title="Ver detalle del equipo">
-                          <Eye className="w-4 h-4" />
-                        </a>
-                        <button onClick={() => { setEditing(v); setShowModal(true); }} className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-yellow-400 hover:bg-amber-50 dark:hover:bg-yellow-500/10 rounded transition-colors" title="Editar equipo">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => { if (confirm(`¿Eliminar equipo ${v.patente}?`)) deleteMutation.mutate(v.id); }} className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded transition-colors" title="Eliminar equipo">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
-          {data && data.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700">
-              <p className="text-sm text-slate-600 dark:text-slate-400">Total: {data.total} equipos</p>
-              <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-secondary py-1 px-3 disabled:opacity-40">Anterior</button>
-                <span className="px-3 py-1 text-sm text-slate-600 dark:text-slate-400">Pág. {page}/{data.totalPages}</span>
-                <button onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))} disabled={page === data.totalPages} className="btn-secondary py-1 px-3 disabled:opacity-40">Siguiente</button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {showModal && <VehicleModal vehicle={editing} onClose={() => setShowModal(false)} />}
+      {/* Vehicle Create/Edit Modal */}
+      {showModal && (
+        <VehicleModal vehicle={editing} onClose={() => setShowModal(false)} />
+      )}
+
+      {/* Odometer Modal */}
+      {odometerVehicle && (
+        <OdometerModal vehicle={odometerVehicle} onClose={() => setOdometerVehicle(null)} />
+      )}
+
+      {/* Expediente 360° Drawer */}
+      <VehicleDetailDrawer
+        vehicleId={selected360Id}
+        onClose={() => setSelected360Id(null)}
+      />
     </div>
   );
 }
