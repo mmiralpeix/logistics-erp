@@ -451,6 +451,57 @@ export async function runMasterSeed(prisma: PrismaClient) {
   }
   console.log('✅ 55+ Viajes Operativos, Checkpoints, Costos y Hazmat creados');
 
+  // 7b. VIAJES GARANTIZADOS POR OPERADOR TERCERIZADO (evita fichas 360° de Carrier sin historial)
+  const carrierTripStatuses = [TripStatus.FINALIZADO, TripStatus.EN_CURSO, TripStatus.PROGRAMADO];
+  let carrierTripSeq = 1;
+  for (const carrier of allCarriersList) {
+    const cVehicle = allCarrierVehiclesList.find((v) => v.carrierId === carrier.id);
+    const cDriver = allCarrierDriversList.find((d) => d.carrierId === carrier.id);
+    if (!cVehicle || !cDriver) continue;
+
+    for (let j = 0; j < 2; j++) {
+      const idx = carrierTripSeq++;
+      const numero = `VJ-2026-TER-${String(idx).padStart(5, '0')}`;
+      const client = allClientsList[idx % allClientsList.length];
+      const status = carrierTripStatuses[idx % carrierTripStatuses.length];
+      const tarifa = 210000 + idx * 4500;
+      const flete = Math.round(tarifa * 0.82);
+
+      await prisma.trip.upsert({
+        where: { numero },
+        update: {},
+        create: {
+          numero,
+          clientId: client.id,
+          carrierId: carrier.id,
+          carrierVehicleId: cVehicle.id,
+          carrierDriverId: cDriver.id,
+          dispatcherId: dispatcherUser?.id || null,
+          origen: idx % 2 === 0 ? 'Comodoro Rivadavia, Chubut' : 'Neuquén Capital',
+          destino: idx % 2 === 0 ? 'Cerro Dragón, Chubut' : 'Rincón de los Sauces, Neuquén',
+          fechaSalidaProgramada: addDays(now, -(idx % 20)),
+          fechaLlegadaEstimada: addDays(now, -(idx % 20) + 1),
+          fechaSalidaReal: status !== TripStatus.PROGRAMADO ? addDays(now, -(idx % 20)) : null,
+          fechaLlegadaReal: status === TripStatus.FINALIZADO ? addDays(now, -(idx % 20) + 1) : null,
+          duracionEstimadaHoras: 14,
+          distanciaKm: 380 + idx * 8,
+          status,
+          tipoCarga: 'Carga General / Soporte Operativo',
+          pesoCarga: 28000,
+          descripcionCarga: `Flete tercerizado ${idx} operado por ${carrier.razonSocial}`,
+          tipoOperacion: 'TERCERIZADO',
+          subcontractorName: carrier.razonSocial,
+          subcontractorFee: flete,
+          tarifaAcordada: tarifa,
+          costoTotal: flete,
+          margenBruto: tarifa - flete,
+          notas: `Viaje de flete tercerizado, operador ${carrier.razonSocial}`,
+        },
+      });
+    }
+  }
+  console.log(`✅ ${carrierTripSeq - 1} Viajes de Flete Tercerizado creados (2 por operador logístico)`);
+
   // 8. PAÑOL DE REPUESTOS & MANTENIMIENTO (50+ Registros)
   const categoriasSpare = ['FILTROS', 'FRENOS', 'VALVULAS_CISTERNA', 'NEUMATICOS', 'VARIOS'];
   for (let i = 1; i <= 52; i++) {
