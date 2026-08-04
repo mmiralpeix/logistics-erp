@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { maintenanceApi, vehiclesApi, sparePartsApi, tiresApi } from '@/lib/api';
@@ -23,7 +23,7 @@ import { TireRetreadModal } from '@/components/maintenance/tires/TireRetreadModa
 import { TireInspectionModal } from '@/components/maintenance/tires/TireInspectionModal';
 import { TireTimelineModal } from '@/components/maintenance/tires/TireTimelineModal';
 
-export default function MaintenancePage() {
+function MaintenanceContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<'orders' | 'reserve-funds' | 'health' | 'costs' | 'inventory' | 'tires'>('orders');
@@ -971,5 +971,13 @@ export default function MaintenancePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function MaintenancePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-400">Cargando módulo de mantenimiento...</div>}>
+      <MaintenanceContent />
+    </Suspense>
   );
 }
