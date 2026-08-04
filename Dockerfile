@@ -34,4 +34,4 @@ ENV NODE_ENV=production
 
 EXPOSE 3001
 
-CMD ["node", "dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss --schema=./prisma/schema.prisma && node dist/src/main.js"]
