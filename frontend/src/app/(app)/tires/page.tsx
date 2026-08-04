@@ -166,7 +166,7 @@ export default function TiresPage() {
                   No se encontraron neumáticos registrados o coincidentes
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  Ajustá los filtros de búsqueda o hacé clic en "Registrar Neumático" para dar de alta unidades en stock o instaladas.
+                  Ajustá los filtros de búsqueda o hacé clic en &quot;Registrar Neumático&quot; para dar de alta unidades en stock o instaladas.
                 </p>
                 <button
                   onClick={() => {
