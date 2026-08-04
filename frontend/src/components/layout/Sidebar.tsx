@@ -25,7 +25,7 @@ const navItems = [
   { href: '/trips', icon: MapPin, label: 'Viajes', description: 'Planificación multidía' },
   { href: '/maintenance', icon: Wrench, label: 'Mantenimiento', description: 'Preventivo y correctivo' },
   { href: '/tires', icon: CircleDot, label: 'Neumáticos', description: 'Control y rendimiento' },
-  { href: '/reserve-funds', icon: Coins, label: 'Fondos Reserva', description: 'Fondos de Mantenimiento y Neumáticos' },
+  { href: '/maintenance?tab=reserve-funds', icon: Coins, label: 'Fondos Reserva', description: 'Fondos de Mantenimiento y Neumáticos' },
   { href: '/consumables', icon: Droplet, label: 'Consumibles', description: 'Diésel, Urea y fluidos' },
   { href: '/dangerous-goods', icon: Package, label: 'C. Peligrosas', description: 'Decreto 779/95' },
   { href: '/documents', icon: FileText, label: 'Documentos', description: 'Gestión documental' },

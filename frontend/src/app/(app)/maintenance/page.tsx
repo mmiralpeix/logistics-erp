@@ -5,10 +5,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { maintenanceApi, vehiclesApi, sparePartsApi, tiresApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatDate, formatMoney, MAINTENANCE_STATUS_MAP } from '@/lib/utils';
-import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search, Package, Layers, Image as ImageIcon, CircleDot, LayoutGrid } from 'lucide-react';
+import { Plus, Wrench, AlertTriangle, CheckCircle2, ShieldAlert, DollarSign, Activity, FileText, Search, Package, Layers, Image as ImageIcon, CircleDot, LayoutGrid, Coins } from 'lucide-react';
 import { WorkOrderModal } from '@/components/maintenance/WorkOrderModal';
 import { MaintenanceHealthCard } from '@/components/maintenance/MaintenanceHealthCard';
 import { SparePartModal } from '@/components/maintenance/SparePartModal';
+import { ReserveFundsTab } from '@/components/maintenance/ReserveFundsTab';
 import toast from 'react-hot-toast';
 
 // Tires Submodule Components
@@ -25,10 +26,10 @@ import { TireTimelineModal } from '@/components/maintenance/tires/TireTimelineMo
 export default function MaintenancePage() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState<'orders' | 'health' | 'costs' | 'inventory' | 'tires'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'reserve-funds' | 'health' | 'costs' | 'inventory' | 'tires'>('orders');
 
   useEffect(() => {
-    if (tabParam && ['orders', 'health', 'costs', 'inventory', 'tires'].includes(tabParam)) {
+    if (tabParam && ['orders', 'reserve-funds', 'health', 'costs', 'inventory', 'tires'].includes(tabParam)) {
       setActiveTab(tabParam as any);
     }
   }, [tabParam]);
@@ -353,6 +354,17 @@ export default function MaintenancePage() {
           </button>
 
           <button
+            onClick={() => setActiveTab('reserve-funds')}
+            className={`pb-3 flex items-center gap-2 border-b-2 transition-colors shrink-0 ${
+              activeTab === 'reserve-funds'
+                ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400 font-extrabold'
+                : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Coins className="w-4 h-4 text-emerald-500" /> Fondos de Reserva por Unidad
+          </button>
+
+          <button
             onClick={() => setActiveTab('health')}
             className={`pb-3 flex items-center gap-2 border-b-2 transition-colors shrink-0 ${
               activeTab === 'health'
@@ -404,6 +416,9 @@ export default function MaintenancePage() {
             )}
           </button>
         </div>
+
+        {/* TAB: RESERVE FUNDS */}
+        {activeTab === 'reserve-funds' && <ReserveFundsTab />}
 
         {/* TAB 1: ORDERS */}
         {activeTab === 'orders' && (
