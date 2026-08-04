@@ -47,6 +47,16 @@ export default function TripsPage() {
     }).then((r) => r.data),
   });
 
+  const tripsList: any[] = Array.isArray(data?.data)
+    ? data.data
+    : Array.isArray(data)
+    ? data
+    : Array.isArray(data?.trips)
+    ? data.trips
+    : [];
+
+  const totalCount = data?.total !== undefined ? data.total : tripsList.length;
+
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => tripsApi.updateStatus(id, status),
     onSuccess: () => {
@@ -149,11 +159,9 @@ export default function TripsPage() {
             </button>
           </div>
 
-          {data?.total !== undefined && (
-            <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2">
-              Mostrando <span className="font-bold text-slate-800 dark:text-white">{data?.data?.length || 0}</span> de <span className="font-bold text-slate-800 dark:text-white">{data?.total || 0}</span> viajes
-            </div>
-          )}
+          <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-2">
+            Mostrando <span className="font-bold text-slate-800 dark:text-white">{tripsList.length}</span> de <span className="font-bold text-slate-800 dark:text-white">{totalCount}</span> viajes
+          </div>
         </div>
 
         {/* Filters Bar */}
@@ -209,12 +217,12 @@ export default function TripsPage() {
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700/50">
                 {isLoading ? (
                   <tr><td colSpan={9} className="text-center py-12 text-slate-500">Cargando viajes...</td></tr>
-                ) : data?.data?.length === 0 ? (
+                ) : tripsList.length === 0 ? (
                   <tr><td colSpan={9} className="text-center py-12">
                     <Map className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-slate-600" />
                     <p className="text-slate-500 dark:text-slate-400">No se encontraron viajes para los filtros seleccionados</p>
                   </td></tr>
-                ) : data?.data?.map((trip: any) => {
+                ) : tripsList.map((trip: any) => {
                   const tarifa = trip.tarifaAcordada || 0;
                   const costo = trip.costoTotal || 0;
                   const margen = tarifa - costo;
