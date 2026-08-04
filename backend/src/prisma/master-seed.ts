@@ -642,5 +642,133 @@ export async function runMasterSeed(prisma: PrismaClient) {
     create: { key: 'alertas_vencimiento', label: 'Días de anticipación para alertas', value: { documentos: 30, revisiones: 15, mantenimiento: 7 } },
   });
 
-  console.log('🎉 [MasterSeed] ¡Generación masiva completada con éxito para las 38 entidades relacionales!');
+  // 14. DOCUMENTOS, INCIDENTES, RECAPES, REPORTES GUARDADOS/PROGRAMADOS Y PREFERENCIAS DE ALERTA
+  const docCount = await prisma.document.count();
+  if (docCount === 0) {
+    const docTypes = Object.values(DocumentType);
+    for (let i = 1; i <= 50; i++) {
+      const tipo = docTypes[i % docTypes.length];
+      const vehicle = allVehicles[i % allVehicles.length];
+      const driver = allDrivers[i % allDrivers.length];
+      await prisma.document.create({
+        data: {
+          tipo,
+          nombre: `${tipo} - Documento ${i}`,
+          descripcion: `Documento generado automáticamente, tipo ${tipo}`,
+          fileName: `doc_${tipo.toLowerCase()}_${i}.pdf`,
+          filePath: `uploads/seed/doc_${tipo.toLowerCase()}_${i}.pdf`,
+          fileSize: 102400 + i * 512,
+          mimeType: 'application/pdf',
+          vehicleId: i % 2 === 0 ? vehicle.id : null,
+          driverId: i % 2 !== 0 ? driver.id : null,
+          fechaEmision: past(i % 12 + 1),
+          fechaVencimiento: i % 6 === 0 ? past(1) : future(i % 12 + 1),
+          isExpired: i % 6 === 0,
+        },
+      });
+    }
+  }
+
+  const incidentCount = await prisma.incident.count();
+  if (incidentCount === 0) {
+    const incidentTypes = ['Accidente Menor', 'Retraso en Ruta', 'Falla Mecánica', 'Robo/Hurto', 'Multa de Tránsito', 'Reclamo de Cliente'];
+    const allTrips = await prisma.trip.findMany({ take: 30 });
+    for (let i = 1; i <= 30; i++) {
+      const trip = allTrips[i % allTrips.length];
+      const driver = allDrivers[i % allDrivers.length];
+      await prisma.incident.create({
+        data: {
+          tripId: i % 4 !== 0 ? trip?.id : null,
+          driverId: driver.id,
+          tipo: incidentTypes[i % incidentTypes.length],
+          descripcion: `Incidente ${i}: ${incidentTypes[i % incidentTypes.length]} reportado en ruta.`,
+          fecha: past(i % 6),
+          lugar: i % 2 === 0 ? `Ruta 3, Km ${1000 + i}` : 'Playa de Carga Central',
+          costoEstimado: i % 3 === 0 ? 15000 + i * 500 : null,
+          resolucion: i % 2 === 0 ? 'Resuelto sin novedades adicionales, parte policial adjunto.' : null,
+        },
+      });
+    }
+  }
+
+  const retreadCount = await prisma.tireRetread.count();
+  if (retreadCount === 0) {
+    const allTires = await prisma.tire.findMany({ take: 15 });
+    for (let i = 0; i < allTires.length; i++) {
+      const recibido = i % 3 === 0 ? null : past(i % 3);
+      await prisma.tireRetread.create({
+        data: {
+          tireId: allTires[i].id,
+          empresaRecapadora: i % 2 === 0 ? 'Recauchutadora Patagónica S.A.' : 'Bandag Comodoro',
+          numeroRecapado: (i % 3) + 1,
+          fechaEnvio: past((i % 6) + 1),
+          fechaRecepcion: recibido,
+          costo: 85000 + i * 3000,
+          profundidadNuevaMm: 16.0,
+          garantiaMeses: 6,
+          observaciones: `Recapado N° ${i + 1}`,
+          status: recibido ? 'COMPLETADO' : 'EN_PROCESO',
+        },
+      });
+    }
+  }
+
+  const reportSavedCount = await prisma.reportSaved.count();
+  if (reportSavedCount === 0) {
+    const templates = await prisma.reportTemplate.findMany();
+    for (let i = 1; i <= 20; i++) {
+      const template = templates[i % templates.length];
+      await prisma.reportSaved.create({
+        data: {
+          templateId: template?.id,
+          titulo: `Reporte Guardado ${i}`,
+          categoria: template?.categoria || 'OPERACIONES',
+          periodoFrom: past(i % 6 + 1),
+          periodoTo: past(i % 3),
+          filtrosJson: { clienteId: null, vehiculoTipo: null },
+          resumenIA: `Resumen ejecutivo generado automáticamente para el reporte ${i}.`,
+          favorito: i % 5 === 0,
+          creadoPor: 'admin@logistics.com',
+        },
+      });
+    }
+  }
+
+  const reportScheduleCount = await prisma.reportSchedule.count();
+  if (reportScheduleCount === 0) {
+    const frecuencias = ['DIARIO', 'SEMANAL', 'MENSUAL'];
+    const formatos = ['PDF', 'EXCEL'];
+    for (let i = 1; i <= 15; i++) {
+      await prisma.reportSchedule.create({
+        data: {
+          titulo: `Envío Programado ${i}`,
+          categoria: i % 2 === 0 ? 'FLOTA' : 'OPERACIONES',
+          frecuencia: frecuencias[i % frecuencias.length],
+          destinatarios: `reportes${i}@logistics.com,supervision@logistics.com`,
+          formato: formatos[i % formatos.length],
+          isActive: i % 4 !== 0,
+          ultimoEnvio: past(1),
+          proximoEnvio: future(1),
+        },
+      });
+    }
+  }
+
+  const allUsersForPrefs = await prisma.user.findMany({ take: 50 });
+  for (const user of allUsersForPrefs) {
+    await prisma.userAlertPreference.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: {
+        userId: user.id,
+        severidadMinima: AlertSeverity.ADVERTENCIA,
+        emailNotify: true,
+        systemNotify: true,
+        categoriasMuted: [],
+      },
+    });
+  }
+  console.log('✅ Documentos, Incidentes, Recapes, Reportes Guardados/Programados y Preferencias de Alerta creados');
+
+  console.log('🎉 [MasterSeed] ¡Generación masiva completada con éxito para las 44 entidades relacionales!');
 }

@@ -5,6 +5,7 @@ import { CreateTripDto } from './dto/create-trip.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { CreateBatchTripDto } from './dto/create-batch-trip.dto';
 import { AddTripCostDto } from './dto/add-trip-cost.dto';
+import { RescheduleTripDto } from './dto/reschedule-trip.dto';
 import { TripStatus, UserRole } from '@prisma/client';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -80,7 +81,7 @@ export class TripsController {
   @Patch(':id/reschedule')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
   @ApiOperation({ summary: 'Reprogramar viaje con recálculo automático de llegada' })
-  reschedule(@Param('id') id: string, @Body() body: { newDeparture: string; reason: string }) {
+  reschedule(@Param('id') id: string, @Body() body: RescheduleTripDto) {
     return this.tripsService.reschedule(id, new Date(body.newDeparture), body.reason);
   }
 }

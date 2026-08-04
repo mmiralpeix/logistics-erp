@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
 import { InvoiceStatus, UserRole } from '@prisma/client';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CreateInvoiceFromTripDto } from './dto/create-invoice-from-trip.dto';
 
 @ApiTags('Billing')
 @ApiBearerAuth('JWT')
@@ -30,7 +31,7 @@ export class BillingController {
   @Post('invoices/from-trip')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
   @ApiOperation({ summary: 'Generar factura desde viaje' })
-  createFromTrip(@Body() body: { tripId: string; clientId: string; tipo: string }) {
+  createFromTrip(@Body() body: CreateInvoiceFromTripDto) {
     return this.billingService.createFromTrip(body.tripId, body.clientId, body.tipo);
   }
 }
