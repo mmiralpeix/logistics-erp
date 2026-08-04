@@ -102,4 +102,12 @@ export class SparePartsService {
       data: { stockActual: newStock },
     });
   }
+
+  async getLowStock() {
+    // Prisma doesn't support field-to-field comparison, so we filter in memory
+    const parts = await this.prisma.sparePart.findMany({
+      orderBy: { stockActual: 'asc' },
+    });
+    return parts.filter(p => p.stockActual <= p.stockMinimo);
+  }
 }

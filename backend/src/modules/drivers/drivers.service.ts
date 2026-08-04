@@ -88,16 +88,19 @@ export class DriversService {
   }
 
   async getAvailableForDate(date: Date) {
+    const safeDate = date instanceof Date && !isNaN(date.getTime()) ? date : new Date();
     const tripsOnDate = await this.prisma.trip.findMany({
       where: {
         status: { in: ['EN_CURSO', 'PROGRAMADO'] as any },
-        fechaSalidaProgramada: { lte: date },
-        fechaLlegadaEstimada: { gte: date },
+        fechaSalidaProgramada: { lte: safeDate },
+        fechaLlegadaEstimada: { gte: safeDate },
       },
       select: { driverId: true },
     });
-    const busyIds = tripsOnDate.map((t) => t.driverId);
-    return this.prisma.driver.findMany({ where: { isActive: true, id: { notIn: busyIds } } });
+    const busyIds = tripsOnDate.map((t) => t.driverId).filter(Boolean);
+    return this.prisma.driver.findMany({
+      where: { isActive: true, ...(busyIds.length > 0 ? { id: { notIn: busyIds } } : {}) },
+    });
   }
 
   async addTraining(driverId: string, data: any) {

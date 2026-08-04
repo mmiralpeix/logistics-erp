@@ -100,18 +100,20 @@ export class VehiclesService {
   }
 
   async getAvailableForTrip(date: Date) {
+    // Ensure we have a valid date
+    const safeDate = date instanceof Date && !isNaN(date.getTime()) ? date : new Date();
     const tripsOnDate = await this.prisma.trip.findMany({
       where: {
         status: { in: ['EN_CURSO', 'PROGRAMADO'] as any },
-        fechaSalidaProgramada: { lte: date },
-        fechaLlegadaEstimada: { gte: date },
+        fechaSalidaProgramada: { lte: safeDate },
+        fechaLlegadaEstimada: { gte: safeDate },
       },
       select: { vehicleId: true },
     });
-    const busyIds = tripsOnDate.map((t) => t.vehicleId);
+    const busyIds = tripsOnDate.map((t) => t.vehicleId).filter(Boolean);
 
     return this.prisma.vehicle.findMany({
-      where: { isActive: true, status: VehicleStatus.DISPONIBLE, id: { notIn: busyIds } },
+      where: { isActive: true, status: VehicleStatus.DISPONIBLE, ...(busyIds.length > 0 ? { id: { notIn: busyIds } } : {}) },
     });
   }
 

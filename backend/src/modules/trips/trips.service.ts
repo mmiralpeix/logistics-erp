@@ -46,7 +46,9 @@ export class TripsService {
     page?: number;
     limit?: number;
   }) {
-    const { status, vehicleId, driverId, clientId, tipoOperacion, from, to, search, page = 1, limit = 20 } = filters || {};
+    const { status, vehicleId, driverId, clientId, tipoOperacion, from, to, search } = filters || {};
+    const page = Math.max(1, Number(filters?.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(filters?.limit) || 20));
     const skip = (page - 1) * limit;
     const where: any = {};
 
