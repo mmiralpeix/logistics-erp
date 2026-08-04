@@ -17,6 +17,11 @@ export class SparePartsController {
     return this.sparePartsService.findAll({ search, categoria, tipoVehiculo });
   }
 
+  @Get('low-stock')
+  getLowStock() {
+    return this.sparePartsService.getLowStock();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.sparePartsService.findOne(id);

@@ -12,8 +12,10 @@ export class BillingService {
     return `${prefix}-0001-${String(num).padStart(8, '0')}`;
   }
 
-  async findAll(clientId?: string, status?: InvoiceStatus, from?: string, to?: string, page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
+  async findAll(clientId?: string, status?: InvoiceStatus, from?: string, to?: string, page: any = 1, limit: any = 20) {
+    const p = Math.max(1, Number(page) || 1);
+    const l = Math.max(1, Math.min(100, Number(limit) || 20));
+    const skip = (p - 1) * l;
     const where: any = {};
     if (clientId) where.clientId = clientId;
     if (status) where.status = status;
@@ -25,7 +27,7 @@ export class BillingService {
 
     const [data, total] = await Promise.all([
       this.prisma.invoice.findMany({
-        where, skip, take: limit,
+        where, skip, take: l,
         orderBy: { createdAt: 'desc' },
         include: {
           client: { select: { razonSocial: true, cuit: true } },
@@ -35,7 +37,7 @@ export class BillingService {
       this.prisma.invoice.count({ where }),
     ]);
 
-    return { data, total, page, totalPages: Math.ceil(total / limit) };
+    return { data, total, page: p, totalPages: Math.ceil(total / l) };
   }
 
   async findOne(id: string) {

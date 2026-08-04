@@ -94,7 +94,9 @@ export class CertificationsService {
   }
 
   async findAll(query: { clientId?: string; contractId?: string; estado?: string; page?: number; limit?: number }) {
-    const { clientId, contractId, estado, page = 1, limit = 50 } = query;
+    const { clientId, contractId, estado } = query;
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(query.limit) || 50));
     const skip = (page - 1) * limit;
 
     const where: any = {};
