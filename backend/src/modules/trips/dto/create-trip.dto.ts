@@ -56,6 +56,8 @@ export class CreateTripDto {
   @ApiPropertyOptional() @IsOptional() @IsString() tipoOperacion?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() subcontractorName?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() subcontractorFee?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() pctMaintenanceOverride?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() pctTiresOverride?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() carrierId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() carrierDriverId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() carrierVehicleId?: string;

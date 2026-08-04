@@ -536,6 +536,9 @@ model Trip {
   costoTotal      Float?
   margenBruto     Float?
 
+  pctMaintenanceOverride Float? // Sobrescritura opcional por viaje (% Mantenimiento)
+  pctTiresOverride       Float? // Sobrescritura opcional por viaje (% Neumáticos)
+
   contractId String?
 
   convoyCode        String?

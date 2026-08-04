@@ -100,6 +100,47 @@ export function FinancialsSection({
           </div>
         </div>
       )}
+
+      {/* Fondos de Reserva Personalizados por Viaje */}
+      <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span>💰</span> Fondos de Reserva por Viaje (Opcional)
+          </label>
+          <span className="text-[10px] text-slate-400">Dejar vacío para usar 13% y 11% global</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              🛠️ % Reserva Mantenimiento
+            </label>
+            <input
+              {...register('pctMaintenanceOverride')}
+              type="number"
+              step="0.5"
+              min="0"
+              max="50"
+              className="input w-full text-xs font-bold"
+              placeholder="13.0% (Global por defecto)"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+              🛞 % Reserva Neumáticos
+            </label>
+            <input
+              {...register('pctTiresOverride')}
+              type="number"
+              step="0.5"
+              min="0"
+              max="50"
+              className="input w-full text-xs font-bold"
+              placeholder="11.0% (Global por defecto)"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

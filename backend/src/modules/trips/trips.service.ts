@@ -258,7 +258,7 @@ export class TripsService {
     });
 
     // Clean numbers
-    ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'costoTotal', 'subcontractorFee', 'pesoExcedenteKg', 'montoExcedente'].forEach((numKey) => {
+    ['distanciaKm', 'pesoCarga', 'volumenCarga', 'duracionEstimadaHoras', 'esperaEnDestinoHoras', 'descansosConductorHoras', 'tarifaAcordada', 'costoTotal', 'subcontractorFee', 'pesoExcedenteKg', 'montoExcedente', 'pctMaintenanceOverride', 'pctTiresOverride'].forEach((numKey) => {
       if (sanitizedData[numKey] !== undefined) {
         if (sanitizedData[numKey] === '' || sanitizedData[numKey] === null) {
           sanitizedData[numKey] = null;

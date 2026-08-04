@@ -176,8 +176,14 @@ export class ReserveFundsService {
     const config = await this.getConfig(tenantId);
     const weightsMap: Record<string, number> = (config.vehicleTypeWeights as any) || DEFAULT_WEIGHTS;
 
-    const totalMaintGenerated = (tarifa * config.pctMaintenance) / 100;
-    const totalTiresGenerated = (tarifa * config.pctTires) / 100;
+    const isMaintCustom = trip.pctMaintenanceOverride !== null && trip.pctMaintenanceOverride !== undefined;
+    const isTiresCustom = trip.pctTiresOverride !== null && trip.pctTiresOverride !== undefined;
+
+    const pctMaint = isMaintCustom ? Number(trip.pctMaintenanceOverride) : config.pctMaintenance;
+    const pctTires = isTiresCustom ? Number(trip.pctTiresOverride) : config.pctTires;
+
+    const totalMaintGenerated = (tarifa * pctMaint) / 100;
+    const totalTiresGenerated = (tarifa * pctTires) / 100;
 
     // Recopilar activos participantes
     const participatingAssets: Array<{ id: string; tipo: string; patente: string }> = [];
@@ -212,7 +218,7 @@ export class ReserveFundsService {
           fundType: ReserveFundType.MAINTENANCE,
           txType: ReserveFundTxType.INGRESO_VIAJE,
           monto: maintShare,
-          concepto: `Acreditación ${config.pctMaintenance}% por Viaje ${trip.numero} (${asset.patente})`,
+          concepto: `Acreditación ${pctMaint}%${isMaintCustom ? ' (Ajuste por Viaje)' : ''} por Viaje ${trip.numero} (${asset.patente})`,
           referenceNumber: trip.numero,
           tripId: trip.id,
         });
@@ -226,7 +232,7 @@ export class ReserveFundsService {
           fundType: ReserveFundType.TIRES,
           txType: ReserveFundTxType.INGRESO_VIAJE,
           monto: tiresShare,
-          concepto: `Acreditación ${config.pctTires}% por Viaje ${trip.numero} (${asset.patente})`,
+          concepto: `Acreditación ${pctTires}%${isTiresCustom ? ' (Ajuste por Viaje)' : ''} por Viaje ${trip.numero} (${asset.patente})`,
           referenceNumber: trip.numero,
           tripId: trip.id,
         });
