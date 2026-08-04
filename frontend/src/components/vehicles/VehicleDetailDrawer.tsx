@@ -14,7 +14,7 @@ interface VehicleDetailDrawerProps {
 }
 
 export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'tech' | 'docs' | 'maintenance' | 'fuel' | 'tires' | 'trips' | 'funds'>('tech');
+  const [activeTab, setActiveTab] = useState<'tech' | 'docs' | 'maintenance' | 'fuel' | 'tires' | 'trips'>('tech');
 
   const { data, isLoading } = useQuery({
     queryKey: ['vehicle-summary-360', vehicleId],
@@ -25,7 +25,7 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
   const { data: fundsData, isLoading: isLoadingFunds } = useQuery({
     queryKey: ['asset-reserve-funds', vehicleId],
     queryFn: () => reserveFundsApi.getAssetSummary(vehicleId!).then((r) => r.data),
-    enabled: !!vehicleId && activeTab === 'funds',
+    enabled: !!vehicleId && activeTab === 'maintenance',
   });
 
   if (!vehicleId) return null;
@@ -219,6 +219,45 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
             </div>
           ) : activeTab === 'maintenance' ? (
             <div className="space-y-4">
+              {/* Fondos de Reserva por Unidad (Resumen Financiero Taller) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                <div className="card p-4 border-l-4 border-l-blue-600 bg-slate-50/50 dark:bg-slate-800/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400">
+                      🛠️ Fondo de Mantenimiento (13%)
+                    </span>
+                  </div>
+                  <span className="text-xl font-black text-slate-900 dark:text-white block">
+                    {formatMoney(fundsData?.maintenanceFund?.availableBalance || 0)}
+                  </span>
+                  <div className="flex justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                    <span>Acumulado: <strong className="text-slate-700 dark:text-slate-300">{formatMoney(fundsData?.maintenanceFund?.accumulatedTotal || 0)}</strong></span>
+                    <span>Gastado: <strong className="text-red-500">{formatMoney(fundsData?.maintenanceFund?.spentTotal || 0)}</strong></span>
+                  </div>
+                </div>
+
+                <div className="card p-4 border-l-4 border-l-purple-600 bg-slate-50/50 dark:bg-slate-800/40 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase text-purple-600 dark:text-purple-400">
+                      🛞 Fondo de Neumáticos (11%)
+                    </span>
+                  </div>
+                  <span className="text-xl font-black text-slate-900 dark:text-white block">
+                    {formatMoney(fundsData?.tiresFund?.availableBalance || 0)}
+                  </span>
+                  <div className="flex justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                    <span>Acumulado: <strong className="text-slate-700 dark:text-slate-300">{formatMoney(fundsData?.tiresFund?.accumulatedTotal || 0)}</strong></span>
+                    <span>Gastado: <strong className="text-red-500">{formatMoney(fundsData?.tiresFund?.spentTotal || 0)}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Histórico de Órdenes de Trabajo en Taller ({maintenances.length})
+                </h4>
+              </div>
+
               {maintenances.map((m: any) => (
                 <div key={m.id} className="card p-4 space-y-3">
                   <div className="flex items-center justify-between">
