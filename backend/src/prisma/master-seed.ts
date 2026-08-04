@@ -204,6 +204,17 @@ export async function runMasterSeed(prisma: PrismaClient) {
   for (let i = 1; i <= 52; i++) {
     const dni = `${25000000 + i * 23456}`;
     const char = specialChars[i % specialChars.length];
+
+    // Distribuir estados de jornada realistas: EN_RUTA, PROXIMO_A_DESCANSO, DESCANSANDO, EXCEDIDO, SIN_TURNO
+    const bucket = i % 5;
+    let fechaInicioTurno: Date | null = null;
+    let fechaInicioDescanso: Date | null = null;
+    if (bucket === 1) fechaInicioTurno = addDays(now, -(3 + (i % 15))); // EN_RUTA
+    else if (bucket === 2) fechaInicioTurno = addDays(now, -(19 + (i % 2))); // PROXIMO_A_DESCANSO
+    else if (bucket === 3) fechaInicioDescanso = addDays(now, -(1 + (i % 6))); // DESCANSANDO
+    else if (bucket === 4) fechaInicioTurno = addDays(now, -(22 + (i % 5))); // EXCEDIDO
+    // bucket === 0 => SIN_TURNO (ambos null)
+
     const driver = await prisma.driver.upsert({
       where: { dni },
       update: {},
@@ -230,22 +241,46 @@ export async function runMasterSeed(prisma: PrismaClient) {
         modalidadLaboral: '21x7',
         diasTrabajo: 21,
         diasDescanso: 7,
+        fechaInicioTurno,
+        fechaInicioDescanso,
         notas: `Conductor habilitado para cargas peligrosas y minería ${char}`,
       },
     });
 
-    // Registros de turnos y capacitaciones
-    await prisma.driverShiftLog.create({
-      data: {
-        driverId: driver.id,
-        tipoRegistro: i % 3 === 0 ? 'DESCANSO' : 'TURNO_TRABAJO',
-        fechaInicio: past(i % 5),
-        diasTrabajados: i % 3 === 0 ? 21 : 12,
-        diasDescansados: i % 3 === 0 ? 7 : 0,
-        excedido: i % 8 === 0,
-        notas: `Registro de turno automatizado para chofer ${i}`,
-      },
-    });
+    // Registro de turno actual, consistente con el estado en vivo del conductor
+    if (fechaInicioTurno) {
+      await prisma.driverShiftLog.create({
+        data: {
+          driverId: driver.id,
+          tipoRegistro: 'INICIO_TURNO',
+          fechaInicio: fechaInicioTurno,
+          excedido: bucket === 4,
+          notas: `Inicio de turno automatizado para chofer ${i}`,
+        },
+      });
+    } else if (fechaInicioDescanso) {
+      await prisma.driverShiftLog.create({
+        data: {
+          driverId: driver.id,
+          tipoRegistro: 'INICIO_DESCANSO',
+          fechaInicio: fechaInicioDescanso,
+          diasTrabajados: 21,
+          notas: `Inicio de descanso automatizado para chofer ${i}`,
+        },
+      });
+    } else {
+      await prisma.driverShiftLog.create({
+        data: {
+          driverId: driver.id,
+          tipoRegistro: 'REGRESO',
+          fechaInicio: past(1),
+          fechaFin: past(1),
+          diasTrabajados: 21,
+          diasDescansados: 7,
+          notas: `Regreso de última jornada, chofer ${i} sin turno asignado actualmente`,
+        },
+      });
+    }
 
     await prisma.driverTraining.create({
       data: {
@@ -312,19 +347,28 @@ export async function runMasterSeed(prisma: PrismaClient) {
   const allVehicles = await prisma.vehicle.findMany({ take: 50 });
   const allDrivers = await prisma.driver.findMany({ take: 50 });
   const allClientsList = await prisma.client.findMany({ take: 50 });
+  const allCarriersList = await prisma.carrier.findMany({ take: 50 });
+  const allCarrierVehiclesList = await prisma.carrierVehicle.findMany({ take: 50 });
+  const allCarrierDriversList = await prisma.carrierDriver.findMany({ take: 50 });
   const dispatcherUser = await prisma.user.findFirst({ where: { role: UserRole.DISPATCHER } });
   const tripStatuses = [TripStatus.PENDIENTE, TripStatus.PROGRAMADO, TripStatus.EN_CURSO, TripStatus.FINALIZADO, TripStatus.CANCELADO, TripStatus.DEMORADO];
 
   for (let i = 1; i <= 55; i++) {
     const numero = `VJ-2026-${String(i).padStart(6, '0')}`;
     const client = allClientsList[(i - 1) % allClientsList.length];
-    const vehicle = allVehicles[(i - 1) % allVehicles.length];
-    const driver = allDrivers[(i - 1) % allDrivers.length];
     const status = tripStatuses[(i - 1) % tripStatuses.length];
     const isHazmat = i % 4 === 0;
     const isMining = i % 3 === 0;
     const tarifa = 220000 + i * 6000;
     const costo = 110000 + i * 3500;
+
+    // ~1 de cada 5 viajes se asigna a un operador tercerizado (Carrier) en vez de flota propia
+    const isTercerizado = allCarriersList.length > 0 && i % 5 === 0;
+    const carrier = isTercerizado ? allCarriersList[(i - 1) % allCarriersList.length] : null;
+    const carrierVehicle = isTercerizado ? allCarrierVehiclesList[(i - 1) % allCarrierVehiclesList.length] : null;
+    const carrierDriver = isTercerizado ? allCarrierDriversList[(i - 1) % allCarrierDriversList.length] : null;
+    const vehicle = allVehicles[(i - 1) % allVehicles.length];
+    const driver = allDrivers[(i - 1) % allDrivers.length];
 
     const trip = await prisma.trip.upsert({
       where: { numero },
@@ -332,8 +376,11 @@ export async function runMasterSeed(prisma: PrismaClient) {
       create: {
         numero,
         clientId: client.id,
-        vehicleId: vehicle.id,
-        driverId: driver.id,
+        vehicleId: isTercerizado ? null : vehicle.id,
+        driverId: isTercerizado ? null : driver.id,
+        carrierId: carrier?.id || null,
+        carrierVehicleId: carrierVehicle?.id || null,
+        carrierDriverId: carrierDriver?.id || null,
         dispatcherId: dispatcherUser?.id || null,
         origen: i % 2 === 0 ? 'Comodoro Rivadavia, Chubut' : 'Plaza Huincul, Neuquén',
         destino: i % 2 === 0 ? 'Cerro Negro, Chubut' : 'Añelo, Neuquén',
@@ -349,7 +396,7 @@ export async function runMasterSeed(prisma: PrismaClient) {
         descripcionCarga: `Carga de prueba auditada ${i} - ${isHazmat ? 'UN1203 Clase 3' : 'Equipamiento Pesado'}`,
         numeroRemito: `R-0001-${String(10000 + i)}`,
         numeroOCCliente: `OC-CLIENTE-${2000 + i}`,
-        tipoOperacion: 'PROPIA',
+        tipoOperacion: isTercerizado ? 'TERCERIZADO' : 'PROPIA',
         esCargaPeligrosa: isHazmat,
         esMineria: isMining,
         tarifaAcordada: tarifa,
