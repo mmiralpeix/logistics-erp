@@ -2,7 +2,6 @@
 import { Header } from '@/components/layout/Header';
 import { getApiUrl } from '@/lib/api';
 import { Building2, Bell, Shield, Database } from 'lucide-react';
-import { getApiUrl } from '@/lib/api';
 
 export default function SettingsPage() {
   return (

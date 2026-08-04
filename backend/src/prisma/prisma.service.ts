@@ -7,8 +7,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private readonly logger = new Logger(PrismaService.name);
 
   async onModuleInit() {
-    await this.$connect();
     try {
+      await this.$connect();
+      this.logger.log('Conectado a la base de datos.');
+
       const clientCount = await this.client.count();
       const driverCount = await this.driver.count();
       const carrierCount = await this.carrier.count();
@@ -22,8 +24,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       } else {
         this.logger.log(`✅ Base de datos completamente sembrada (${clientCount} clientes, ${driverCount} choferes, ${carrierCount} terceros, ${vehicleCount} vehículos, ${tripCount} viajes).`);
       }
-    } catch (err) {
-      this.logger.error('Error durante la verificación/sembrado automático:', err);
+    } catch (err: any) {
+      this.logger.warn(`⚠️ No se pudo conectar a PostgreSQL (${err.message}). NestJS continuará en línea.`);
     }
   }
 

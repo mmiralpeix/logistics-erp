@@ -18,6 +18,10 @@ export function DashboardGrid({
   onOpenAddModal,
   childrenMap,
 }: DashboardGridProps) {
+  const visibleWidgets = (widgets || [])
+    .filter((w) => w.visible)
+    .sort((a, b) => a.order - b.order);
+
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
