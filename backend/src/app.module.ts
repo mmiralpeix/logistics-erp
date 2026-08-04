@@ -25,6 +25,7 @@ import { CertificationsModule } from './modules/certifications/certifications.mo
 import { MailModule } from './modules/mail/mail.module';
 import { CarriersModule } from './modules/carriers/carriers.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ReserveFundsModule } from './modules/reserve-funds/reserve-funds.module';
 
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -57,6 +58,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     DangerousGoodsModule,
     CarriersModule,
     AnalyticsModule,
+    ReserveFundsModule,
   ],
   providers: [
     {

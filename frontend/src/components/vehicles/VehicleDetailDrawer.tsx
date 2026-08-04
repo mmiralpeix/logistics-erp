@@ -1,11 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { vehiclesApi } from '@/lib/api';
+import { vehiclesApi, reserveFundsApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
 import {
   X, Truck, Wrench, Fuel, CircleDot, FileText, ShieldAlert, ShieldCheck,
-  Calendar, Activity, Gauge, MapPin, Award
+  Calendar, Activity, Gauge, MapPin, Award, Coins, ArrowUpRight, ArrowDownRight, Plus
 } from 'lucide-react';
 
 interface VehicleDetailDrawerProps {
@@ -14,12 +14,18 @@ interface VehicleDetailDrawerProps {
 }
 
 export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'tech' | 'docs' | 'maintenance' | 'fuel' | 'tires' | 'trips'>('tech');
+  const [activeTab, setActiveTab] = useState<'tech' | 'docs' | 'maintenance' | 'fuel' | 'tires' | 'trips' | 'funds'>('tech');
 
   const { data, isLoading } = useQuery({
     queryKey: ['vehicle-summary-360', vehicleId],
     queryFn: () => vehiclesApi.getSummary360(vehicleId!).then((r) => r.data),
     enabled: !!vehicleId,
+  });
+
+  const { data: fundsData, isLoading: isLoadingFunds } = useQuery({
+    queryKey: ['asset-reserve-funds', vehicleId],
+    queryFn: () => reserveFundsApi.getAssetSummary(vehicleId!).then((r) => r.data),
+    enabled: !!vehicleId && activeTab === 'funds',
   });
 
   if (!vehicleId) return null;
@@ -109,6 +115,15 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
             className={`py-3 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'trips' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}
           >
             Historial de Viajes ({trips.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('funds')}
+            className={`py-3 border-b-2 whitespace-nowrap transition-colors flex items-center gap-1 font-bold ${
+              activeTab === 'funds' ? 'border-emerald-600 text-emerald-600 dark:text-emerald-400 font-extrabold' : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <span>💰</span>
+            <span>Fondos de Reserva</span>
           </button>
         </div>
 
@@ -285,6 +300,117 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          ) : activeTab === 'funds' ? (
+            <div className="space-y-6">
+              {/* Account Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Fondo Mantenimiento */}
+                <div className="card p-5 border-l-4 border-l-blue-600 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600">
+                        <Wrench className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        🛠️ Fondo Mantenimiento (13%)
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-2xl font-black text-slate-900 dark:text-white">
+                      {formatMoney(fundsData?.maintenanceFund?.availableBalance || 0)}
+                    </span>
+                    <span className="text-xs text-slate-500 block">Saldo Disponible</span>
+                  </div>
+                  <div className="flex justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800 text-slate-500">
+                    <span>Acumulado: <strong className="text-slate-800 dark:text-slate-200">{formatMoney(fundsData?.maintenanceFund?.accumulatedTotal || 0)}</strong></span>
+                    <span>Gastado: <strong className="text-red-500">{formatMoney(fundsData?.maintenanceFund?.spentTotal || 0)}</strong></span>
+                  </div>
+                </div>
+
+                {/* Fondo Neumáticos */}
+                <div className="card p-5 border-l-4 border-l-purple-600 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-purple-500/10 text-purple-600">
+                        <CircleDot className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        🛞 Fondo Neumáticos (11%)
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-2xl font-black text-slate-900 dark:text-white">
+                      {formatMoney(fundsData?.tiresFund?.availableBalance || 0)}
+                    </span>
+                    <span className="text-xs text-slate-500 block">Saldo Disponible</span>
+                  </div>
+                  <div className="flex justify-between text-xs pt-2 border-t border-slate-100 dark:border-slate-800 text-slate-500">
+                    <span>Acumulado: <strong className="text-slate-800 dark:text-slate-200">{formatMoney(fundsData?.tiresFund?.accumulatedTotal || 0)}</strong></span>
+                    <span>Gastado: <strong className="text-red-500">{formatMoney(fundsData?.tiresFund?.spentTotal || 0)}</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ledger Current Account Table */}
+              <div className="card overflow-hidden space-y-3 p-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-emerald-500" />
+                    Extracto de Cuenta Corriente y Movimientos Auditales
+                  </h3>
+                </div>
+
+                {isLoadingFunds ? (
+                  <div className="text-center py-8 text-slate-400 text-xs">Cargando movimientos de cuenta corriente...</div>
+                ) : !fundsData?.transactions || fundsData.transactions.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-xs">No hay movimientos registrados para este activo.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="table-header">
+                          <th className="p-3 text-left">Fecha</th>
+                          <th className="p-3 text-left">Fondo</th>
+                          <th className="p-3 text-left">Concepto / Referencia</th>
+                          <th className="p-3 text-right">Monto ($)</th>
+                          <th className="p-3 text-right">Saldo Resultante</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {fundsData.transactions.map((tx: any) => (
+                          <tr key={tx.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                            <td className="p-3 font-mono text-slate-500">
+                              {new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="p-3 font-bold">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                                tx.fundType === 'MAINTENANCE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                              }`}>
+                                {tx.fundType === 'MAINTENANCE' ? '🛠️ MANTENIMIENTO' : '🛞 NEUMÁTICOS'}
+                              </span>
+                            </td>
+                            <td className="p-3">
+                              <p className="font-semibold text-slate-800 dark:text-slate-200">{tx.concepto}</p>
+                              {tx.referenceNumber && (
+                                <span className="text-[10px] font-mono text-slate-400">Ref: {tx.referenceNumber}</span>
+                              )}
+                            </td>
+                            <td className={`p-3 text-right font-black ${tx.monto > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {tx.monto > 0 ? `+${formatMoney(tx.monto)}` : formatMoney(tx.monto)}
+                            </td>
+                            <td className="p-3 text-right font-bold text-slate-900 dark:text-white font-mono">
+                              {formatMoney(tx.saldoPosterior)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           ) : (

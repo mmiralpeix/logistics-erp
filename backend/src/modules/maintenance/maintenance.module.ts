@@ -6,7 +6,10 @@ import { SparePartsService } from './spare-parts.service';
 import { TiresController } from './tires.controller';
 import { TiresService } from './tires.service';
 
+import { ReserveFundsModule } from '../reserve-funds/reserve-funds.module';
+
 @Module({
+  imports: [ReserveFundsModule],
   controllers: [TiresController, SparePartsController, MaintenanceController],
   providers: [MaintenanceService, SparePartsService, TiresService],
   exports: [MaintenanceService, SparePartsService, TiresService],

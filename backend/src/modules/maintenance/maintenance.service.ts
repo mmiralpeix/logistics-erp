@@ -2,9 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MaintenanceStatus, MaintenanceType } from '@prisma/client';
 
+import { ReserveFundsService } from '../reserve-funds/reserve-funds.service';
+
 @Injectable()
 export class MaintenanceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private reserveFundsService: ReserveFundsService,
+  ) {}
 
   async findAll(vehicleId?: string, status?: MaintenanceStatus, tipo?: MaintenanceType, page = 1, limit = 20) {
     const pageNum = Math.max(1, Number(page) || 1);
@@ -158,6 +163,15 @@ export class MaintenanceService {
       const vehicle = await this.prisma.vehicle.findUnique({ where: { id: m.vehicleId } });
       if (vehicle?.status === 'EN_MANTENIMIENTO') {
         await this.prisma.vehicle.update({ where: { id: m.vehicleId }, data: { status: 'DISPONIBLE' as any } });
+      }
+    }
+
+    // Trigger automatic Reserve Fund debit if OT is created or updated as COMPLETADO
+    if (dto.status === MaintenanceStatus.COMPLETADO) {
+      try {
+        await this.reserveFundsService.processMaintenanceDebit(updated.id);
+      } catch (err) {
+        console.error(`Error procesando débito de fondos para OT ${updated.id}:`, err);
       }
     }
 

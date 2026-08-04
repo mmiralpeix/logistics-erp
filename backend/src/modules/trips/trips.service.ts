@@ -5,11 +5,16 @@ import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripStatus, VehicleStatus } from '@prisma/client';
 import { randomBytes } from 'crypto';
 
+import { ReserveFundsService } from '../reserve-funds/reserve-funds.service';
+
 @Injectable()
 export class TripsService {
   private readonly logger = new Logger(TripsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private reserveFundsService?: ReserveFundsService,
+  ) {}
 
   private async generateTripNumber(): Promise<string> {
     const now = new Date();
@@ -302,6 +307,15 @@ export class TripsService {
     }
 
     this.logger.log(`Viaje ${trip.numero} → estado: ${status}${trip.vehicleId ? '' : ' (sin vehículo propio)'}`);
+    // Trigger automatic Reserve Fund accrual if trip status becomes FINALIZADO
+    if (status === TripStatus.FINALIZADO && this.reserveFundsService) {
+      try {
+        await this.reserveFundsService.processTripAccrual(updated.id);
+      } catch (err: any) {
+        this.logger.error(`Error procesando acreditación de fondos para viaje ${updated.id}:`, err);
+      }
+    }
+
     return updated;
   }
 

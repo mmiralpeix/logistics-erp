@@ -295,6 +295,8 @@ model Vehicle {
   gpsDevice    GPSDevice?
   tires        Tire[]
   tireMovements TireMovement[]
+  reserveFunds ReserveFund[]
+  reserveFundTransactions ReserveFundTransaction[]
 
   @@map("vehicles")
 }
@@ -567,6 +569,7 @@ model Trip {
   incidents      Incident[]
   invoiceItems   InvoiceItem[]
   fuelLogs       FuelLog[]
+  reserveFundTransactions ReserveFundTransaction[]
 
   @@index([status])
   @@index([vehicleId])
@@ -651,6 +654,7 @@ model Maintenance {
   vehicle   Vehicle           @relation(fields: [vehicleId], references: [id])
   documents Document[]
   items     MaintenanceItem[]
+  reserveFundTransactions ReserveFundTransaction[]
 
   @@index([vehicleId])
   @@index([status])
@@ -1104,3 +1108,79 @@ model UserAlertPreference {
 
   @@map("user_alert_preferences")
 }
+
+enum ReserveFundType {
+  MAINTENANCE  // Fondo de Mantenimiento (13%)
+  TIRES        // Fondo de Neumáticos (11%)
+}
+
+enum ReserveFundTxType {
+  INGRESO_VIAJE          // Acreditación por viaje finalizado
+  EGRESO_MANTENIMIENTO   // Débito por OT de mantenimiento
+  EGRESO_NEUMATICOS      // Débito por OT / Neumáticos
+  AJUSTE_MANUAL          // Ajuste de auditoría manual (+/-)
+  REVERTIDO_CANCELACION  // Reversión por cancelación
+}
+
+model ReserveFundConfig {
+  id                 String   @id @default(cuid())
+  tenantId           String   @default("default")
+  pctMaintenance     Float    @default(13.0)
+  pctTires           Float    @default(11.0)
+  vehicleTypeWeights Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([tenantId])
+  @@map("reserve_fund_configs")
+}
+
+model ReserveFund {
+  id               String          @id @default(cuid())
+  tenantId         String          @default("default")
+  vehicleId        String
+  fundType         ReserveFundType
+  accumulatedTotal Float           @default(0)
+  spentTotal       Float           @default(0)
+  availableBalance Float           @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  vehicle      Vehicle                  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  transactions ReserveFundTransaction[]
+
+  @@unique([vehicleId, fundType])
+  @@index([tenantId])
+  @@map("reserve_funds")
+}
+
+model ReserveFundTransaction {
+  id                String            @id @default(cuid())
+  tenantId          String            @default("default")
+  reserveFundId     String
+  vehicleId         String
+  fundType          ReserveFundType
+  txType            ReserveFundTxType
+  monto             Float
+  saldoAnterior     Float
+  saldoPosterior    Float
+  tripId            String?
+  maintenanceId     String?
+  maintenanceItemId String?
+  referenceNumber   String?
+  concepto          String
+  createdById       String?
+  createdAt         DateTime          @default(now())
+
+  reserveFund ReserveFund  @relation(fields: [reserveFundId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  trip        Trip?        @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  maintenance Maintenance? @relation(fields: [maintenanceId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId])
+  @@index([fundType])
+  @@index([createdAt])
+  @@index([tenantId])
+  @@map("reserve_fund_transactions")
+}
+

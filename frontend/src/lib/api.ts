@@ -249,6 +249,15 @@ export const dangerousGoodsApi = {
   checkCompliance: (tripId: string) => api.get(`/dangerous-goods/compliance-check/${tripId}`),
   update: (id: string, data: any) => api.patch(`/dangerous-goods/${id}`, data),
   approve: (id: string) => api.patch(`/dangerous-goods/${id}/approve`),
+  remove: (id: string) => api.delete(`/dangerous-goods/${id}`),
+};
+
+export const reserveFundsApi = {
+  getDashboard: () => api.get('/reserve-funds/dashboard'),
+  getConfig: () => api.get('/reserve-funds/config'),
+  updateConfig: (data: any) => api.put('/reserve-funds/config', data),
+  getAssetSummary: (vehicleId: string) => api.get(`/reserve-funds/vehicle/${vehicleId}`),
+  manualAdjustment: (data: any) => api.post('/reserve-funds/manual-adjustment', data),
 };
 
 export const carriersApi = {
