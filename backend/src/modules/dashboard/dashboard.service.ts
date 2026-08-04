@@ -17,7 +17,7 @@ export class DashboardService {
       totalDrivers, activeTrips, pendingTrips, completedThisMonth,
       cancelledThisMonth, totalClients,
       monthlyRevenue, monthlyCosts, monthlyFuel,
-      expiringDocs, pendingMaintenances,
+      expiringDocs, pendingMaintenances, activeAlertsTotal,
     ] = await Promise.all([
       this.prisma.vehicle.count({ where: { isActive: true } }),
       this.prisma.vehicle.count({ where: { isActive: true, status: VehicleStatus.DISPONIBLE } }),
@@ -43,6 +43,7 @@ export class DashboardService {
         },
       }),
       this.prisma.maintenance.count({ where: { status: { in: [MaintenanceStatus.PENDIENTE, MaintenanceStatus.EN_CURSO] } } }),
+      this.prisma.alertRecord.count({ where: { isResolved: false } }),
     ]);
 
     const revenue = monthlyRevenue._sum.total || 0;
@@ -73,6 +74,7 @@ export class DashboardService {
         grossMarginPct: Math.round(margin * 10) / 10,
       },
       alerts: {
+        total: activeAlertsTotal,
         expiringDocuments: expiringDocs,
         pendingMaintenances,
       },
