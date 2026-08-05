@@ -44,7 +44,9 @@ export class CertificationsService {
         excessKg = t.pesoCarga - 30000;
       }
       totalTnExcedente += excessKg / 1000;
-      montoTotal += (t.tarifaAcordada || 0) + (t.montoExcedente || 0);
+      // tarifaAcordada is already the full total (base + excess-per-ton, see TripModal's
+      // calculatedTotalRate) - adding montoExcedente again here double-counts the excess.
+      montoTotal += t.tarifaAcordada || 0;
     });
 
     const numCertStr = nextNum.toString();
