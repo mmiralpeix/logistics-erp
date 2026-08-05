@@ -5,6 +5,13 @@ import { driversApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { X, UserCheck } from 'lucide-react';
 
+const PROVINCIAS_ARGENTINA = [
+  'Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes',
+  'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones',
+  'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe',
+  'Santiago del Estero', 'Tierra del Fuego', 'Tucumán',
+];
+
 export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => void }) {
   const qc = useQueryClient();
   const isEdit = !!driver;
@@ -15,7 +22,13 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
 
   const mutation = useMutation({
     mutationFn: (data: any) => isEdit ? driversApi.update(driver.id, data) : driversApi.create(data),
-    onSuccess: () => { toast.success(isEdit ? 'Conductor actualizado' : 'Conductor creado'); qc.invalidateQueries({ queryKey: ['drivers'] }); onClose(); },
+    onSuccess: () => {
+      toast.success(isEdit ? 'Conductor actualizado' : 'Conductor creado');
+      qc.invalidateQueries({ queryKey: ['drivers'] });
+      qc.invalidateQueries({ queryKey: ['driver-schedule'] });
+      qc.invalidateQueries({ queryKey: ['driver-schedule-kpis'] });
+      onClose();
+    },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Error al guardar'),
   });
 
@@ -61,10 +74,6 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
               <input {...register('domicilio')} className="input" placeholder="Calle Las Flores 456" />
             </div>
             <div>
-              <label className="label">Fecha de nacimiento</label>
-              <input {...register('fechaNacimiento')} type="date" className="input" />
-            </div>
-            <div>
               <label className="label">Fecha de ingreso</label>
               <input {...register('fechaIngreso')} type="date" className="input" />
             </div>
@@ -74,7 +83,10 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
             </div>
             <div>
               <label className="label">Provincia</label>
-              <input {...register('provincia')} className="input" placeholder="Chubut" />
+              <select {...register('provincia')} className="input">
+                <option value="">Seleccionar...</option>
+                {PROVINCIAS_ARGENTINA.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
             </div>
 
             {/* Licencia */}
@@ -118,10 +130,6 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
               </div>
             </div>
 
-            <div className="col-span-3">
-              <label className="label">CBU (para pagos)</label>
-              <input {...register('cbu')} className="input" placeholder="1234567890123456789012" />
-            </div>
             <div className="col-span-3">
               <label className="label">Notas</label>
               <textarea {...register('notas')} rows={2} className="input resize-none" />
