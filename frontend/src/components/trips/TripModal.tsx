@@ -4,7 +4,7 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { tripsApi, vehiclesApi, driversApi, clientsApi, carriersApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { X, Map, Lock, Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { formatMoney } from '@/lib/utils';
 import { OperationModeSection } from './modal-sections/OperationModeSection';
 import { ClientAndContractSection } from './modal-sections/ClientAndContractSection';
@@ -95,12 +95,22 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
   const excessAmount = excessTn * excessRatePerTn;
   const calculatedTotalRate = activeContract ? baseRate + excessAmount : null;
 
+  // La tarifa se recalcula sola en base al contrato mientras el usuario no la haya
+  // tocado a mano. En cuanto la edita manualmente, dejamos de pisar su valor - y
+  // volvemos a recalcular solo si cambia de contrato (elección deliberada).
+  const [tarifaOverridden, setTarifaOverridden] = useState(false);
+  useEffect(() => {
+    setTarifaOverridden(false);
+  }, [selectedContractId]);
+
   useEffect(() => {
     if (activeContract) {
-      if (calculatedTotalRate !== null) {
+      if (calculatedTotalRate !== null && !tarifaOverridden) {
         const roundedRate = Math.round(calculatedTotalRate);
-        const roundedExcessAmount = Math.round(excessAmount);
         setValue('tarifaAcordada', roundedRate);
+      }
+      if (calculatedTotalRate !== null) {
+        const roundedExcessAmount = Math.round(excessAmount);
         setValue('pesoExcedenteKg', Math.round(excessKg));
         setValue('montoExcedente', roundedExcessAmount);
       }
@@ -111,7 +121,14 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
         setValue('numeroOCCliente', ocFormatted);
       }
     }
-  }, [selectedContractId, pesoCargaKg, activeContract, calculatedTotalRate, excessAmount, excessKg, setValue]);
+  }, [selectedContractId, pesoCargaKg, activeContract, calculatedTotalRate, excessAmount, excessKg, tarifaOverridden, setValue]);
+
+  const handleUseCalculatedRate = () => {
+    if (calculatedTotalRate !== null) {
+      setValue('tarifaAcordada', Math.round(calculatedTotalRate));
+      setTarifaOverridden(false);
+    }
+  };
 
   const handleAutoCalculateCost = () => {
     const km = Number(watch('distanciaKm')) || 0;
@@ -270,6 +287,9 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
             excessTn={excessTn}
             excessKg={excessKg}
             excessAmount={excessAmount}
+            tarifaOverridden={tarifaOverridden}
+            onTarifaManualEdit={() => setTarifaOverridden(true)}
+            onUseCalculatedRate={handleUseCalculatedRate}
           />
 
           <div className="pt-2">

@@ -1,5 +1,5 @@
 'use client';
-import { Zap, Calculator } from 'lucide-react';
+import { Zap, Calculator, RotateCcw } from 'lucide-react';
 import { formatMoney, formatWeight } from '@/lib/utils';
 
 export function FinancialsSection({
@@ -13,6 +13,9 @@ export function FinancialsSection({
   excessTn,
   excessKg,
   excessAmount,
+  tarifaOverridden,
+  onTarifaManualEdit,
+  onUseCalculatedRate,
 }: {
   register: any;
   margenWatch: number;
@@ -24,26 +27,43 @@ export function FinancialsSection({
   excessTn: number;
   excessKg: number;
   excessAmount: number;
+  tarifaOverridden?: boolean;
+  onTarifaManualEdit?: () => void;
+  onUseCalculatedRate?: () => void;
 }) {
+  const { onChange: registerOnChange, ...tarifaRegisterProps } = register('tarifaAcordada');
   return (
     <div className="p-4 bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
       <div className="grid grid-cols-3 gap-3">
         {/* Tarifa Acordada */}
         <div>
-          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-            Tarifa Acordada ($)
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              Tarifa Acordada ($)
+            </label>
+            {activeContract && tarifaOverridden && (
+              <button
+                type="button"
+                onClick={onUseCalculatedRate}
+                className="px-2 py-0.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-md text-[10px] font-bold transition-all flex items-center gap-1 border border-blue-500/20"
+                title="Volver a usar la tarifa calculada por contrato"
+              >
+                <RotateCcw className="w-3 h-3" /> Usar del contrato
+              </button>
+            )}
+          </div>
           <input
-            {...register('tarifaAcordada')}
+            {...tarifaRegisterProps}
+            onChange={(e) => { onTarifaManualEdit?.(); registerOnChange(e); }}
             type="number"
             step="any"
-            readOnly={!!activeContract}
-            tabIndex={activeContract ? -1 : undefined}
-            className={`input w-full text-sm font-bold text-blue-600 dark:text-blue-400 ${activeContract ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : ''}`}
+            className="input w-full text-sm font-bold text-blue-600 dark:text-blue-400"
             placeholder="0.00"
           />
           <span className="text-[10px] text-slate-400 mt-1 block">
-            {activeContract ? 'Calculada por contrato (base + excedente)' : 'Facturación al cliente'}
+            {activeContract
+              ? (tarifaOverridden ? 'Modificada manualmente' : 'Calculada por contrato (base + excedente)')
+              : 'Facturación al cliente'}
           </span>
         </div>
 
