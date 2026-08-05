@@ -234,9 +234,11 @@ export class TripsService {
 
     const sanitizedData: any = { ...data };
 
-    // Clean foreign key relations (convert empty strings or 'null' strings or undefined to null)
+    // Clean foreign key relations (convert empty strings or 'null' strings to null).
+    // Only touches keys actually present in the request - a key that's simply absent from a
+    // partial PATCH must be left alone, not nulled out (this is a PATCH, not a full replace).
     ['clientId', 'contractId', 'vehicleId', 'trailerId', 'driverId', 'carrierId', 'carrierDriverId', 'carrierVehicleId', 'carrierTrailerId', 'dispatcherId', 'certificationId'].forEach((fkKey) => {
-      if (sanitizedData[fkKey] === '' || sanitizedData[fkKey] === 'null' || sanitizedData[fkKey] === undefined) {
+      if (fkKey in sanitizedData && (sanitizedData[fkKey] === '' || sanitizedData[fkKey] === 'null')) {
         sanitizedData[fkKey] = null;
       }
     });
