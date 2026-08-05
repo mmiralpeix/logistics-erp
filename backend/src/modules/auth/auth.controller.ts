@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '@prisma/client';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -24,9 +26,9 @@ export class AuthController {
     return this.authService.forgotPassword(email);
   }
 
-  @Public()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
   @Post('register')
-  @ApiOperation({ summary: 'Registro público de nuevos usuarios' })
+  @ApiOperation({ summary: 'Alta de nuevo usuario (solo administradores)' })
   register(@Body() body: { email: string; password: string; firstName: string; lastName: string; phone?: string }) {
     return this.authService.register(body);
   }

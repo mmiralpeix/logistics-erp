@@ -103,25 +103,27 @@ export class ClientsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    const contractsWithStats = await Promise.all(
-      contracts.map(async (c) => {
-        const tripsCount = await this.prisma.trip.count({
-          where: { contractId: c.id, status: { notIn: ['CANCELADO'] as any } },
-        });
-        const aggregate = await this.prisma.trip.aggregate({
-          where: { contractId: c.id, status: { notIn: ['CANCELADO'] as any } },
+    const contractIds = contracts.map((c) => c.id);
+    const grouped = contractIds.length
+      ? await this.prisma.trip.groupBy({
+          by: ['contractId'],
+          where: { contractId: { in: contractIds }, status: { notIn: ['CANCELADO'] as any } },
+          _count: { _all: true },
           _sum: { tarifaAcordada: true, montoExcedente: true },
-        });
-        return {
-          ...c,
-          viajesEjecutados: tripsCount,
-          viajesRestantes: c.cantidadViajes ? Math.max(0, c.cantidadViajes - tripsCount) : null,
-          montoTotalEjecutado: aggregate._sum.tarifaAcordada || 0,
-        };
-      }),
-    );
+        })
+      : [];
+    const statsByContract = new Map(grouped.map((g) => [g.contractId, g]));
 
-    return contractsWithStats;
+    return contracts.map((c) => {
+      const stats = statsByContract.get(c.id);
+      const tripsCount = stats?._count._all || 0;
+      return {
+        ...c,
+        viajesEjecutados: tripsCount,
+        viajesRestantes: c.cantidadViajes ? Math.max(0, c.cantidadViajes - tripsCount) : null,
+        montoTotalEjecutado: stats?._sum.tarifaAcordada || 0,
+      };
+    });
   }
 
   async createContract(clientId: string, dto: any) {

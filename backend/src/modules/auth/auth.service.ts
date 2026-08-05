@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, OnModuleInit, HttpException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, NotFoundException, HttpException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import * as speakeasy from 'speakeasy';
@@ -8,109 +8,16 @@ import { MailService } from '../mail/mail.service';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
-export class AuthService implements OnModuleInit {
+export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private mailService: MailService,
   ) {}
 
-  async onModuleInit() {
-    try {
-      await this.ensureDefaultUsersExist();
-    } catch (err) {
-      console.error('[AuthService] Error auto-creando usuarios por defecto:', err);
-    }
-  }
-
-  async ensureDefaultUsersExist() {
-    const adminPassword = await bcrypt.hash('Admin123!', 10);
-    const opsPassword = await bcrypt.hash('Ops123!', 10);
-    const driverPassword = await bcrypt.hash('Driver123!', 10);
-
-    const defaultUsers = [
-      { email: 'admin@logistics.com', password: adminPassword, firstName: 'Carlos', lastName: 'Rodríguez', role: 'SUPER_ADMIN' },
-      { email: 'ops@logistics.com', password: opsPassword, firstName: 'María', lastName: 'González', role: 'OPERATIONS_MANAGER' },
-      { email: 'despacho@logistics.com', password: opsPassword, firstName: 'Roberto', lastName: 'López', role: 'DISPATCHER' },
-      { email: 'chofer@logistics.com', password: driverPassword, firstName: 'Juan', lastName: 'Martínez', role: 'DRIVER' },
-      { email: 'contaduria@logistics.com', password: opsPassword, firstName: 'Laura', lastName: 'Sánchez', role: 'ACCOUNTANT' },
-    ];
-
-    for (const u of defaultUsers) {
-      await this.prisma.user.upsert({
-        where: { email: u.email },
-        update: {
-          password: u.password,
-          isActive: true,
-        },
-        create: {
-          email: u.email,
-          password: u.password,
-          firstName: u.firstName,
-          lastName: u.lastName,
-          role: u.role as any,
-          isActive: true,
-        },
-      });
-    }
-  }
-
   async validateUser(email: string, password: string) {
     const normalizedEmail = (email || '').toLowerCase().trim();
 
-    // Guaranteed demo accounts mapping
-    const demoAccounts: Record<string, { pass: string; role: any; name: string; surname: string }> = {
-      'admin@logistics.com': { pass: 'Admin123!', role: 'SUPER_ADMIN', name: 'Carlos', surname: 'Rodríguez' },
-      'ops@logistics.com': { pass: 'Ops123!', role: 'OPERATIONS_MANAGER', name: 'María', surname: 'González' },
-      'despacho@logistics.com': { pass: 'Ops123!', role: 'DISPATCHER', name: 'Roberto', surname: 'López' },
-      'chofer@logistics.com': { pass: 'Driver123!', role: 'DRIVER', name: 'Juan', surname: 'Martínez' },
-      'contaduria@logistics.com': { pass: 'Ops123!', role: 'ACCOUNTANT', name: 'Laura', surname: 'Sánchez' },
-    };
-
-    const demoConfig = demoAccounts[normalizedEmail];
-    if (demoConfig && password === demoConfig.pass) {
-      let user: any = null;
-      try {
-        user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
-      } catch (tableErr: any) {
-        console.warn('[AuthService] Tabla "users" no encontrada durante login. Auto-migrando esquema con prisma db push...', tableErr?.message || tableErr);
-        try {
-          const { execSync } = require('child_process');
-          execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
-          user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } }).catch(() => null);
-        } catch (pushErr) {
-          console.error('[AuthService] Error auto-migrando esquema:', pushErr);
-        }
-      }
-
-      const hashedPass = await bcrypt.hash(demoConfig.pass, 10);
-
-      if (!user) {
-        user = await this.prisma.user.create({
-          data: {
-            email: normalizedEmail,
-            password: hashedPass,
-            firstName: demoConfig.name,
-            lastName: demoConfig.surname,
-            role: demoConfig.role,
-            isActive: true,
-          },
-        });
-      } else {
-        user = await this.prisma.user.update({
-          where: { id: user.id },
-          data: {
-            password: hashedPass,
-            isActive: true,
-          },
-        });
-      }
-
-      const { password: _, ...result } = user;
-      return result;
-    }
-
-    // Standard user authentication flow
     const user = await this.prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user || !user.isActive) throw new UnauthorizedException('Credenciales inválidas o cuenta inactiva');
     const isMatch = await bcrypt.compare(password, user.password);

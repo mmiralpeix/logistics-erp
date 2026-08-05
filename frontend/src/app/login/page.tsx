@@ -8,7 +8,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { authApi, getApiUrl } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth';
-import { Truck, Eye, EyeOff, Lock, Mail, Sun, Moon, ShieldCheck, Award, ArrowRight, UserCheck, Scale, MapPin, UserPlus, Phone, User } from 'lucide-react';
+import { Truck, Eye, EyeOff, Lock, Mail, Sun, Moon, ShieldCheck, Award, ArrowRight, UserCheck, Scale, MapPin } from 'lucide-react';
 import { useTheme } from '@/lib/theme';
 import Image from 'next/image';
 
@@ -24,7 +24,6 @@ export default function LoginPage() {
   const { setAuth } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
 
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showPass, setShowPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -71,27 +70,11 @@ export default function LoginPage() {
     }
   };
 
-  // Self-Registration State
-  const [regForm, setRegForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    phone: '',
-  });
-  const [regLoading, setRegLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { email: 'admin@logistics.com', password: 'Admin123!' },
   });
-
-  const fillQuickLogin = (email: string, pass: string) => {
-    setValue('email', email);
-    setValue('password', pass);
-  };
 
   const handleSaveApiUrl = () => {
     if (!customApiUrlInput) return;
@@ -166,46 +149,6 @@ export default function LoginPage() {
       }
     } finally {
         setLoading(false);
-    }
-  };
-
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!regForm.firstName || !regForm.lastName || !regForm.email || !regForm.password) {
-      toast.error('Por favor complete todos los campos obligatorios');
-      return;
-    }
-    if (regForm.password !== regForm.confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
-      return;
-    }
-    setRegLoading(true);
-    try {
-      const res = await authApi.register(regForm);
-      if (res.data.activationLink) {
-        toast((t) => (
-          <div className="space-y-2">
-            <p className="font-bold text-white text-xs">📧 Enlace de Activación Simulado (Dev Mode):</p>
-            <p className="text-[11px] text-blue-200 break-all">{res.data.activationLink}</p>
-            <button
-              onClick={() => {
-                toast.dismiss(t.id);
-                window.location.href = res.data.activationLink;
-              }}
-              className="px-3 py-1 bg-blue-600 text-white rounded text-xs font-bold w-full"
-            >
-              Hacer clic para Activar Ahora
-            </button>
-          </div>
-        ), { duration: 15000 });
-      } else {
-        toast.success(`¡Cuenta creada! Se ha enviado el correo de activación a ${regForm.email}`);
-      }
-      setAuthMode('login');
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Error al registrar la cuenta');
-    } finally {
-      setRegLoading(false);
     }
   };
 
@@ -362,74 +305,14 @@ export default function LoginPage() {
 
         {/* Auth Card Container */}
         <div className="max-w-md w-full mx-auto my-auto space-y-6 py-6">
-          {/* Mode Switcher Tabs */}
-          <div className="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setAuthMode('login')}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                authMode === 'login'
-                  ? 'bg-white text-blue-600 shadow-sm border border-slate-200 dark:bg-blue-600 dark:text-white dark:border-transparent'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <UserCheck className="w-4 h-4" />
-              <span>Iniciar Sesión</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAuthMode('register')}
-              className={`flex-1 py-2.5 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                authMode === 'register'
-                  ? 'bg-white text-blue-600 shadow-sm border border-slate-200 dark:bg-blue-600 dark:text-white dark:border-transparent'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Crear Cuenta</span>
-            </button>
-          </div>
-
-          {authMode === 'login' ? (
-            /* MODE 1: LOGIN FORM */
-            <div className="space-y-6">
+          {/* LOGIN FORM */}
+          <div className="space-y-6">
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200 dark:border-blue-500/20">
                   <UserCheck className="w-3.5 h-3.5" /> Acceso al Sistema
                 </div>
                 <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Iniciar Sesión</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-xs">Ingresá tus credenciales corporativas para acceder al sistema.</p>
-              </div>
-
-              {/* Quick Login Profiles */}
-              <div className="space-y-2">
-                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Perfiles Rápidos Demo:</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fillQuickLogin('admin@logistics.com', 'Admin123!')}
-                    className="p-2.5 bg-slate-50 hover:bg-blue-50 dark:bg-slate-900 dark:hover:bg-blue-600/20 border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500/50 rounded-xl text-left transition-all group shadow-sm"
-                  >
-                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">Admin</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Acceso Total</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillQuickLogin('ops@logistics.com', 'Ops123!')}
-                    className="p-2.5 bg-slate-50 hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-600/20 border border-slate-200 dark:border-slate-800 hover:border-emerald-400 dark:hover:border-emerald-500/50 rounded-xl text-left transition-all group shadow-sm"
-                  >
-                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">Operaciones</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Gestor Flota</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillQuickLogin('chofer@logistics.com', 'Driver123!')}
-                    className="p-2.5 bg-slate-50 hover:bg-amber-50 dark:bg-slate-900 dark:hover:bg-amber-600/20 border border-slate-200 dark:border-slate-800 hover:border-amber-400 dark:hover:border-amber-500/50 rounded-xl text-left transition-all group shadow-sm"
-                  >
-                    <p className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400">Chofer</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Despacho</p>
-                  </button>
-                </div>
               </div>
 
               {/* Config Servidor API Button */}
@@ -506,7 +389,7 @@ export default function LoginPage() {
                     <input
                       {...register('email')}
                       type="email"
-                      placeholder="admin@logistics.com"
+                      placeholder="tu.email@empresa.com"
                       className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm"
                       autoComplete="email"
                     />
@@ -573,128 +456,7 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
-            </div>
-          ) : (
-            /* MODE 2: SELF-REGISTRATION FORM */
-            <div className="space-y-5">
-              <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-500/20">
-                  <UserPlus className="w-3.5 h-3.5" /> Alta de Cuenta
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Crear una Cuenta</h2>
-                <p className="text-slate-500 dark:text-slate-400 text-xs">Registrá tus datos corporativos para solicitar acceso al ERP.</p>
-              </div>
-
-              <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Nombre *</label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="text"
-                        required
-                        value={regForm.firstName}
-                        onChange={(e) => setRegForm({ ...regForm, firstName: e.target.value })}
-                        placeholder="Juan"
-                        className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Apellido *</label>
-                    <input
-                      type="text"
-                      required
-                      value={regForm.lastName}
-                      onChange={(e) => setRegForm({ ...regForm, lastName: e.target.value })}
-                      placeholder="Pérez"
-                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Correo Electrónico *</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="email"
-                      required
-                      value={regForm.email}
-                      onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                      placeholder="jperez@empresa.com"
-                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Contraseña *</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="password"
-                        required
-                        minLength={6}
-                        value={regForm.password}
-                        onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-                        placeholder="••••••••"
-                        className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Repetir Clave *</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input
-                        type="password"
-                        required
-                        minLength={6}
-                        value={regForm.confirmPassword}
-                        onChange={(e) => setRegForm({ ...regForm, confirmPassword: e.target.value })}
-                        placeholder="••••••••"
-                        className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1">Teléfono (Opcional)</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      value={regForm.phone}
-                      onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
-                      placeholder="+54 9 11 1234-5678"
-                      className="w-full bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 pl-10 text-sm font-medium focus:outline-none focus:border-blue-500 transition-all shadow-sm"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={regLoading}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all text-sm disabled:opacity-50 pt-2"
-                >
-                  {regLoading ? (
-                    <span>Registrando cuenta...</span>
-                  ) : (
-                    <>
-                      <span>Registrarme en LogisticsPro</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Footer */}

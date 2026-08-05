@@ -193,6 +193,7 @@ model Client {
   certifications Certification[]
   rates     ClientRate[]
 
+  @@index([isActive])
   @@map("clients")
 }
 
@@ -298,6 +299,8 @@ model Vehicle {
   reserveFunds ReserveFund[]
   reserveFundTransactions ReserveFundTransaction[]
 
+  @@index([status])
+  @@index([isActive])
   @@map("vehicles")
 }
 
@@ -340,6 +343,8 @@ model Tire {
   retreads              TireRetread[]
   inspections           TireInspection[]
 
+  @@index([vehicleId])
+  @@index([status])
   @@map("tires")
 }
 
@@ -445,6 +450,7 @@ model Driver {
   incidents  Incident[]
   shiftLogs  DriverShiftLog[]
 
+  @@index([isActive])
   @@map("drivers")
 }
 
@@ -778,6 +784,10 @@ model Document {
   trip        Trip?        @relation(fields: [tripId], references: [id])
   maintenance Maintenance? @relation(fields: [maintenanceId], references: [id])
 
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([tripId])
+  @@index([fechaVencimiento])
   @@map("documents")
 }
 
