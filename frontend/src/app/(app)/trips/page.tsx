@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tripsApi, clientsApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import { formatMoney, formatDate, formatDateTime, TRIP_STATUS_MAP } from '@/lib/utils';
-import { Plus, Search, Map, Truck, User, Eye, Edit2, FileText, FileCheck, Building2, Container, Layers, Printer, Users, Link2, ShieldAlert, Droplets, Package, Flame, DollarSign } from 'lucide-react';
+import { Plus, Search, Map, Truck, User, Eye, Edit2, Trash2, FileText, FileCheck, Building2, Container, Layers, Printer, Users, Link2, ShieldAlert, Droplets, Package, Flame, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 
@@ -66,6 +66,16 @@ export default function TripsPage() {
       qc.invalidateQueries({ queryKey: ['trip-distribution'] });
     },
     onError: () => toast.error('Error al actualizar el estado'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => tripsApi.remove(id),
+    onSuccess: () => {
+      toast.success('Viaje eliminado');
+      qc.invalidateQueries({ queryKey: ['trips'] });
+      qc.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Error al eliminar el viaje'),
   });
 
   const createBatchMutation = useMutation({
@@ -454,6 +464,13 @@ export default function TripsPage() {
                             title="Editar viaje"
                           >
                             <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => { if (confirm(`¿Eliminar el viaje ${trip.numero}?`)) deleteMutation.mutate(trip.id); }}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors"
+                            title="Eliminar viaje"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>

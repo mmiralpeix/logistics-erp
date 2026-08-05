@@ -629,4 +629,17 @@ export class TripsService {
 
     return cost;
   }
+
+  async remove(id: string) {
+    const trip = await this.findOne(id);
+
+    if (trip.certificationId) {
+      throw new BadRequestException(
+        'No se puede eliminar un viaje certificado. Quitalo de la certificación primero.',
+      );
+    }
+
+    await this.prisma.trip.delete({ where: { id } });
+    return { message: `Viaje ${trip.numero} eliminado` };
+  }
 }

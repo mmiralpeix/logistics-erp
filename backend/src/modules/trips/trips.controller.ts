@@ -84,5 +84,12 @@ export class TripsController {
   reschedule(@Param('id') id: string, @Body() body: RescheduleTripDto) {
     return this.tripsService.reschedule(id, new Date(body.newDeparture), body.reason);
   }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS_MANAGER, UserRole.DISPATCHER)
+  @ApiOperation({ summary: 'Eliminar viaje' })
+  remove(@Param('id') id: string) {
+    return this.tripsService.remove(id);
+  }
 }
 

@@ -136,6 +136,7 @@ export const tripsApi = {
   create: (data: any) => api.post('/trips', data),
   createBatch: (data: any) => api.post('/trips/batch', data),
   update: (id: string, data: any) => api.patch(`/trips/${id}`, data),
+  remove: (id: string) => api.delete(`/trips/${id}`),
   updateStatus: (id: string, status: string, notes?: string) => api.patch(`/trips/${id}/status`, { status, notes }),
   addCost: (id: string, data: any) => api.post(`/trips/${id}/costs`, data),
   getGantt: (from: string, to: string) => api.get('/trips/gantt', { params: { from, to } }),
