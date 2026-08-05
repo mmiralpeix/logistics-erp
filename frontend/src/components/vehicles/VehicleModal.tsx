@@ -17,6 +17,10 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
   const selectedTipo = watch('tipo');
   const isCisterna = selectedTipo === 'SEMI_CISTERNA' || selectedTipo === 'CISTERNA';
   const isRemolcado = ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CARRETON', 'BATEA', 'BITREN', 'ACOPLADO'].includes(selectedTipo);
+  // Un tractor de carretera, una camioneta o un equipo especial no transportan carga propia
+  // (esa capacidad la define el remolque/semirremolque que enganchan), así que esos campos
+  // solo aplican a unidades que sí cargan directamente.
+  const isCargoCarrier = !['TRACTOR', 'CAMIONETA', 'EQUIPO_ESPECIAL'].includes(selectedTipo);
 
   const mutation = useMutation({
     mutationFn: (data: any) => isEdit ? vehiclesApi.update(vehicle.id, data) : vehiclesApi.create(data),
@@ -70,18 +74,22 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
               </select>
             </div>
 
-            <div>
-              <label className="label">Capacidad de Carga (kg / Tn)</label>
-              <input {...register('capacidadKg')} type="number" className="input" placeholder="45000" />
-            </div>
-            <div>
-              <label className="label">Volumen útil (m³ / Litros)</label>
-              <input {...register('capacidadM3')} type="number" className="input" placeholder="35" />
-            </div>
-            <div>
-              <label className="label">Tipo de Carga habitual</label>
-              <input {...register('tipoCarga')} className="input" placeholder="Combustibles / Granel / Maquinaria" />
-            </div>
+            {isCargoCarrier && (
+              <>
+                <div>
+                  <label className="label">Capacidad de Carga (kg / Tn)</label>
+                  <input {...register('capacidadKg')} type="number" className="input" placeholder="45000" />
+                </div>
+                <div>
+                  <label className="label">Volumen útil (m³ / Litros)</label>
+                  <input {...register('capacidadM3')} type="number" className="input" placeholder="35" />
+                </div>
+                <div>
+                  <label className="label">Tipo de Carga habitual</label>
+                  <input {...register('tipoCarga')} className="input" placeholder="Combustibles / Granel / Maquinaria" />
+                </div>
+              </>
+            )}
 
             {/* Atributos específicos para Remolcados / Cisternas / Carretones */}
             {isRemolcado && (
@@ -123,10 +131,6 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
             <div>
               <label className="label">Vcto. ITV / RTO</label>
               <input {...register('vencimientoITV')} type="date" className="input" />
-            </div>
-            <div>
-              <label className="label">Vcto. RUTA</label>
-              <input {...register('vencimientoRUTA')} type="date" className="input" />
             </div>
 
             {isCisterna && (
