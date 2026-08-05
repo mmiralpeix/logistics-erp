@@ -22,7 +22,7 @@ export function AnalyticsPredictiveTab() {
   return (
     <div className="space-y-6">
       {/* AI Predictive Forecast Banner */}
-      <div className="card p-5 bg-gradient-to-r from-blue-900 to-indigo-900 text-white space-y-3 shadow-lg">
+      <div className="p-5 rounded-2xl shadow-lg bg-gradient-to-r from-blue-900 to-indigo-900 text-white space-y-3">
         <div className="flex items-center gap-2 font-black text-xs uppercase tracking-wider text-cyan-300">
           <Sparkles className="w-5 h-5 text-amber-400" />
           <span>Motor Predictivo por Analítica IA & Tasa de Uso</span>

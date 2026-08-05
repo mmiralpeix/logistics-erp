@@ -100,20 +100,20 @@ export function TripDetailDrawer({ tripId, onClose }: TripDetailDrawerProps) {
           ) : activeTab === 'route' ? (
             <div className="space-y-6">
               {/* Route Summary Card */}
-              <div className="card p-5 bg-gradient-to-r from-slate-900 to-blue-950 text-white space-y-3 shadow-md">
+              <div className="p-5 rounded-2xl shadow-md bg-gradient-to-r from-slate-900 to-blue-950 space-y-3">
                 <div className="flex items-center justify-between text-xs text-blue-300 font-bold uppercase tracking-wider">
                   <span>Itinerario de Ruta</span>
                   <span>{trip?.distanciaKm ? `${trip.distanciaKm} km` : 'Ruta Estándar'}</span>
                 </div>
                 <div className="flex items-center justify-between text-base font-black">
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-emerald-400" />
-                    <span>{trip?.origen}</span>
+                    <MapPin className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                    <span className="text-white">{trip?.origen}</span>
                   </div>
                   <span className="text-blue-400 text-xs font-mono">➔ ➔ ➔</span>
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-rose-400" />
-                    <span>{trip?.destino}</span>
+                    <MapPin className="w-5 h-5 text-rose-400 flex-shrink-0" />
+                    <span className="text-white">{trip?.destino}</span>
                   </div>
                 </div>
               </div>
