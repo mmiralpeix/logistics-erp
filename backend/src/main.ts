@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { EmptyStringToUndefinedPipe } from './common/pipes/empty-string-to-undefined.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -37,6 +38,7 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionsFilter());
 
   app.useGlobalPipes(
+    new EmptyStringToUndefinedPipe(),
     new ValidationPipe({
       whitelist: true,
       transform: true,

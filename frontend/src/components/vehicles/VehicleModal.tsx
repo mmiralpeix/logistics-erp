@@ -11,7 +11,8 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
   const isEdit = !!vehicle;
 
   const { register, handleSubmit, watch, formState: { isSubmitting } } = useForm({
-    defaultValues: vehicle || { tipo: 'TRACTOR', status: 'DISPONIBLE', anio: new Date().getFullYear(), kilometraje: 0, isThirdParty: false, cantidadEjes: 3 },
+    defaultValues: vehicle || { tipo: 'TRACTOR', status: 'DISPONIBLE', anio: new Date().getFullYear(), kilometraje: 0, cantidadEjes: 3 },
+    shouldUnregister: true,
   });
 
   const selectedTipo = watch('tipo');
@@ -147,10 +148,6 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
             <div>
               <label className="label">N° Chasis / Cuadro</label>
               <input {...register('numeroChasis')} className="input" />
-            </div>
-            <div className="flex items-center gap-3 pt-6">
-              <input {...register('isThirdParty')} type="checkbox" id="thirdParty" className="w-4 h-4 text-blue-600 rounded" />
-              <label htmlFor="thirdParty" className="text-sm text-slate-700 dark:text-slate-300">Equipo tercerizado</label>
             </div>
             <div className="col-span-3">
               <label className="label">Notas y Especificaciones</label>
