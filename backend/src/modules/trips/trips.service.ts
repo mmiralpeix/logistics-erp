@@ -581,7 +581,12 @@ export class TripsService {
     const costoPeajes = trip.costs.filter((c) => c.categoria === 'PEAJES').reduce((sum, c) => sum + c.monto, 0);
     const costoViaticos = trip.costs.filter((c) => c.categoria === 'VIATICOS').reduce((sum, c) => sum + c.monto, 0);
     const costoCombustible = trip.fuelLogs.reduce((sum, f) => sum + f.costoTotal, 0);
-    const costoDirectoTotal = trip.costs.reduce((sum, c) => sum + c.monto, 0) + costoCombustible;
+    const costoItemizado = trip.costs.reduce((sum, c) => sum + c.monto, 0) + costoCombustible;
+    // trip.costoTotal is the authoritative cost (set manually, via "Auto por KM", or kept in
+    // sync with itemized costs by addTripCost) - the same value the trips list and margin
+    // calc already use. Itemized costs/fuel logs are just the supporting breakdown and are
+    // often empty even when a real cost estimate exists, so never show $0 over a real value.
+    const costoDirectoTotal = trip.costoTotal != null ? Number(trip.costoTotal) : costoItemizado;
 
     const tarifa = trip.subcontractorFee || trip.tarifaAcordada || 0;
     const margenBruto = tarifa > 0 ? (((tarifa - costoDirectoTotal) / tarifa) * 100).toFixed(1) : '0';
