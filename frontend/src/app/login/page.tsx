@@ -121,7 +121,7 @@ export default function LoginPage() {
         ACCOUNTANT: 'Contabilidad',
       };
 
-      setAuth(res.data.user, res.data.access_token);
+      setAuth(res.data.user, res.data.access_token, rememberMe);
       toast.success(`¡Bienvenido, ${res.data.user.firstName}! Conectado como ${roleLabels[res.data.user.role] || res.data.user.role}`);
       router.push('/dashboard');
     } catch (err: any) {
@@ -158,7 +158,7 @@ export default function LoginPage() {
     setMfaLoading(true);
     try {
       const res = await authApi.login(pendingCredentials.email, pendingCredentials.pass, totpCode);
-      setAuth(res.data.user, res.data.access_token);
+      setAuth(res.data.user, res.data.access_token, rememberMe);
       toast.success(`¡Verificación de 2FA Exitosa! Bienvenido ${res.data.user.firstName}`);
       setShowMfaModal(false);
       router.push('/dashboard');

@@ -1,29 +1,28 @@
 'use client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
 import { Sidebar } from '@/components/layout/Sidebar';
-import { useAuthStore } from '@/lib/auth';
+import { useAuthStore, getStoredToken } from '@/lib/auth';
 import { authApi } from '@/lib/api';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { setAuth, isAuthenticated } = useAuthStore();
+  const { hydrate, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    const token = Cookies.get('auth_token') || localStorage.getItem('auth_token');
+    const token = getStoredToken();
     if (!token) {
       router.replace('/login');
       return;
     }
     if (!isAuthenticated) {
       authApi.getProfile().then((res) => {
-        setAuth(res.data, token);
+        hydrate(res.data, token);
       }).catch(() => {
         router.replace('/login');
       });
     }
-  }, [isAuthenticated, router, setAuth]);
+  }, [isAuthenticated, router, hydrate]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors">

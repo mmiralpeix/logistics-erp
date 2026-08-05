@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { getStoredToken } from './auth';
 
 export const getApiUrl = () => {
   if (typeof window !== 'undefined') {
@@ -29,7 +30,7 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   config.baseURL = getApiUrl();
-  const token = Cookies.get('auth_token') || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null);
+  const token = getStoredToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -39,6 +40,10 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       Cookies.remove('auth_token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_token');
+      }
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }

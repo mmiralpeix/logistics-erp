@@ -1,6 +1,32 @@
 import { create } from 'zustand';
 import Cookies from 'js-cookie';
 
+const TOKEN_KEY = 'auth_token';
+
+// Checks persistent storage (remembered sessions) first, then session-only storage
+// (kept only for the current browser tab/window, cleared on close).
+export function getStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return Cookies.get(TOKEN_KEY) || localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || null;
+}
+
+function persistToken(token: string, remember: boolean) {
+  if (remember) {
+    localStorage.setItem(TOKEN_KEY, token);
+    Cookies.set(TOKEN_KEY, token, { expires: 7 });
+  } else {
+    // No `expires` -> session cookie, cleared when the browser closes.
+    sessionStorage.setItem(TOKEN_KEY, token);
+    Cookies.set(TOKEN_KEY, token);
+  }
+}
+
+function clearStoredToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  Cookies.remove(TOKEN_KEY);
+}
+
 interface User {
   id: string;
   email: string;
@@ -13,24 +39,29 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: User, token: string) => void;
+  setAuth: (user: User, token: string, remember?: boolean) => void;
+  // Restores an already-persisted session (e.g. on page load) without re-writing storage,
+  // so a session-only login isn't silently upgraded to a remembered one.
+  hydrate: (user: User, token: string) => void;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  token: typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null,
+  token: getStoredToken(),
   isAuthenticated: false,
 
-  setAuth: (user, token) => {
-    localStorage.setItem('auth_token', token);
-    Cookies.set('auth_token', token, { expires: 7 });
+  setAuth: (user, token, remember = true) => {
+    persistToken(token, remember);
+    set({ user, token, isAuthenticated: true });
+  },
+
+  hydrate: (user, token) => {
     set({ user, token, isAuthenticated: true });
   },
 
   logout: () => {
-    localStorage.removeItem('auth_token');
-    Cookies.remove('auth_token');
+    clearStoredToken();
     set({ user: null, token: null, isAuthenticated: false });
     window.location.href = '/login';
   },
