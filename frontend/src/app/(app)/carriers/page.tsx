@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { carriersApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
 import {
-  Plus, Search, Building2, Truck, User, Edit2, Phone, Mail, MapPin, X, Eye, DollarSign
+  Plus, Search, Building2, Truck, User, Edit2, Trash2, Phone, Mail, MapPin, X, Eye, DollarSign
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CarrierDetailDrawer } from '@/components/carriers/CarrierDetailDrawer';
@@ -120,6 +120,12 @@ export default function CarriersPage() {
     queryFn: () => carriersApi.getAll({ search, page, limit: 15 }).then((r) => r.data),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => carriersApi.remove(id),
+    onSuccess: () => { toast.success('Operador eliminado'); qc.invalidateQueries({ queryKey: ['carriers'] }); },
+    onError: () => toast.error('Error al eliminar operador'),
+  });
+
   return (
     <div>
       <Header
@@ -214,6 +220,14 @@ export default function CarriersPage() {
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                         >
                           <Edit2 className="w-4 h-4" />
+                        </button>
+
+                        <button
+                          onClick={() => { if (confirm('¿Eliminar este operador?')) deleteMutation.mutate(carrier.id); }}
+                          title="Eliminar Operador"
+                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
