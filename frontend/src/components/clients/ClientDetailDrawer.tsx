@@ -208,6 +208,37 @@ export function ClientDetailDrawer({ clientId, onClose }: ClientDetailDrawerProp
                       </span>
                     </div>
 
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Tarifa Base</span>
+                        <span className="font-bold text-blue-600">{c.tarifaBase ? formatMoney(c.tarifaBase) : 'Sin definir'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Tn Excedente</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{c.tarifaExcedentePorTn ? `${formatMoney(c.tarifaExcedentePorTn)}/Tn` : 'Sin definir'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Peso Mínimo</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{c.pesoMinimoKg ? `${Number(c.pesoMinimoKg).toLocaleString()} kg` : '-'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Viajes Permitidos</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{totalAllowed ? `${executed} / ${totalAllowed}` : `${executed} (sin límite)`}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Vigencia</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          {c.fechaInicio ? new Date(c.fechaInicio).toLocaleDateString() : '-'} ➔ {c.fechaFin ? new Date(c.fechaFin).toLocaleDateString() : 'Sin vencimiento'}
+                        </span>
+                      </div>
+                      {c.condiciones && (
+                        <div className="col-span-2 sm:col-span-3">
+                          <span className="text-slate-400 block font-semibold">Condiciones</span>
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{c.condiciones}</span>
+                        </div>
+                      )}
+                    </div>
+
                     {totalAllowed && (
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
