@@ -1,12 +1,131 @@
 'use client';
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { carriersApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
+import toast from 'react-hot-toast';
 import {
   X, Building2, Truck, UserCheck, MapPin, Phone, Mail, DollarSign,
-  FileText, ShieldCheck, ShieldAlert, Award
+  FileText, ShieldCheck, ShieldAlert, Award, Plus
 } from 'lucide-react';
+
+const VEHICLE_TYPES = ['CAMION', 'TRACTOR', 'SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CARRETON', 'BATEA', 'BITREN', 'CAMIONETA', 'EQUIPO_ESPECIAL', 'CISTERNA', 'VOLQUETE', 'ACOPLADO'];
+
+function AddCarrierVehicleModal({ carrierId, onClose }: { carrierId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ patente: '', tipo: 'CAMION', marca: '', modelo: '' });
+
+  const mutation = useMutation({
+    mutationFn: () => carriersApi.createVehicle(carrierId, form),
+    onSuccess: () => {
+      toast.success('Vehículo agregado a la flota del operador');
+      qc.invalidateQueries({ queryKey: ['carrier-summary-360', carrierId] });
+      qc.invalidateQueries({ queryKey: ['carriers'] });
+      onClose();
+    },
+    onError: (err: any) => {
+      const msg = Array.isArray(err?.response?.data?.message) ? err.response.data.message.join(', ') : err?.response?.data?.message;
+      toast.error(msg || 'Error al agregar el vehículo');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Agregar Vehículo Subcontratado</h3>
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg"><X className="w-4 h-4" /></button>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="p-5 space-y-3 text-xs">
+          <div>
+            <label className="label">Patente / Dominio *</label>
+            <input value={form.patente} onChange={(e) => setForm({ ...form, patente: e.target.value.toUpperCase() })} className="input w-full font-mono" placeholder="AB123CD" required />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Tipo</label>
+              <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} className="input w-full">
+                {VEHICLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="label">Marca</label>
+              <input value={form.marca} onChange={(e) => setForm({ ...form, marca: e.target.value })} className="input w-full" placeholder="Scania" />
+            </div>
+          </div>
+          <div>
+            <label className="label">Modelo</label>
+            <input value={form.modelo} onChange={(e) => setForm({ ...form, modelo: e.target.value })} className="input w-full" placeholder="R450" />
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <button type="button" onClick={onClose} className="btn-secondary text-xs px-4 py-2">Cancelar</button>
+            <button type="submit" disabled={mutation.isPending} className="btn-primary text-xs px-4 py-2">
+              {mutation.isPending ? 'Guardando...' : 'Agregar Vehículo'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AddCarrierDriverModal({ carrierId, onClose }: { carrierId: string; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ firstName: '', lastName: '', dni: '', telefono: '' });
+
+  const mutation = useMutation({
+    mutationFn: () => carriersApi.createDriver(carrierId, form),
+    onSuccess: () => {
+      toast.success('Chofer agregado a la nómina del operador');
+      qc.invalidateQueries({ queryKey: ['carrier-summary-360', carrierId] });
+      qc.invalidateQueries({ queryKey: ['carriers'] });
+      onClose();
+    },
+    onError: (err: any) => {
+      const msg = Array.isArray(err?.response?.data?.message) ? err.response.data.message.join(', ') : err?.response?.data?.message;
+      toast.error(msg || 'Error al agregar el chofer');
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+          <h3 className="text-sm font-bold text-slate-900 dark:text-white">Agregar Chofer del Operador</h3>
+          <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg"><X className="w-4 h-4" /></button>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="p-5 space-y-3 text-xs">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Nombre *</label>
+              <input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="input w-full" placeholder="Juan" required />
+            </div>
+            <div>
+              <label className="label">Apellido *</label>
+              <input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="input w-full" placeholder="Pérez" required />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">DNI</label>
+              <input value={form.dni} onChange={(e) => setForm({ ...form, dni: e.target.value })} className="input w-full" placeholder="30123456" />
+            </div>
+            <div>
+              <label className="label">Teléfono</label>
+              <input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} className="input w-full" placeholder="0297-15-1234" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <button type="button" onClick={onClose} className="btn-secondary text-xs px-4 py-2">Cancelar</button>
+            <button type="submit" disabled={mutation.isPending} className="btn-primary text-xs px-4 py-2">
+              {mutation.isPending ? 'Guardando...' : 'Agregar Chofer'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 interface CarrierDetailDrawerProps {
   carrierId: string | null;
@@ -15,6 +134,8 @@ interface CarrierDetailDrawerProps {
 
 export function CarrierDetailDrawer({ carrierId, onClose }: CarrierDetailDrawerProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'vehicles' | 'drivers' | 'trips'>('info');
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [showAddDriver, setShowAddDriver] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['carrier-summary-360', carrierId],
@@ -142,6 +263,19 @@ export function CarrierDetailDrawer({ carrierId, onClose }: CarrierDetailDrawerP
             </div>
           ) : activeTab === 'vehicles' ? (
             <div className="space-y-4">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowAddVehicle(true)}
+                  className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Agregar Vehículo
+                </button>
+              </div>
+              {vehicles.length === 0 && (
+                <div className="card p-8 text-center text-slate-400 text-xs">
+                  Este operador todavía no tiene vehículos cargados en su flota subcontratada.
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {vehicles.map((v: any) => (
                   <div key={v.id} className="card p-4 space-y-2 border-l-4 border-l-purple-600">
@@ -164,6 +298,19 @@ export function CarrierDetailDrawer({ carrierId, onClose }: CarrierDetailDrawerP
             </div>
           ) : activeTab === 'drivers' ? (
             <div className="space-y-4">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowAddDriver(true)}
+                  className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Agregar Chofer
+                </button>
+              </div>
+              {drivers.length === 0 && (
+                <div className="card p-8 text-center text-slate-400 text-xs">
+                  Este operador todavía no tiene choferes cargados en su nómina.
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {drivers.map((d: any) => (
                   <div key={d.id} className="card p-4 space-y-2 border-l-4 border-l-blue-600">
@@ -219,6 +366,13 @@ export function CarrierDetailDrawer({ carrierId, onClose }: CarrierDetailDrawerP
           )}
         </div>
       </div>
+
+      {showAddVehicle && (
+        <AddCarrierVehicleModal carrierId={carrierId} onClose={() => setShowAddVehicle(false)} />
+      )}
+      {showAddDriver && (
+        <AddCarrierDriverModal carrierId={carrierId} onClose={() => setShowAddDriver(false)} />
+      )}
     </div>
   );
 }
