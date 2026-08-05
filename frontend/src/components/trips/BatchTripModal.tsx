@@ -52,6 +52,33 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
   const hasContract = !!form.contractId && !!activeContract;
   const isOcLocked = hasContract && !isOcUnlocked;
 
+  // Tn excedente: misma lógica que TripModal.tsx (tarifa total = base + excedente sobre peso mínimo)
+  const calcContractTariff = (contract: any, pesoKg: number) => {
+    const minWeightKg = contract?.pesoMinimoKg || 30000;
+    const excessRatePerTn = contract?.tarifaExcedentePorTn || 0;
+    const excessKg = contract ? Math.max(0, (pesoKg || 0) - minWeightKg) : 0;
+    const excessAmount = (excessKg / 1000) * excessRatePerTn;
+    const totalTariff = contract ? (contract.tarifaBase || 0) + excessAmount : null;
+    return { excessKg, excessAmount, totalTariff };
+  };
+
+  const applyContractTariff = (contract: any, pesoKg: number, ocValueOverride?: string) => {
+    if (!contract) return null;
+    const { excessKg, excessAmount, totalTariff } = calcContractTariff(contract, pesoKg);
+    setAssignments((assigns) =>
+      assigns.map((a) => ({
+        ...a,
+        tarifaAcordada: totalTariff,
+        pesoExcedenteKg: Math.round(excessKg),
+        montoExcedente: Math.round(excessAmount),
+        ...(ocValueOverride ? { numeroOCCliente: ocValueOverride } : {}),
+      }))
+    );
+    return totalTariff;
+  };
+
+  const currentExcess = hasContract ? calcContractTariff(activeContract, form.pesoCargaGenericoKg) : null;
+
   const handleContractChange = (contractId: string) => {
     const selected = clientContracts?.find((c: any) => c.id === contractId);
     setIsOcUnlocked(false);
@@ -59,23 +86,15 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
       const ocValue = selected?.numero
         ? (selected.numero.startsWith('OC') ? selected.numero : `OC N°${selected.numero}`)
         : '';
-      const newTariff = selected?.tarifaBase ? selected.tarifaBase : prev.tarifaGenerica;
-
-      if (selected) {
-        setAssignments((assigns) =>
-          assigns.map((a) => ({
-            ...a,
-            tarifaAcordada: selected.tarifaBase || a.tarifaAcordada,
-            numeroOCCliente: ocValue || a.numeroOCCliente,
-          }))
-        );
-      }
+      const newTariff = selected
+        ? applyContractTariff(selected, prev.pesoCargaGenericoKg, ocValue || prev.numeroOCCliente)
+        : prev.tarifaGenerica;
 
       return {
         ...prev,
         contractId,
         numeroOCCliente: ocValue || prev.numeroOCCliente,
-        tarifaGenerica: newTariff,
+        tarifaGenerica: newTariff ?? prev.tarifaGenerica,
       };
     });
   };
@@ -340,8 +359,22 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
               </div>
 
               <div className="lg:col-span-3">
-                <label className="label font-semibold">Tarifa Base por Unidad ($)</label>
-                <input type="number" value={form.tarifaGenerica} onChange={(e) => setField('tarifaGenerica', Number(e.target.value))} className="input py-2 font-bold text-emerald-600 dark:text-emerald-400" placeholder="450000" />
+                <label className="label font-semibold">
+                  {hasContract ? 'Tarifa Total por Unidad (Base + Excedente) ($)' : 'Tarifa por Unidad ($)'}
+                </label>
+                <input
+                  type="number"
+                  value={form.tarifaGenerica}
+                  readOnly={isOcLocked}
+                  onChange={(e) => setField('tarifaGenerica', Number(e.target.value))}
+                  className={`input py-2 font-bold text-emerald-600 dark:text-emerald-400 ${isOcLocked ? 'cursor-not-allowed' : ''}`}
+                  placeholder="450000"
+                />
+                {hasContract && currentExcess && currentExcess.excessAmount > 0 && (
+                  <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-1 font-medium">
+                    Incluye {formatMoney(currentExcess.excessAmount)} por {(currentExcess.excessKg / 1000).toFixed(2)} Tn excedente (${activeContract.tarifaExcedentePorTn}/Tn)
+                  </p>
+                )}
               </div>
 
               <div className="lg:col-span-4">
@@ -365,7 +398,21 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
 
               <div className="lg:col-span-3">
                 <label className="label font-semibold">Peso Estimado / Unidad (Kg)</label>
-                <input type="number" value={form.pesoCargaGenericoKg} onChange={(e) => setField('pesoCargaGenericoKg', Number(e.target.value))} className="input py-2" placeholder="30000" />
+                <input
+                  type="number"
+                  value={form.pesoCargaGenericoKg}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const newTariff = hasContract && !isOcUnlocked ? applyContractTariff(activeContract, val) : null;
+                    setForm((f: any) => ({
+                      ...f,
+                      pesoCargaGenericoKg: val,
+                      ...(newTariff !== null ? { tarifaGenerica: newTariff } : {}),
+                    }));
+                  }}
+                  className="input py-2"
+                  placeholder="30000"
+                />
               </div>
 
               <div className="lg:col-span-5">

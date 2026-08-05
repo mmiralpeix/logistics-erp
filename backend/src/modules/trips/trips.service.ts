@@ -489,6 +489,8 @@ export class TripsService {
             tipoCarga: commonData.tipoCarga || null,
             descripcionCarga: commonData.descripcionCarga || null,
             pesoCarga: item.pesoCargaKg || commonData.pesoCargaGenericoKg || null,
+            pesoExcedenteKg: item.pesoExcedenteKg != null ? Number(item.pesoExcedenteKg) : null,
+            montoExcedente: item.montoExcedente != null ? Number(item.montoExcedente) : null,
             numeroRemito: item.numeroRemito || null,
             numeroOCCliente: item.numeroOCCliente || null,
             esCargaPeligrosa: commonData.esCargaPeligrosa || false,
