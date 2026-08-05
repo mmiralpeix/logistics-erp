@@ -56,6 +56,14 @@ export class BatchUnitAssignmentDto {
 
   @IsNumber()
   @IsOptional()
+  pesoExcedenteKg?: number;
+
+  @IsNumber()
+  @IsOptional()
+  montoExcedente?: number;
+
+  @IsNumber()
+  @IsOptional()
   pesoCargaKg?: number;
 }
 

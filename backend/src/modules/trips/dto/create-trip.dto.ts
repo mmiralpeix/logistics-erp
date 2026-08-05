@@ -63,6 +63,8 @@ export class CreateTripDto {
   @ApiPropertyOptional() @IsOptional() @IsString() carrierVehicleId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() carrierTrailerId?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() tarifaAcordada?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() pesoExcedenteKg?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() montoExcedente?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() costoTotal?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() margenBruto?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() notas?: string;
