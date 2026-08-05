@@ -5,7 +5,7 @@ import { tripsApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
 import {
   X, MapPin, Truck, User, Building2, Calendar, Clock, DollarSign,
-  FileText, ShieldCheck, Flame, Layers, Award, AlertCircle
+  FileText, ShieldCheck, Flame, Layers, Award, AlertCircle, Calculator
 } from 'lucide-react';
 
 interface TripDetailDrawerProps {
@@ -257,6 +257,51 @@ export function TripDetailDrawer({ tripId, onClose }: TripDetailDrawerProps) {
                   <span className="text-[10px] font-black uppercase text-slate-500">Margen Bruto Operativo</span>
                   <span className="text-xl font-black text-emerald-600 block mt-1">{fin?.margenBrutoPct}%</span>
                 </div>
+              </div>
+
+              {/* Desglose de cómo se arma la tarifa */}
+              <div className="card p-5 space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                  <Calculator className="w-4 h-4 text-blue-600" /> Cómo se arma esta tarifa
+                </h3>
+                {trip?.contract ? (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <div className="flex items-center justify-between py-2.5 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">Tarifa Base del Contrato</span>
+                        <span className="text-slate-400 block text-[11px]">
+                          Contrato {trip.contract.numero} • hasta {((trip.contract.pesoMinimoKg || 0) / 1000).toFixed(1)} Tn garantizadas
+                        </span>
+                      </div>
+                      <span className="font-black text-slate-900 dark:text-white text-sm">{formatMoney(trip.contract.tarifaBase)}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between py-2.5 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                          {(trip.pesoExcedenteKg || 0) > 0 ? 'Excedente por Peso' : 'Sin excedente de peso'}
+                        </span>
+                        <span className="text-slate-400 block text-[11px]">
+                          {(trip.pesoExcedenteKg || 0) > 0
+                            ? `Cargaste ${((trip.pesoCarga || 0) / 1000).toFixed(1)} Tn → ${((trip.pesoExcedenteKg || 0) / 1000).toFixed(1)} Tn de más × ${formatMoney(trip.contract.tarifaExcedentePorTn)}/Tn`
+                            : `Cargaste ${((trip.pesoCarga || 0) / 1000).toFixed(1)} Tn, dentro del mínimo garantizado`}
+                        </span>
+                      </div>
+                      <span className={`font-black text-sm ${(trip.montoExcedente || 0) > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                        {(trip.montoExcedente || 0) > 0 ? `+${formatMoney(trip.montoExcedente)}` : '$0'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 text-sm">
+                      <span className="font-black text-slate-900 dark:text-white">Tarifa Total Acordada</span>
+                      <span className="font-black text-blue-600 dark:text-blue-400 text-lg">{formatMoney(trip?.tarifaAcordada)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    Viaje sin contrato asociado (tarifa spot / manual) — <strong className="text-slate-800 dark:text-slate-200">{formatMoney(trip?.tarifaAcordada)}</strong>, sin desglose de excedente.
+                  </p>
+                )}
               </div>
 
               {/* Expenses table */}
