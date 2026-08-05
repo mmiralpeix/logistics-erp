@@ -37,10 +37,14 @@ export function FinancialsSection({
             {...register('tarifaAcordada')}
             type="number"
             step="any"
-            className="input w-full text-sm font-bold text-blue-600 dark:text-blue-400"
+            readOnly={!!activeContract}
+            tabIndex={activeContract ? -1 : undefined}
+            className={`input w-full text-sm font-bold text-blue-600 dark:text-blue-400 ${activeContract ? 'bg-slate-100 dark:bg-slate-900 cursor-not-allowed' : ''}`}
             placeholder="0.00"
           />
-          <span className="text-[10px] text-slate-400 mt-1 block">Facturación al cliente</span>
+          <span className="text-[10px] text-slate-400 mt-1 block">
+            {activeContract ? 'Calculada por contrato (base + excedente)' : 'Facturación al cliente'}
+          </span>
         </div>
 
         {/* Costo Estimado */}
