@@ -156,10 +156,10 @@ export function WidgetKpiCard({ type, stats, tireKpis }: WidgetKpiCardProps) {
           </div>
           <div>
             <span className="text-xl font-black text-slate-900 dark:text-white truncate block">
-              {(stats?.fuel?.totalLiters || 4520).toLocaleString()} L
+              {(stats?.financial?.monthlyFuelLiters || 0).toLocaleString()} L
             </span>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-              Rendimiento: ~3.2 km/l
+              Costo mensual: <strong className="text-cyan-600">{formatMoney(stats?.financial?.monthlyFuelCost)}</strong>
             </p>
           </div>
         </div>
