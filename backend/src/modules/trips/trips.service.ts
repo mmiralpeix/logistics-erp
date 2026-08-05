@@ -618,16 +618,17 @@ export class TripsService {
       },
     });
 
-    // Recalcular costos del viaje
-    const allCosts = await this.prisma.tripCost.findMany({ where: { tripId } });
-    const totalCostos = allCosts.reduce((sum, c) => sum + c.monto, 0);
-    const tarifa = trip.tarifaAcordada || 0;
-    const margenBruto = tarifa > 0 ? (tarifa - totalCostos) / tarifa : 0;
+    // Sumar el nuevo gasto al costo total que ya tenía el viaje (estimado manual, "Auto por
+    // KM", o la suma de gastos previos - cualquiera sea su origen), nunca reemplazarlo por
+    // solo la suma de gastos sueltos: eso perdería un costo estimado que no vino de acá.
+    const nuevoCostoTotal = Number(trip.costoTotal || 0) + Number(dto.monto);
+    const tarifa = Number(trip.tarifaAcordada || 0);
+    const margenBruto = tarifa - nuevoCostoTotal;
 
     await this.prisma.trip.update({
       where: { id: tripId },
       data: {
-        costoTotal: totalCostos,
+        costoTotal: nuevoCostoTotal,
         margenBruto,
       },
     });
