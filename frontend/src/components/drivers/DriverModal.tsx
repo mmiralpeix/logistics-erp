@@ -58,20 +58,12 @@ export function DriverModal({ driver, onClose }: { driver?: any; onClose: () => 
               <input {...register('lastName', { required: true })} className="input" placeholder="Morales" />
             </div>
             <div>
-              <label className="label">CUIL</label>
-              <input {...register('cuil')} className="input" placeholder="20-28456789-4" />
-            </div>
-            <div>
               <label className="label">Teléfono</label>
               <input {...register('telefono')} className="input" placeholder="011-15-4567-8901" />
             </div>
             <div>
               <label className="label">Email</label>
               <input {...register('email')} type="email" className="input" />
-            </div>
-            <div className="col-span-2">
-              <label className="label">Domicilio</label>
-              <input {...register('domicilio')} className="input" placeholder="Calle Las Flores 456" />
             </div>
             <div>
               <label className="label">Fecha de ingreso</label>
