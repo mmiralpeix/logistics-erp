@@ -287,6 +287,7 @@ model Vehicle {
   tara                    Float?
   alturaM                 Float?
   largoM                  Float?
+  anchoM                  Float?
 
   isActive  Boolean  @default(true)
   notas     String?

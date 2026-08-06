@@ -101,14 +101,16 @@ export default function VehiclesPage() {
                 <th className="px-4 py-3 text-left">Kilometraje / Service</th>
                 <th className="px-4 py-3 text-left">Seguro</th>
                 <th className="px-4 py-3 text-left">ITV / VTV</th>
+                <th className="px-4 py-3 text-left">CRIM</th>
+                <th className="px-4 py-3 text-left">SENASA</th>
                 <th className="px-4 py-3 text-right">Acciones 360°</th>
               </tr>
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando flota de vehículos...</td></tr>
+                <tr><td colSpan={9} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando flota de vehículos...</td></tr>
               ) : data?.data?.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-slate-500 dark:text-slate-400">
+                <tr><td colSpan={9} className="text-center py-12 text-slate-500 dark:text-slate-400">
                   <Truck className="w-12 h-12 mx-auto mb-3 text-slate-400 dark:text-slate-600" />
                   <p>No se encontraron equipos registrados</p>
                 </td></tr>
@@ -116,6 +118,7 @@ export default function VehiclesPage() {
                 data?.data?.map((vehicle: any) => {
                   const kmProximoService = Math.ceil(vehicle.kilometraje / 15000) * 15000 + 15000;
                   const kmRestantes = Math.max(0, kmProximoService - vehicle.kilometraje);
+                  const isRemolcado = ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CARRETON', 'BATEA', 'BITREN', 'ACOPLADO'].includes(vehicle.tipo);
 
                   return (
                     <tr key={vehicle.id} className="table-row">
@@ -161,6 +164,24 @@ export default function VehiclesPage() {
                           const b = getExpiryBadge(vehicle.vencimientoITV);
                           return <span className={b.cls}>{b.label}</span>;
                         })()}
+                      </td>
+
+                      <td className="px-4 py-3 text-xs">
+                        {(() => {
+                          const b = getExpiryBadge(vehicle.vencimientoCrim);
+                          return <span className={b.cls}>{b.label}</span>;
+                        })()}
+                      </td>
+
+                      <td className="px-4 py-3 text-xs">
+                        {isRemolcado ? (
+                          (() => {
+                            const b = getExpiryBadge(vehicle.vencimientoSenasa);
+                            return <span className={b.cls}>{b.label}</span>;
+                          })()
+                        ) : (
+                          <span className="badge-gray">N/A</span>
+                        )}
                       </td>
 
                       <td className="px-4 py-3 text-right">

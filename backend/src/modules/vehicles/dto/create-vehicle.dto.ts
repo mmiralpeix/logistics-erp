@@ -30,6 +30,7 @@ export class CreateVehicleDto {
   @ApiPropertyOptional() @IsOptional() @IsNumber() tara?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() alturaM?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() largoM?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() anchoM?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() propietario?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isThirdParty?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsString() empresa?: string;

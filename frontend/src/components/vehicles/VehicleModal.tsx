@@ -119,6 +119,10 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
                   <input {...register('alturaM')} type="number" step="0.01" className="input" placeholder="4.00" />
                 </div>
                 <div>
+                  <label className="label">Ancho (m)</label>
+                  <input {...register('anchoM')} type="number" step="0.01" className="input" placeholder="2.60" />
+                </div>
+                <div>
                   <label className="label">Largo (m)</label>
                   <input {...register('largoM')} type="number" step="0.01" className="input" placeholder="13.60" />
                 </div>

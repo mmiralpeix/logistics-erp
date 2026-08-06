@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { vehiclesApi, reserveFundsApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
+import { TrailerDiagram } from './TrailerDiagram';
 import {
   X, Truck, Wrench, Fuel, CircleDot, FileText, ShieldAlert, ShieldCheck,
   Calendar, Activity, Gauge, MapPin, Award, Coins, ArrowUpRight, ArrowDownRight, Plus
@@ -38,6 +39,9 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
   const tires = vehicle?.tires || [];
   const docs = vehicle?.documents || [];
   const isRemolcado = ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CARRETON', 'BATEA', 'BITREN', 'ACOPLADO'].includes(vehicle?.tipo);
+  // Un remolque no tiene motor propio, así que si quedó seleccionada la pestaña de
+  // Telemetría Diésel de una unidad motriz previa, la redirigimos a Ficha Técnica.
+  const effectiveTab = isRemolcado && activeTab === 'fuel' ? 'tech' : activeTab;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-sm flex justify-end">
@@ -99,12 +103,14 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
           >
             Mantenimientos en Taller ({maintenances.length})
           </button>
-          <button
-            onClick={() => setActiveTab('fuel')}
-            className={`py-3 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'fuel' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}
-          >
-            Telemetría Diésel
-          </button>
+          {!isRemolcado && (
+            <button
+              onClick={() => setActiveTab('fuel')}
+              className={`py-3 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'fuel' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}
+            >
+              Telemetría Diésel
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('tires')}
             className={`py-3 border-b-2 whitespace-nowrap transition-colors ${activeTab === 'tires' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500'}`}
@@ -123,7 +129,7 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {isLoading ? (
             <div className="text-center py-12 text-slate-400 text-xs">Cargando expediente 360° del vehículo...</div>
-          ) : activeTab === 'tech' ? (
+          ) : effectiveTab === 'tech' ? (
             <div className="space-y-6">
               {/* Executive KPI Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -154,19 +160,29 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
 
               {/* Technical Specifications */}
               <div className="card p-5 space-y-4">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Especificaciones Técnicas del Chasis y Motor</h3>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  {isRemolcado ? 'Especificaciones Técnicas del Remolque' : 'Especificaciones Técnicas del Chasis y Motor'}
+                </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                   <div>
                     <span className="text-slate-400 block font-semibold">Número de Chasis / VIN</span>
                     <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{vehicle?.numeroChasis || 'No especificado'}</span>
                   </div>
+                  {!isRemolcado && (
+                    <>
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Número de Motor</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{vehicle?.numeroMotor || 'No especificado'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block font-semibold">Horas de Motor (Horómetro)</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.horasMotor?.toLocaleString()} hs</span>
+                      </div>
+                    </>
+                  )}
                   <div>
-                    <span className="text-slate-400 block font-semibold">Número de Motor</span>
-                    <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{vehicle?.numeroMotor || 'No especificado'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block font-semibold">Horas de Motor (Horómetro)</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.horasMotor?.toLocaleString()} hs</span>
+                    <span className="text-slate-400 block font-semibold">Año de Fabricación</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.anio || 'N/A'}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block font-semibold">Capacidad de Carga</span>
@@ -182,7 +198,7 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
               {isRemolcado && (
                 <div className="card p-5 space-y-4">
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Configuración del Remolque</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-xs">
                     <div>
                       <span className="text-slate-400 block font-semibold">N° de Ejes</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.cantidadEjes || 'N/A'}</span>
@@ -196,14 +212,28 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
                       <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.alturaM ? `${vehicle.alturaM} m` : 'N/A'}</span>
                     </div>
                     <div>
+                      <span className="text-slate-400 block font-semibold">Ancho</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.anchoM ? `${vehicle.anchoM} m` : 'N/A'}</span>
+                    </div>
+                    <div>
                       <span className="text-slate-400 block font-semibold">Largo</span>
                       <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.largoM ? `${vehicle.largoM} m` : 'N/A'}</span>
                     </div>
                   </div>
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <TrailerDiagram
+                      tipo={vehicle?.tipo}
+                      largoM={vehicle?.largoM}
+                      anchoM={vehicle?.anchoM}
+                      alturaM={vehicle?.alturaM}
+                      cantidadEjes={vehicle?.cantidadEjes}
+                    />
+                  </div>
                 </div>
               )}
             </div>
-          ) : activeTab === 'docs' ? (
+          ) : effectiveTab === 'docs' ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* VTV/ITV */}
@@ -270,7 +300,7 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
                 )}
               </div>
             </div>
-          ) : activeTab === 'maintenance' ? (
+          ) : effectiveTab === 'maintenance' ? (
             <div className="space-y-4">
               {/* Fondos de Reserva por Unidad (Resumen Financiero Taller) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
@@ -336,7 +366,7 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
                 </div>
               ))}
             </div>
-          ) : activeTab === 'fuel' ? (
+          ) : effectiveTab === 'fuel' ? (
             <div className="space-y-4">
               <div className="card overflow-hidden">
                 <table className="w-full text-xs">
@@ -365,7 +395,7 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
                 </table>
               </div>
             </div>
-          ) : activeTab === 'tires' ? (
+          ) : effectiveTab === 'tires' ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {tires.map((t: any) => (
