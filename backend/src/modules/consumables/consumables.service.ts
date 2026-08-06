@@ -178,6 +178,16 @@ export class ConsumablesService {
     };
   }
 
+  async getProviders() {
+    const rows = await this.prisma.fuelLog.findMany({
+      where: { proveedor: { not: null } },
+      select: { proveedor: true },
+      distinct: ['proveedor'],
+      orderBy: { proveedor: 'asc' },
+    });
+    return rows.map((r) => r.proveedor).filter((p) => p && p.trim());
+  }
+
   async getDeviations() {
     return this.prisma.fuelLog.findMany({
       where: { esDesvio: true },

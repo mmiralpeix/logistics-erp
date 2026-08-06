@@ -34,6 +34,11 @@ export class ConsumablesController {
     return this.consumablesService.getDeviations();
   }
 
+  @Get('providers')
+  getProviders() {
+    return this.consumablesService.getProviders();
+  }
+
   @Post()
   create(@Body() body: any) {
     return this.consumablesService.create(body);

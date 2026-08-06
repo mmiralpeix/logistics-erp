@@ -51,6 +51,7 @@ export default function ConsumablesPage() {
       qc.invalidateQueries({ queryKey: ['consumables'] });
       qc.invalidateQueries({ queryKey: ['consumables-stats'] });
       qc.invalidateQueries({ queryKey: ['consumables-deviations'] });
+      qc.invalidateQueries({ queryKey: ['consumables-providers'] });
       setShowModal(false);
     },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al registrar consumible'),
@@ -264,6 +265,11 @@ function ConsumableModal({ onClose, onSave }: { onClose: () => void; onSave: (d:
     queryFn: () => vehiclesApi.getAll({ limit: 100, category: 'MOTRIZ' }).then((r) => r.data.data),
   });
 
+  const { data: providers } = useQuery({
+    queryKey: ['consumables-providers'],
+    queryFn: () => consumablesApi.getProviders().then((r) => r.data),
+  });
+
   const [form, setForm] = useState<any>({
     tipoConsumible: 'DIESEL',
     fecha: new Date().toISOString().slice(0, 10),
@@ -351,11 +357,15 @@ function ConsumableModal({ onClose, onSave }: { onClose: () => void; onSave: (d:
             <label className="label">Proveedor / Estación de Servicio</label>
             <input
               type="text"
+              list="providers-list"
               value={form.proveedor || ''}
               onChange={(e) => set('proveedor', e.target.value)}
               className="input"
               placeholder="Ej: YPF, Shell, Axion, Depósito Central..."
             />
+            <datalist id="providers-list">
+              {providers?.map((p: string) => <option key={p} value={p} />)}
+            </datalist>
           </div>
 
           <div className="col-span-2">

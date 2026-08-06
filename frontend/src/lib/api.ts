@@ -187,6 +187,7 @@ export const consumablesApi = {
   create: (data: any) => api.post('/consumables', data),
   getStats: (params?: any) => api.get('/consumables/stats', { params }),
   getDeviations: () => api.get('/consumables/deviations'),
+  getProviders: () => api.get('/consumables/providers'),
 };
 
 export const fuelApi = consumablesApi;
