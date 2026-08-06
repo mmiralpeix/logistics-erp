@@ -415,7 +415,7 @@ function NewCertificationModal({ onClose, onSuccess }: { onClose: () => void; on
   const [observaciones, setObservaciones] = useState('');
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
 
-  const { data: clients } = useQuery({ queryKey: ['clients-cert-modal'], queryFn: () => clientsApi.getAll({ limit: 100 }).then((r) => r.data.data) });
+  const { data: clients } = useQuery({ queryKey: ['clients-select'], queryFn: () => clientsApi.getAll({ limit: 100 }).then((r) => r.data.data) });
   const { data: uncertifiedTrips, isLoading: isLoadingTrips } = useQuery({
     queryKey: ['uncertified-trips', selectedClient],
     queryFn: () => certificationsApi.getUncertifiedTrips(selectedClient || undefined).then((r) => r.data),
@@ -592,7 +592,7 @@ function NewCertificationModal({ onClose, onSuccess }: { onClose: () => void; on
 
 // MODAL COMPONENT FOR AFIP INVOICE
 function InvoiceModal({ initialData, onClose, onSave }: { initialData?: any; onClose: () => void; onSave: (d: any) => void }) {
-  const { data: clients } = useQuery({ queryKey: ['clients-inv'], queryFn: () => clientsApi.getAll({ limit: 100 }).then((r) => r.data.data) });
+  const { data: clients } = useQuery({ queryKey: ['clients-select'], queryFn: () => clientsApi.getAll({ limit: 100 }).then((r) => r.data.data) });
   
   const [form, setForm] = useState<any>({
     clientId: initialData?.clientId || '',

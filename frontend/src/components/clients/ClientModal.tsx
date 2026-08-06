@@ -27,6 +27,7 @@ export function ClientModal({ client, onClose }: Props) {
     onSuccess: () => {
       toast.success(isEdit ? 'Cliente actualizado' : 'Cliente creado');
       qc.invalidateQueries({ queryKey: ['clients'] });
+      qc.invalidateQueries({ queryKey: ['clients-select'] });
       onClose();
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Error al guardar'),

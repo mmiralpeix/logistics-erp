@@ -30,7 +30,7 @@ export default function ClientsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => clientsApi.remove(id),
-    onSuccess: () => { toast.success('Cliente eliminado'); qc.invalidateQueries({ queryKey: ['clients'] }); },
+    onSuccess: () => { toast.success('Cliente eliminado'); qc.invalidateQueries({ queryKey: ['clients'] }); qc.invalidateQueries({ queryKey: ['clients-select'] }); },
     onError: () => toast.error('Error al eliminar cliente'),
   });
 
