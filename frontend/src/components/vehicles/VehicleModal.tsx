@@ -10,7 +10,7 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
   const qc = useQueryClient();
   const isEdit = !!vehicle;
 
-  const { register, handleSubmit, watch, formState: { isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, setValue, formState: { isSubmitting } } = useForm({
     defaultValues: vehicle || { tipo: 'TRACTOR', status: 'DISPONIBLE', anio: new Date().getFullYear(), kilometraje: 0, cantidadEjes: 3 },
     shouldUnregister: true,
   });
@@ -44,7 +44,12 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
           <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="label">Patente / Dominio *</label>
-              <input {...register('patente', { required: true })} className="input uppercase" placeholder="AB 123 CD" />
+              <input
+                {...register('patente', { required: true })}
+                onChange={(e) => setValue('patente', e.target.value.toUpperCase(), { shouldValidate: true })}
+                className="input uppercase"
+                placeholder="AB 123 CD"
+              />
             </div>
             <div>
               <label className="label">Marca *</label>

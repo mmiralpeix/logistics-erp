@@ -66,11 +66,13 @@ export class VehiclesService {
   }
 
   async create(dto: CreateVehicleDto) {
+    if (dto.patente) dto.patente = dto.patente.toUpperCase().trim();
     return this.prisma.vehicle.create({ data: dto });
   }
 
   async update(id: string, dto: UpdateVehicleDto) {
     await this.findOne(id);
+    if (dto.patente) dto.patente = dto.patente.toUpperCase().trim();
     return this.prisma.vehicle.update({ where: { id }, data: dto });
   }
 
