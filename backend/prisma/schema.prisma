@@ -276,12 +276,17 @@ model Vehicle {
   vencimientoITV          DateTime?
   vencimientoRUTA         DateTime?
   vencimientoEstanqueidad DateTime?
+  vencimientoSenasa       DateTime?
+  vencimientoCrim         DateTime?
   numeroSeguro            String?
   aseguradora             String?
 
   cantidadEjes            Int?
   cantidadCompartimentos  Int?
   tipoEnganche            String?
+  tara                    Float?
+  alturaM                 Float?
+  largoM                  Float?
 
   isActive  Boolean  @default(true)
   notas     String?

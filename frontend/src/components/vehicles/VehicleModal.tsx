@@ -105,8 +105,8 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
                   <input {...register('cantidadEjes')} type="number" className="input" placeholder="3" />
                 </div>
                 <div>
-                  <label className="label">Tipo de Enganche</label>
-                  <input {...register('tipoEnganche')} className="input" placeholder="Perno Rey 2 pulg / Perno 3.5 pulg" />
+                  <label className="label">Tara (kg)</label>
+                  <input {...register('tara')} type="number" className="input" placeholder="7500" />
                 </div>
                 {isCisterna && (
                   <div>
@@ -114,6 +114,18 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
                     <input {...register('cantidadCompartimentos')} type="number" className="input" placeholder="3" />
                   </div>
                 )}
+                <div>
+                  <label className="label">Altura (m)</label>
+                  <input {...register('alturaM')} type="number" step="0.01" className="input" placeholder="4.00" />
+                </div>
+                <div>
+                  <label className="label">Largo (m)</label>
+                  <input {...register('largoM')} type="number" step="0.01" className="input" placeholder="13.60" />
+                </div>
+                <div>
+                  <label className="label">Vcto. SENASA</label>
+                  <input {...register('vencimientoSenasa')} type="date" className="input" />
+                </div>
               </div>
             )}
 
@@ -137,6 +149,10 @@ export function VehicleModal({ vehicle, onClose }: { vehicle?: any; onClose: () 
             <div>
               <label className="label">Vcto. ITV / RTO</label>
               <input {...register('vencimientoITV')} type="date" className="input" />
+            </div>
+            <div>
+              <label className="label">Vcto. CRIM</label>
+              <input {...register('vencimientoCrim')} type="date" className="input" />
             </div>
 
             {isCisterna && (

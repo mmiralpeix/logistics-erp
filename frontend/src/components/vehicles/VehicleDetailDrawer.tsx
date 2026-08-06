@@ -37,6 +37,7 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
   const fuelLogs = vehicle?.fuelLogs || [];
   const tires = vehicle?.tires || [];
   const docs = vehicle?.documents || [];
+  const isRemolcado = ['SEMIRREMOLQUE', 'SEMI_CISTERNA', 'CARRETON', 'BATEA', 'BITREN', 'ACOPLADO'].includes(vehicle?.tipo);
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-sm flex justify-end">
@@ -175,12 +176,32 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
                     <span className="text-slate-400 block font-semibold">Tipo de Carga Habilitada</span>
                     <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.tipoCarga || 'General'}</span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 block font-semibold">Configuración de Enganche</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.tipoEnganche || 'Plato de Enganche 2"'}</span>
-                  </div>
                 </div>
               </div>
+
+              {isRemolcado && (
+                <div className="card p-5 space-y-4">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">Configuración del Remolque</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                    <div>
+                      <span className="text-slate-400 block font-semibold">N° de Ejes</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.cantidadEjes || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-semibold">Tara</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.tara ? `${vehicle.tara.toLocaleString()} kg` : 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-semibold">Altura</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.alturaM ? `${vehicle.alturaM} m` : 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block font-semibold">Largo</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{vehicle?.largoM ? `${vehicle.largoM} m` : 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : activeTab === 'docs' ? (
             <div className="space-y-4">
@@ -215,6 +236,38 @@ export function VehicleDetailDrawer({ vehicleId, onClose }: VehicleDetailDrawerP
                   </p>
                   <p className="text-[11px] text-slate-500">{vehicle?.aseguradora} (Póliza N° {vehicle?.numeroSeguro || 'S/D'})</p>
                 </div>
+
+                {/* CRIM */}
+                <div className="card p-4 space-y-2 border-l-4 border-l-amber-600">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">CRIM</span>
+                    {vehicle?.vencimientoCrim && new Date(vehicle.vencimientoCrim) < new Date() ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-700">VENCIDO</span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-700">VIGENTE</span>
+                    )}
+                  </div>
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+                    {vehicle?.vencimientoCrim ? new Date(vehicle.vencimientoCrim).toLocaleDateString() : 'Sin registrar'}
+                  </p>
+                </div>
+
+                {/* SENASA - solo unidades remolcadas */}
+                {isRemolcado && (
+                  <div className="card p-4 space-y-2 border-l-4 border-l-emerald-600">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">SENASA</span>
+                      {vehicle?.vencimientoSenasa && new Date(vehicle.vencimientoSenasa) < new Date() ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-700">VENCIDO</span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-700">VIGENTE</span>
+                      )}
+                    </div>
+                    <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+                      {vehicle?.vencimientoSenasa ? new Date(vehicle.vencimientoSenasa).toLocaleDateString() : 'Sin registrar'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           ) : activeTab === 'maintenance' ? (

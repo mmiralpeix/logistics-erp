@@ -20,11 +20,16 @@ export class CreateVehicleDto {
   @ApiPropertyOptional() @IsOptional() @IsDateString() vencimientoITV?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() vencimientoRUTA?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() vencimientoEstanqueidad?: string;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() vencimientoSenasa?: string;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() vencimientoCrim?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() numeroSeguro?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() aseguradora?: string;
   @ApiPropertyOptional() @IsOptional() @IsInt() cantidadEjes?: number;
   @ApiPropertyOptional() @IsOptional() @IsInt() cantidadCompartimentos?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() tipoEnganche?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() tara?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() alturaM?: number;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() largoM?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() propietario?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isThirdParty?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsString() empresa?: string;
