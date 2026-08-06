@@ -446,7 +446,8 @@ function NewCertificationModal({ onClose, onSuccess }: { onClose: () => void; on
 
   // Calculations
   const selectedTripsObj = uncertifiedTrips?.filter((t: any) => selectedTripIds.includes(t.id)) || [];
-  const totalAmount = selectedTripsObj.reduce((s: number, t: any) => s + (t.tarifaAcordada || 0) + (t.montoExcedente || 0), 0);
+  // tarifaAcordada ya incluye el excedente (base + excedente-por-Tn) - sumarlo de nuevo lo duplica.
+  const totalAmount = selectedTripsObj.reduce((s: number, t: any) => s + (t.tarifaAcordada || 0), 0);
   const getTripExcessTn = (t: any) => {
     if (t.pesoExcedenteKg) return t.pesoExcedenteKg / 1000;
     if (t.pesoCarga && t.pesoCarga > 30000) return (t.pesoCarga - 30000) / 1000;
@@ -550,7 +551,7 @@ function NewCertificationModal({ onClose, onSuccess }: { onClose: () => void; on
                           <td className="p-2 text-right font-mono font-semibold text-amber-700 dark:text-amber-300">
                             {getTripExcessTn(t) > 0 ? `${getTripExcessTn(t).toFixed(2)} Tn` : '-'}
                           </td>
-                          <td className="p-2 text-right font-bold">{formatMoney((t.tarifaAcordada || 0) + (t.montoExcedente || 0))}</td>
+                          <td className="p-2 text-right font-bold">{formatMoney(t.tarifaAcordada || 0)}</td>
                         </tr>
                       ))}
                     </tbody>
