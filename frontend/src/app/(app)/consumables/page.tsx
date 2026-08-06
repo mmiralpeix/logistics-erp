@@ -270,6 +270,8 @@ function ConsumableModal({ onClose, onSave }: { onClose: () => void; onSave: (d:
     queryFn: () => consumablesApi.getProviders().then((r) => r.data),
   });
 
+  const [isAddingProvider, setIsAddingProvider] = useState(false);
+
   const [form, setForm] = useState<any>({
     tipoConsumible: 'DIESEL',
     fecha: new Date().toISOString().slice(0, 10),
@@ -355,17 +357,38 @@ function ConsumableModal({ onClose, onSave }: { onClose: () => void; onSave: (d:
 
           <div>
             <label className="label">Proveedor / Estación de Servicio</label>
-            <input
-              type="text"
-              list="providers-list"
-              value={form.proveedor || ''}
-              onChange={(e) => set('proveedor', e.target.value)}
-              className="input"
-              placeholder="Ej: YPF, Shell, Axion, Depósito Central..."
-            />
-            <datalist id="providers-list">
-              {providers?.map((p: string) => <option key={p} value={p} />)}
-            </datalist>
+            {isAddingProvider ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  autoFocus
+                  value={form.proveedor || ''}
+                  onChange={(e) => set('proveedor', e.target.value)}
+                  className="input"
+                  placeholder="Ej: Axion Güemes"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsAddingProvider(false)}
+                  className="px-3 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:hover:text-white whitespace-nowrap"
+                >
+                  Volver a la lista
+                </button>
+              </div>
+            ) : (
+              <select
+                value={form.proveedor || ''}
+                onChange={(e) => {
+                  if (e.target.value === '__new__') { setIsAddingProvider(true); set('proveedor', ''); }
+                  else set('proveedor', e.target.value);
+                }}
+                className="input"
+              >
+                <option value="">Seleccionar proveedor...</option>
+                {providers?.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                <option value="__new__">+ Agregar nuevo proveedor...</option>
+              </select>
+            )}
           </div>
 
           <div className="col-span-2">
