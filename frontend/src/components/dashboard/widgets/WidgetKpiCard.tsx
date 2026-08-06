@@ -27,7 +27,7 @@ export function WidgetKpiCard({ type, stats, tireKpis }: WidgetKpiCardProps) {
               {stats?.fleet?.total || 0}
             </span>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-              {stats?.fleet?.available || 0} disponibles · {stats?.fleet?.inTrip || 0} en viaje
+              {stats?.fleet?.motriz || 0} motrices · {stats?.fleet?.remolcado || 0} remolcadas
             </p>
           </div>
         </div>

@@ -14,6 +14,7 @@ export class DashboardService {
 
     const [
       totalVehicles, availableVehicles, inTripVehicles, maintenanceVehicles,
+      motrizVehicles, remolcadoVehicles,
       totalDrivers, activeTrips, pendingTrips, completedThisMonth,
       cancelledThisMonth, totalClients,
       monthlyRevenue, monthlyCosts, monthlyFuel,
@@ -23,6 +24,8 @@ export class DashboardService {
       this.prisma.vehicle.count({ where: { isActive: true, status: VehicleStatus.DISPONIBLE } }),
       this.prisma.vehicle.count({ where: { isActive: true, status: VehicleStatus.EN_VIAJE } }),
       this.prisma.vehicle.count({ where: { isActive: true, status: VehicleStatus.EN_MANTENIMIENTO } }),
+      this.prisma.vehicle.count({ where: { isActive: true, tipo: { in: ['CAMION', 'TRACTOR', 'CAMIONETA', 'EQUIPO_ESPECIAL'] } } }),
+      this.prisma.vehicle.count({ where: { isActive: true, tipo: { notIn: ['CAMION', 'TRACTOR', 'CAMIONETA', 'EQUIPO_ESPECIAL'] } } }),
       this.prisma.driver.count({ where: { isActive: true } }),
       this.prisma.trip.count({ where: { status: TripStatus.EN_CURSO } }),
       this.prisma.trip.count({ where: { status: { in: [TripStatus.PENDIENTE, TripStatus.PROGRAMADO] } } }),
@@ -56,6 +59,8 @@ export class DashboardService {
         available: availableVehicles,
         inTrip: inTripVehicles,
         inMaintenance: maintenanceVehicles,
+        motriz: motrizVehicles,
+        remolcado: remolcadoVehicles,
         utilizationRate: totalVehicles > 0 ? Math.round((inTripVehicles / totalVehicles) * 100) : 0,
       },
       drivers: { total: totalDrivers },
