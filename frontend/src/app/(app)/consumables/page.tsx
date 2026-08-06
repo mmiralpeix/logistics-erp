@@ -261,7 +261,7 @@ export default function ConsumablesPage() {
 function ConsumableModal({ onClose, onSave }: { onClose: () => void; onSave: (d: any) => void }) {
   const { data: vehicles } = useQuery({
     queryKey: ['vehicles-consumables'],
-    queryFn: () => vehiclesApi.getAll({ limit: 100 }).then((r) => r.data.data),
+    queryFn: () => vehiclesApi.getAll({ limit: 100, category: 'MOTRIZ' }).then((r) => r.data.data),
   });
 
   const [form, setForm] = useState<any>({
