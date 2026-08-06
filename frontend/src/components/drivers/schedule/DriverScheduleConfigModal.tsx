@@ -153,7 +153,7 @@ export function DriverScheduleConfigModal({ driver, onClose, onSave }: DriverSch
                 <input
                   type="date"
                   value={form.fechaInicioTurno}
-                  onChange={(e) => setForm((f) => ({ ...f, fechaInicioTurno: e.target.value, fechaInicioDescanso: '' }))}
+                  onChange={(e) => setForm((f) => ({ ...f, fechaInicioTurno: e.target.value }))}
                   className="input w-full text-xs py-1.5"
                 />
               </div>
@@ -163,11 +163,16 @@ export function DriverScheduleConfigModal({ driver, onClose, onSave }: DriverSch
                 <input
                   type="date"
                   value={form.fechaInicioDescanso}
-                  onChange={(e) => setForm((f) => ({ ...f, fechaInicioDescanso: e.target.value, fechaInicioTurno: '' }))}
+                  onChange={(e) => setForm((f) => ({ ...f, fechaInicioDescanso: e.target.value }))}
                   className="input w-full text-xs py-1.5"
                 />
               </div>
             </div>
+            {form.fechaInicioTurno && form.fechaInicioDescanso && (
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                Cargaste las dos fechas: el sistema va a considerar al chofer &quot;En Descanso&quot; (esa fecha manda sobre el turno de ruta).
+              </p>
+            )}
           </div>
 
           {/* Footer Actions */}
