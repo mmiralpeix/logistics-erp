@@ -5,9 +5,10 @@ import { clientsApi } from '@/lib/api';
 import { formatMoney } from '@/lib/utils';
 import {
   X, Building2, Phone, Mail, MapPin, ShieldAlert, CreditCard,
-  FileText, MapPin as MapPinIcon, DollarSign, Plus, Trash2, ShieldCheck, Award
+  FileText, MapPin as MapPinIcon, DollarSign, Plus, Trash2, ShieldCheck, Award, Pencil
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ContractModal } from './ContractModal';
 
 interface ClientDetailDrawerProps {
   clientId: string | null;
@@ -17,6 +18,7 @@ interface ClientDetailDrawerProps {
 export function ClientDetailDrawer({ clientId, onClose }: ClientDetailDrawerProps) {
   const [activeTab, setActiveTab] = useState<'info' | 'contracts' | 'trips' | 'billing' | 'rates'>('info');
   const [newRate, setNewRate] = useState({ origen: '', destino: '', tipoCarga: 'GENERAL', tarifaBase: '', costoPorTnExcedente: '', horasEsperaLibres: '2' });
+  const [editingContract, setEditingContract] = useState<any>(null);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -203,9 +205,18 @@ export function ClientDetailDrawer({ clientId, onClose }: ClientDetailDrawerProp
                         <span className="font-extrabold text-sm text-slate-900 dark:text-white">{c.numero}</span>
                         <p className="text-xs text-slate-500">{c.descripcion || 'Sin descripción'}</p>
                       </div>
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                        {c.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                          {c.status}
+                        </span>
+                        <button
+                          onClick={() => setEditingContract(c)}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                          title="Editar Órden de Compra"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
@@ -409,6 +420,17 @@ export function ClientDetailDrawer({ clientId, onClose }: ClientDetailDrawerProp
           )}
         </div>
       </div>
+
+      {editingContract && (
+        <ContractModal
+          clientId={clientId}
+          contract={editingContract}
+          onClose={() => {
+            setEditingContract(null);
+            qc.invalidateQueries({ queryKey: ['client-summary-360', clientId] });
+          }}
+        />
+      )}
     </div>
   );
 }
