@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Delete, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TiresService } from './tires.service';
 import { CreateTireDto } from './dto/create-tire.dto';
@@ -106,5 +106,12 @@ export class TiresController {
   @ApiOperation({ summary: 'Dar de baja definitiva al neumático' })
   retire(@Param('id') id: string, @Body('motivo') motivo: string) {
     return this.tiresService.retire(id, motivo);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Eliminar registro de neumático' })
+  remove(@Param('id') id: string) {
+    return this.tiresService.remove(id);
   }
 }

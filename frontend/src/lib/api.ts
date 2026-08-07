@@ -179,6 +179,7 @@ export const tiresApi = {
   receiveFromRetread: (id: string, data: any) => api.post(`/maintenance/tires/${id}/retread/receive`, data),
   recordInspection: (id: string, data: any) => api.post(`/maintenance/tires/${id}/inspection`, data),
   retire: (id: string, motivo: string) => api.post(`/maintenance/tires/${id}/retire`, { motivo }),
+  remove: (id: string) => api.delete(`/maintenance/tires/${id}`),
   exportReport: (params?: any) => api.get('/maintenance/tires/export', { params }),
 };
 

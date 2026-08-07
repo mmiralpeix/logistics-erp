@@ -1,7 +1,7 @@
 'use client';
 import { getTireStatusBadge, getTireDepthInfo, formatPositionLabel, formatCPK } from '@/lib/tire-utils';
 import { formatDate, formatMoney } from '@/lib/utils';
-import { QrCode, Truck, RefreshCw, Eye, Wrench, ShieldAlert, ArrowRightLeft, History, Edit2, AlertCircle } from 'lucide-react';
+import { QrCode, Truck, RefreshCw, Eye, Wrench, ShieldAlert, ArrowRightLeft, History, Edit2, Trash2, AlertCircle } from 'lucide-react';
 
 interface TireCardProps {
   tire: any;
@@ -13,6 +13,7 @@ interface TireCardProps {
   onViewHistory: (tire: any) => void;
   onEdit: (tire: any) => void;
   onShowQR: (tire: any) => void;
+  onDelete: (tire: any) => void;
 }
 
 export function TireCard({
@@ -25,6 +26,7 @@ export function TireCard({
   onViewHistory,
   onEdit,
   onShowQR,
+  onDelete,
 }: TireCardProps) {
   const badge = getTireStatusBadge(tire.status);
   const depthInfo = getTireDepthInfo(tire.profundidadActualMm, tire.profundidadInicialMm);
@@ -74,6 +76,15 @@ export function TireCard({
             title="Editar especificaciones"
           >
             <Edit2 className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onDelete(tire)}
+            className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-colors"
+            title="Eliminar neumático"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

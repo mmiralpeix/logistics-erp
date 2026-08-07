@@ -178,6 +178,16 @@ function MaintenanceContent() {
     },
   });
 
+  const deleteTireMutation = useMutation({
+    mutationFn: (id: string) => tiresApi.remove(id),
+    onSuccess: () => {
+      toast.success('Neumático eliminado');
+      qc.invalidateQueries({ queryKey: ['maintenance-tires'] });
+      qc.invalidateQueries({ queryKey: ['maintenance-tires-kpis'] });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Error al eliminar el neumático'),
+  });
+
   const handleEdit = (ot: any) => {
     setEditData(ot);
     setShowModal(true);
@@ -846,6 +856,11 @@ function MaintenanceContent() {
                       onViewHistory={(t) => setTimelineTireId(t.id)}
                       onEdit={(t) => { setEditTireData(t); setShowTireModal(true); }}
                       onShowQR={(t) => setTimelineTireId(t.id)}
+                      onDelete={(t) => {
+                        if (confirm(`¿Eliminar el neumático ${t.codigoInterno}? Esta acción no se puede deshacer.`)) {
+                          deleteTireMutation.mutate(t.id);
+                        }
+                      }}
                     />
                   ))}
                 </div>

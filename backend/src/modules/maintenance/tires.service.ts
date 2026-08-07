@@ -538,6 +538,12 @@ export class TiresService {
     return updated;
   }
 
+  async remove(id: string) {
+    const tire = await this.prisma.tire.findUnique({ where: { id } });
+    if (!tire) throw new NotFoundException('Neumático no encontrado');
+    return this.prisma.tire.delete({ where: { id } });
+  }
+
   async exportReport(query: any = {}) {
     const res = await this.findAll({ ...query, limit: 1000 });
     return res.data.map((t: any) => ({
