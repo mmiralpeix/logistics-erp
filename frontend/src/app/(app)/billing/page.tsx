@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { billingApi, clientsApi, certificationsApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
-import { formatDate, formatMoney, INVOICE_STATUS_MAP } from '@/lib/utils';
+import { formatDate, formatMoney, formatOCNumber, INVOICE_STATUS_MAP } from '@/lib/utils';
 import { Plus, Receipt, DollarSign, AlertTriangle, CheckCircle, Clock, FileCheck, Layers, Calendar, ArrowRight, Trash2, Eye, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -462,7 +462,7 @@ function NewCertificationModal({ onClose, onSuccess }: { onClose: () => void; on
 
     createCertMutation.mutate({
       clientId: selectedClient,
-      numeroOC: selectedOC,
+      numeroOC: selectedOC ? formatOCNumber(selectedOC) : selectedOC,
       periodo: periodo || `Certificación ${new Date().toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}`,
       tripIds: selectedTripIds,
       observaciones,
