@@ -5,7 +5,7 @@ import { tripsApi, vehiclesApi, driversApi, clientsApi, carriersApi } from '@/li
 import toast from 'react-hot-toast';
 import { X, Map, Lock, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatOCNumber } from '@/lib/utils';
 import { OperationModeSection } from './modal-sections/OperationModeSection';
 import { ClientAndContractSection } from './modal-sections/ClientAndContractSection';
 import { FleetAssignmentSection } from './modal-sections/FleetAssignmentSection';
@@ -115,10 +115,7 @@ export function TripModal({ trip, onClose, onSave }: { trip?: any; onClose: () =
         setValue('montoExcedente', roundedExcessAmount);
       }
       if (activeContract.numero) {
-        const ocFormatted = activeContract.numero.startsWith('OC')
-          ? activeContract.numero
-          : `OC N°${activeContract.numero}`;
-        setValue('numeroOCCliente', ocFormatted);
+        setValue('numeroOCCliente', formatOCNumber(activeContract.numero));
       }
     }
   }, [selectedContractId, pesoCargaKg, activeContract, calculatedTotalRate, excessAmount, excessKg, tarifaOverridden, setValue]);

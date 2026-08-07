@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { FileCheck, Lock, Unlock } from 'lucide-react';
 import { CARGO_TYPES } from '@/lib/constants';
+import { stripOCPrefix } from '@/lib/utils';
 
 export function CargoAndDocsSection({
   register,
@@ -33,7 +34,7 @@ export function CargoAndDocsSection({
           {hasContract && (
             <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-200/60 dark:bg-amber-900/60 px-2 py-0.5 rounded-md flex items-center gap-1 border border-amber-300 dark:border-amber-700/50">
               <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-              Contrato #{activeContract.numero}
+              Contrato #{stripOCPrefix(activeContract.numero)}
             </span>
           )}
         </div>

@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { tripsApi } from '@/lib/api';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, stripOCPrefix } from '@/lib/utils';
 import {
   X, MapPin, Truck, User, Building2, Calendar, Clock, DollarSign,
   FileText, ShieldCheck, Flame, Layers, Award, AlertCircle, Calculator
@@ -270,7 +270,7 @@ export function TripDetailDrawer({ tripId, onClose }: TripDetailDrawerProps) {
                       <div>
                         <span className="font-bold text-slate-800 dark:text-slate-200">Tarifa Base del Contrato</span>
                         <span className="text-slate-400 block text-[11px]">
-                          Contrato {trip.contract.numero} • hasta {((trip.contract.pesoMinimoKg || 0) / 1000).toFixed(1)} Tn garantizadas
+                          Contrato {stripOCPrefix(trip.contract.numero)} • hasta {((trip.contract.pesoMinimoKg || 0) / 1000).toFixed(1)} Tn garantizadas
                         </span>
                       </div>
                       <span className="font-black text-slate-900 dark:text-white text-sm">{formatMoney(trip.contract.tarifaBase)}</span>

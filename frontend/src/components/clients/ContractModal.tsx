@@ -2,6 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { clientsApi } from '@/lib/api';
+import { stripOCPrefix } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import { X, FileText, CheckCircle } from 'lucide-react';
 
@@ -37,6 +38,7 @@ export function ContractModal({ clientId, contract, onClose }: Props) {
     mutationFn: (data: any) => {
       const payload: any = {
         ...data,
+        numero: stripOCPrefix(data.numero) || data.numero,
         cantidadViajes: data.cantidadViajes !== '' && data.cantidadViajes !== null && data.cantidadViajes !== undefined ? Number(data.cantidadViajes) : null,
         pesoMinimoKg: data.pesoMinimoTn !== '' && data.pesoMinimoTn !== null && data.pesoMinimoTn !== undefined ? Number(data.pesoMinimoTn) * 1000 : null,
         tarifaBase: data.tarifaBase !== '' && data.tarifaBase !== null && data.tarifaBase !== undefined ? Number(data.tarifaBase) : null,

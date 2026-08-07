@@ -1,6 +1,6 @@
 'use client';
 import { Zap, Calculator, RotateCcw } from 'lucide-react';
-import { formatMoney, formatWeight } from '@/lib/utils';
+import { formatMoney, formatWeight, stripOCPrefix } from '@/lib/utils';
 
 export function FinancialsSection({
   register,
@@ -113,7 +113,7 @@ export function FinancialsSection({
         <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs space-y-1.5">
           <div className="flex items-center justify-between font-bold text-amber-900 dark:text-amber-300">
             <span className="flex items-center gap-1.5">
-              <Calculator className="w-4 h-4 text-amber-600" /> Desglose por Contrato ({activeContract.numero})
+              <Calculator className="w-4 h-4 text-amber-600" /> Desglose por Contrato ({stripOCPrefix(activeContract.numero)})
             </span>
             <span className="text-sm font-extrabold">{formatMoney(calculatedTotalRate)}</span>
           </div>

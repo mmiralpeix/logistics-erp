@@ -1,5 +1,5 @@
 'use client';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, stripOCPrefix } from '@/lib/utils';
 
 export function ClientAndContractSection({
   register,
@@ -44,7 +44,7 @@ export function ClientAndContractSection({
         <select {...register('contractId')} className="input w-full text-sm font-medium" disabled={isLocked || !selectedClientId}>
           <option value="">{selectedClientId ? 'Sin contrato específico' : 'Seleccione cliente primero...'}</option>
           {clientContracts?.map((c: any) => (
-            <option key={c.id} value={c.id}>#{c.numero} — {c.descripcion || 'Contrato Estándar'}</option>
+            <option key={c.id} value={c.id}>#{stripOCPrefix(c.numero)} — {c.descripcion || 'Contrato Estándar'}</option>
           ))}
         </select>
       </div>

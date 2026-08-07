@@ -32,6 +32,19 @@ export function formatNumber(n: number | null | undefined) {
   return new Intl.NumberFormat('es-AR').format(n);
 }
 
+// Algunas OC quedaron cargadas con el prefijo "oc n°" escrito a mano como parte
+// del número (en vez de solo el código), en cualquier combinación de mayúsculas.
+// Lo sacamos antes de anteponer un "OC N°" limpio, para no duplicarlo.
+export function stripOCPrefix(numero?: string | null): string {
+  if (!numero) return '';
+  return numero.replace(/^\s*oc\s*n[°ºo]?\.?\s*/i, '').trim();
+}
+
+export function formatOCNumber(numero?: string | null): string {
+  const cleaned = stripOCPrefix(numero);
+  return cleaned ? `OC N°${cleaned}` : '';
+}
+
 export function formatDistance(km: number | null | undefined) {
   if (km === null || km === undefined) return '-';
   return `${new Intl.NumberFormat('es-AR').format(km)} km`;

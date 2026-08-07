@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { clientsApi, vehiclesApi, driversApi, carriersApi } from '@/lib/api';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatOCNumber, stripOCPrefix } from '@/lib/utils';
 import { CARGO_TYPES } from '@/lib/constants';
 import { Plus, Trash2, Truck, UserCheck, ShieldAlert, Layers, MapPin, Calendar, DollarSign, FileCheck, FileText, Container, Building2, Lock, Unlock } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -83,9 +83,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
     const selected = clientContracts?.find((c: any) => c.id === contractId);
     setIsOcUnlocked(false);
     setForm((prev: any) => {
-      const ocValue = selected?.numero
-        ? (selected.numero.startsWith('OC') ? selected.numero : `OC N°${selected.numero}`)
-        : '';
+      const ocValue = selected?.numero ? formatOCNumber(selected.numero) : '';
       const newTariff = selected
         ? applyContractTariff(selected, prev.pesoCargaGenericoKg, ocValue || prev.numeroOCCliente)
         : prev.tarifaGenerica;
@@ -276,7 +274,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                 >
                   <option value="">{form.clientId ? 'Sin contrato específico' : 'Seleccione cliente primero...'}</option>
                   {clientContracts?.map((c: any) => (
-                    <option key={c.id} value={c.id}>#{c.numero} — {c.descripcion || 'Contrato Estándar'}</option>
+                    <option key={c.id} value={c.id}>#{stripOCPrefix(c.numero)} — {c.descripcion || 'Contrato Estándar'}</option>
                   ))}
                 </select>
               </div>
@@ -328,7 +326,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                 </div>
                 {isOcLocked && (
                   <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-1 font-medium">
-                    🔒 Bloqueada por Contrato Corporativo #{activeContract.numero}. Hacé clic en &quot;Modificar&quot; para cambiar.
+                    🔒 Bloqueada por Contrato Corporativo #{stripOCPrefix(activeContract.numero)}. Hacé clic en &quot;Modificar&quot; para cambiar.
                   </p>
                 )}
               </div>
@@ -475,7 +473,7 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                     <th className="px-3 py-3 text-center w-10">#</th>
                     <th className="px-3 py-3 text-left w-44">Modalidad</th>
                     <th className="px-3 py-3 text-left min-w-[220px]">
-                      <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-blue-600" /> Camión / Operador *</span>
+                      <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-blue-600" /> Tractor / Operador *</span>
                     </th>
                     <th className="px-3 py-3 text-left min-w-[200px]">
                       <span className="flex items-center gap-1"><UserCheck className="w-3.5 h-3.5 text-emerald-600" /> Conductor / Chofer</span>
@@ -554,8 +552,8 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                               onChange={(e) => updateAssignment(idx, 'vehicleId', e.target.value)}
                               className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-900 dark:text-white"
                             >
-                              <option value="">Elegir Camión de Flota...</option>
-                              {vehicles?.map((v: any) => (
+                              <option value="">Elegir Tractor...</option>
+                              {vehicles?.filter((v: any) => v.tipo === 'TRACTOR').map((v: any) => (
                                 <option key={v.id} value={v.id}>{v.patente} — {v.marca} {v.modelo}</option>
                               ))}
                             </select>
