@@ -3,10 +3,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { driversApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
-import { formatDate, getExpiryBadge } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { Plus, Search, Phone, Mail, Edit2, Trash2, Calendar, Users, Clock, ShieldCheck, FileSpreadsheet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { DriverModal } from '@/components/drivers/DriverModal';
+import { ExpiryCell } from '@/components/ui/ExpiryCell';
 
 // Driver Schedule Submodule Components
 import { DriverScheduleKPIs } from '@/components/drivers/schedule/DriverScheduleKPIs';
@@ -243,10 +244,10 @@ export default function DriversPage() {
                   <tr className="table-header">
                     <th className="px-4 py-3 text-left">Conductor</th>
                     <th className="px-4 py-3 text-left">Contacto</th>
-                    <th className="px-4 py-3 text-left">Licencia</th>
-                    <th className="px-4 py-3 text-left">Examen Médico</th>
-                    <th className="px-4 py-3 text-left">Psicofísico</th>
-                    <th className="px-4 py-3 text-left">C. Peligrosas</th>
+                    <th className="px-4 py-3 text-center">Licencia</th>
+                    <th className="px-4 py-3 text-center">Examen Médico</th>
+                    <th className="px-4 py-3 text-center">Psicofísico</th>
+                    <th className="px-4 py-3 text-center">C. Peligrosas</th>
                     <th className="px-4 py-3 text-left">Viajes</th>
                     <th className="px-4 py-3 text-right">Acciones</th>
                   </tr>
@@ -255,9 +256,6 @@ export default function DriversPage() {
                   {isLoading ? (
                     <tr><td colSpan={8} className="text-center py-12 text-slate-500 dark:text-slate-400">Cargando...</td></tr>
                   ) : data?.data?.map((driver: any) => {
-                    const licBadge = getExpiryBadge(driver.licenciaVencimiento);
-                    const medBadge = getExpiryBadge(driver.examenMedicoVencimiento);
-                    const psicoBadge = getExpiryBadge(driver.psicofisicoVencimiento);
                     return (
                       <tr key={driver.id} className="table-row">
                         <td className="px-4 py-3">
@@ -276,28 +274,24 @@ export default function DriversPage() {
                           {driver.email && <p className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><Mail className="w-3 h-3 text-slate-400" /> {driver.email}</p>}
                         </td>
                         <td className="px-4 py-3">
-                          <div>
-                            <span className="badge badge-gray text-xs mr-1">{driver.licenciaTipo}</span>
-                            <span className={licBadge.cls}>{licBadge.label}</span>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(driver.licenciaVencimiento)}</p>
-                          </div>
+                          <ExpiryCell date={driver.licenciaVencimiento} extra={driver.licenciaTipo} />
                         </td>
                         <td className="px-4 py-3">
-                          <span className={medBadge.cls}>{medBadge.label}</span>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(driver.examenMedicoVencimiento)}</p>
+                          <ExpiryCell date={driver.examenMedicoVencimiento} />
                         </td>
                         <td className="px-4 py-3">
-                          <span className={psicoBadge.cls}>{psicoBadge.label}</span>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(driver.psicofisicoVencimiento)}</p>
+                          <ExpiryCell date={driver.psicofisicoVencimiento} />
                         </td>
                         <td className="px-4 py-3">
                           {driver.habilitadoCargasPeligrosas ? (
-                            <div>
+                            <div className="flex flex-col items-center text-center gap-0.5">
                               <span className="badge badge-green text-xs">Habilitado</span>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{formatDate(driver.certificadoCargasPeligrosas)}</p>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{formatDate(driver.certificadoCargasPeligrosas)}</span>
                             </div>
                           ) : (
-                            <span className="badge badge-gray">No habilitado</span>
+                            <div className="flex flex-col items-center text-center">
+                              <span className="badge badge-gray">No habilitado</span>
+                            </div>
                           )}
                         </td>
                         <td className="px-4 py-3">

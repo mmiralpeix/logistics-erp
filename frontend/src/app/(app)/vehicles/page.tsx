@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { vehiclesApi } from '@/lib/api';
 import { Header } from '@/components/layout/Header';
-import { formatDate, VEHICLE_STATUS_MAP, VEHICLE_TYPE_MAP, getExpiryBadge } from '@/lib/utils';
+import { VEHICLE_STATUS_MAP, VEHICLE_TYPE_MAP } from '@/lib/utils';
+import { ExpiryCell } from '@/components/ui/ExpiryCell';
 import {
   Plus, Search, Truck, Edit2, Trash2, Eye, Gauge, Wrench, ShieldAlert, ShieldCheck
 } from 'lucide-react';
@@ -99,10 +100,10 @@ export default function VehiclesPage() {
                 <th className="px-4 py-3 text-left">Tipo & Especificaciones</th>
                 <th className="px-4 py-3 text-left">Estado</th>
                 <th className="px-4 py-3 text-left">Kilometraje / Service</th>
-                <th className="px-4 py-3 text-left">Seguro</th>
-                <th className="px-4 py-3 text-left">ITV / VTV</th>
-                <th className="px-4 py-3 text-left">CRIM</th>
-                <th className="px-4 py-3 text-left">SENASA</th>
+                <th className="px-4 py-3 text-center">Seguro</th>
+                <th className="px-4 py-3 text-center">ITV / VTV</th>
+                <th className="px-4 py-3 text-center">CRIM</th>
+                <th className="px-4 py-3 text-center">SENASA</th>
                 <th className="px-4 py-3 text-right">Acciones 360°</th>
               </tr>
             </thead>
@@ -153,35 +154,19 @@ export default function VehiclesPage() {
                       </td>
 
                       <td className="px-4 py-3 text-xs">
-                        {(() => {
-                          const b = getExpiryBadge(vehicle.vencimientoSeguro);
-                          return <span className={b.cls}>{b.label}</span>;
-                        })()}
+                        <ExpiryCell date={vehicle.vencimientoSeguro} />
                       </td>
 
                       <td className="px-4 py-3 text-xs">
-                        {(() => {
-                          const b = getExpiryBadge(vehicle.vencimientoITV);
-                          return <span className={b.cls}>{b.label}</span>;
-                        })()}
+                        <ExpiryCell date={vehicle.vencimientoITV} />
                       </td>
 
                       <td className="px-4 py-3 text-xs">
-                        {(() => {
-                          const b = getExpiryBadge(vehicle.vencimientoCrim);
-                          return <span className={b.cls}>{b.label}</span>;
-                        })()}
+                        <ExpiryCell date={vehicle.vencimientoCrim} />
                       </td>
 
                       <td className="px-4 py-3 text-xs">
-                        {isRemolcado ? (
-                          (() => {
-                            const b = getExpiryBadge(vehicle.vencimientoSenasa);
-                            return <span className={b.cls}>{b.label}</span>;
-                          })()
-                        ) : (
-                          <span className="badge-gray">N/A</span>
-                        )}
+                        <ExpiryCell date={vehicle.vencimientoSenasa} na={!isRemolcado} />
                       </td>
 
                       <td className="px-4 py-3 text-right">
