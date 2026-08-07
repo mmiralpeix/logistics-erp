@@ -77,8 +77,6 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
     return totalTariff;
   };
 
-  const currentExcess = hasContract ? calcContractTariff(activeContract, form.pesoCargaGenericoKg) : null;
-
   const handleContractChange = (contractId: string) => {
     const selected = clientContracts?.find((c: any) => c.id === contractId);
     setIsOcUnlocked(false);
@@ -356,24 +354,18 @@ export function BatchTripModal({ onClose, onSave, isLoading }: BatchTripModalPro
                 <input type="number" value={form.distanciaKm} onChange={(e) => setField('distanciaKm', Number(e.target.value))} className="input py-2" />
               </div>
 
-              <div className="lg:col-span-3">
-                <label className="label font-semibold">
-                  {hasContract ? 'Tarifa Total por Unidad (Base + Excedente) ($)' : 'Tarifa por Unidad ($)'}
-                </label>
-                <input
-                  type="number"
-                  value={form.tarifaGenerica}
-                  readOnly={isOcLocked}
-                  onChange={(e) => setField('tarifaGenerica', Number(e.target.value))}
-                  className={`input py-2 font-bold text-emerald-600 dark:text-emerald-400 ${isOcLocked ? 'cursor-not-allowed' : ''}`}
-                  placeholder="450000"
-                />
-                {hasContract && currentExcess && currentExcess.excessAmount > 0 && (
-                  <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 mt-1 font-medium">
-                    Incluye {formatMoney(currentExcess.excessAmount)} por {(currentExcess.excessKg / 1000).toFixed(2)} Tn excedente (${activeContract.tarifaExcedentePorTn}/Tn)
-                  </p>
-                )}
-              </div>
+              {!hasContract && (
+                <div className="lg:col-span-3">
+                  <label className="label font-semibold">Tarifa por Unidad ($)</label>
+                  <input
+                    type="number"
+                    value={form.tarifaGenerica}
+                    onChange={(e) => setField('tarifaGenerica', Number(e.target.value))}
+                    className="input py-2 font-bold text-emerald-600 dark:text-emerald-400"
+                    placeholder="450000"
+                  />
+                </div>
+              )}
 
               <div className="lg:col-span-4">
                 <label className="label font-semibold">Tipo de Carga</label>
