@@ -3,10 +3,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { VehicleStatus, VehicleType } from '@prisma/client';
+import { SystemConfigService } from '../system-config/system-config.service';
 
 @Injectable()
 export class VehiclesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private systemConfig: SystemConfigService,
+  ) {}
 
   async findAll(search?: string, status?: VehicleStatus, category?: string, type?: VehicleType, page: any = 1, limit: any = 20) {
     const p = Math.max(1, Number(page) || 1);
@@ -87,7 +91,8 @@ export class VehiclesService {
   }
 
   async getExpiringDocuments() {
-    const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const { documentos } = await this.systemConfig.getAlertThresholds();
+    const in30 = new Date(Date.now() + documentos * 24 * 60 * 60 * 1000);
     return this.prisma.vehicle.findMany({
       where: {
         isActive: true,

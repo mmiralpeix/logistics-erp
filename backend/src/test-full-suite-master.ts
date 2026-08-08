@@ -5,11 +5,12 @@ import { CarriersService } from './modules/carriers/carriers.service';
 import { TripsService } from './modules/trips/trips.service';
 import { AnalyticsService } from './modules/analytics/analytics.service';
 import { PrismaService } from './prisma/prisma.service';
+import { SystemConfigService } from './modules/system-config/system-config.service';
 
 async function runMasterStressSuite() {
   console.log('🚀 INICIANDO AUDITORÍA & ESTRESADO MASTER DE TODA LA PLATAFORMA LOGISTICSPRO...');
   const prisma = new PrismaService();
-  const vehiclesService = new VehiclesService(prisma);
+  const vehiclesService = new VehiclesService(prisma, new SystemConfigService(prisma));
   const clientsService = new ClientsService(prisma);
   const carriersService = new CarriersService(prisma);
   const tripsService = new TripsService(prisma);

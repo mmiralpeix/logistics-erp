@@ -3,12 +3,16 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { calculateDriverScheduleStatus } from '../drivers/utils/schedule-calculator.util';
 import { AlertSeverity, AlertCategory } from '@prisma/client';
+import { SystemConfigService } from '../system-config/system-config.service';
 
 @Injectable()
 export class AlertsService {
   private readonly logger = new Logger(AlertsService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private systemConfig: SystemConfigService,
+  ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_8AM)
   async checkExpirationsCron() {
@@ -38,8 +42,8 @@ export class AlertsService {
   // Motor Centralizado de Evaluación de Reglas Multimódulo
   async evaluarReglasGlobales() {
     const now = new Date();
-    const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const { documentos } = await this.systemConfig.getAlertThresholds();
+    const docThreshold = new Date(Date.now() + documentos * 24 * 60 * 60 * 1000);
 
     // 1. VEHICULOS & DOCUMENTACION
     const vehicles = await this.prisma.vehicle.findMany({
@@ -59,7 +63,7 @@ export class AlertsService {
             moduloOrigen: 'vehicles',
             entidadId: v.id,
           });
-        } else if (v.vencimientoITV <= in30Days) {
+        } else if (v.vencimientoITV <= docThreshold) {
           await this.upsertAlertRecord({
             codigo: `ALT-VTV-${v.id}`,
             categoria: AlertCategory.DOCUMENTACION,
@@ -106,13 +110,13 @@ export class AlertsService {
             moduloOrigen: 'drivers',
             entidadId: d.id,
           });
-        } else if (d.licenciaVencimiento <= in30Days) {
+        } else if (d.licenciaVencimiento <= docThreshold) {
           await this.upsertAlertRecord({
             codigo: `ALT-LIC-${d.id}`,
             categoria: AlertCategory.CHOFERES,
             severidad: AlertSeverity.ADVERTENCIA,
             titulo: `Licencia Próxima a Vencer — ${d.firstName} ${d.lastName}`,
-            mensaje: `La licencia vencerá en menos de 30 días (${d.licenciaVencimiento.toLocaleDateString('es-AR')}).`,
+            mensaje: `La licencia vencerá en menos de ${documentos} días (${d.licenciaVencimiento.toLocaleDateString('es-AR')}).`,
             moduloOrigen: 'drivers',
             entidadId: d.id,
           });

@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { VehiclesService } from './modules/vehicles/vehicles.service';
 import { PrismaService } from './prisma/prisma.service';
+import { SystemConfigService } from './modules/system-config/system-config.service';
 
 async function runVehicleSuiteOptimizationAndTest() {
   console.log('⚡ Iniciando Prueba de Estrés, Benchmark de Rendimiento & Auditoría de Vehículos 360°...');
   const prisma = new PrismaService();
-  const vehiclesService = new VehiclesService(prisma);
+  const vehiclesService = new VehiclesService(prisma, new SystemConfigService(prisma));
 
   const startTime = Date.now();
   const vehicles = await prisma.vehicle.findMany({ where: { isActive: true }, take: 10 });

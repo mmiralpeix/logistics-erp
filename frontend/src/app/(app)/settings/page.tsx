@@ -1,6 +1,6 @@
 'use client';
 import { Header } from '@/components/layout/Header';
-import { getApiUrl, companyApi } from '@/lib/api';
+import { getApiUrl, companyApi, systemConfigApi } from '@/lib/api';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -54,6 +54,67 @@ function CompanyDataCard() {
   );
 }
 
+const DEFAULT_ALERT_THRESHOLDS = { documentos: 30, revisiones: 15, mantenimiento: 7 };
+
+function AlertThresholdsCard() {
+  const qc = useQueryClient();
+  const { data: config, isLoading } = useQuery({
+    queryKey: ['system-config', 'alertas_vencimiento'],
+    queryFn: () => systemConfigApi.get('alertas_vencimiento').then((r) => r.data),
+  });
+
+  const values = { ...DEFAULT_ALERT_THRESHOLDS, ...(config?.value ?? {}) };
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({ values });
+
+  const mutation = useMutation({
+    mutationFn: (data: any) =>
+      systemConfigApi.upsert('alertas_vencimiento', {
+        documentos: Number(data.documentos),
+        revisiones: Number(data.revisiones),
+        mantenimiento: Number(data.mantenimiento),
+      }, 'Días de anticipación para alertas'),
+    onSuccess: (res) => {
+      toast.success('Umbrales de alerta guardados');
+      qc.setQueryData(['system-config', 'alertas_vencimiento'], res.data);
+      reset(res.data.value);
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Error al guardar'),
+  });
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Bell className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
+        <h3 className="section-title">Alertas y Notificaciones</h3>
+      </div>
+      {isLoading ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">Cargando...</p>
+      ) : (
+        <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
+          {[
+            { key: 'documentos', label: 'Días anticipación - Documentos' },
+            { key: 'revisiones', label: 'Días anticipación - Revisiones' },
+            { key: 'mantenimiento', label: 'Días anticipación - Mantenimiento' },
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between">
+              <label className="text-sm text-slate-700 dark:text-slate-300">{item.label}</label>
+              <input
+                type="number"
+                min={1}
+                {...register(item.key as any, { required: true, valueAsNumber: true, min: 1 })}
+                className="input w-24 text-center"
+              />
+            </div>
+          ))}
+          <button type="submit" disabled={isSubmitting} className="btn-primary mt-2 disabled:opacity-60">
+            {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <div>
@@ -62,24 +123,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <CompanyDataCard />
 
-          <div className="card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Bell className="w-5 h-5 text-amber-600 dark:text-yellow-400" />
-              <h3 className="section-title">Alertas y Notificaciones</h3>
-            </div>
-            <div className="space-y-3">
-              {[
-                { label: 'Días anticipación - Documentos', value: 30 },
-                { label: 'Días anticipación - Revisiones', value: 15 },
-                { label: 'Días anticipación - Mantenimiento', value: 7 },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between">
-                  <label className="text-sm text-slate-700 dark:text-slate-300">{item.label}</label>
-                  <input type="number" defaultValue={item.value} className="input w-24 text-center" />
-                </div>
-              ))}
-            </div>
-          </div>
+          <AlertThresholdsCard />
 
           <div className="card p-6">
             <div className="flex items-center gap-3 mb-4">

@@ -31,6 +31,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { CarriersModule } from './modules/carriers/carriers.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ReserveFundsModule } from './modules/reserve-funds/reserve-funds.module';
+import { SystemConfigModule } from './modules/system-config/system-config.module';
 
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -41,6 +42,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     ScheduleModule.forRoot(),
     PrismaModule,
+    SystemConfigModule,
     MailModule,
     HealthModule,
     AuthModule,

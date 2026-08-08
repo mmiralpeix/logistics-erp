@@ -1,10 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { AlertsService } from './modules/alerts/alerts.service';
 import { PrismaService } from './prisma/prisma.service';
+import { SystemConfigService } from './modules/system-config/system-config.service';
 
 async function testGlobalRules() {
   const prisma = new PrismaService();
-  const alertsService = new AlertsService(prisma);
+  const alertsService = new AlertsService(prisma, new SystemConfigService(prisma));
 
   console.log('🔍 Ejecutando evaluación de reglas globales de alertas...');
   await alertsService.evaluarReglasGlobales();

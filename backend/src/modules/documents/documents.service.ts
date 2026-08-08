@@ -3,10 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DocumentType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { SystemConfigService } from '../system-config/system-config.service';
 
 @Injectable()
 export class DocumentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private systemConfig: SystemConfigService,
+  ) {}
 
   async findAll(filters: { vehicleId?: string; driverId?: string; tripId?: string; tipo?: string }) {
     const { vehicleId, driverId, tripId, tipo } = filters;
@@ -47,7 +51,8 @@ export class DocumentsService {
   }
 
   async getExpiringSoon() {
-    const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const { documentos } = await this.systemConfig.getAlertThresholds();
+    const in30 = new Date(Date.now() + documentos * 24 * 60 * 60 * 1000);
     return this.prisma.document.findMany({
       where: { fechaVencimiento: { lte: in30, gte: new Date() } },
       include: {

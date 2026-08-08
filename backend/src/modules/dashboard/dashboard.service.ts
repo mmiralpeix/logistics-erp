@@ -1,16 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { TripStatus, VehicleStatus, MaintenanceStatus } from '@prisma/client';
+import { SystemConfigService } from '../system-config/system-config.service';
 
 @Injectable()
 export class DashboardService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private systemConfig: SystemConfigService,
+  ) {}
 
   async getStats() {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const { documentos } = await this.systemConfig.getAlertThresholds();
+    const thirtyDaysLater = new Date(now.getTime() + documentos * 24 * 60 * 60 * 1000);
 
     const [
       totalVehicles, availableVehicles, inTripVehicles, maintenanceVehicles,
@@ -124,7 +129,8 @@ export class DashboardService {
 
   async getExpiringAlerts() {
     const now = new Date();
-    const in30 = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const { documentos } = await this.systemConfig.getAlertThresholds();
+    const in30 = new Date(now.getTime() + documentos * 24 * 60 * 60 * 1000);
 
     const vehicles = await this.prisma.vehicle.findMany({
       where: {

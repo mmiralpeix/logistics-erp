@@ -3,12 +3,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { MaintenanceStatus, MaintenanceType } from '@prisma/client';
 
 import { ReserveFundsService } from '../reserve-funds/reserve-funds.service';
+import { SystemConfigService } from '../system-config/system-config.service';
 
 @Injectable()
 export class MaintenanceService {
   constructor(
     private prisma: PrismaService,
     private reserveFundsService: ReserveFundsService,
+    private systemConfig: SystemConfigService,
   ) {}
 
   async findAll(vehicleId?: string, status?: MaintenanceStatus, tipo?: MaintenanceType, page = 1, limit = 20) {
@@ -184,7 +186,8 @@ export class MaintenanceService {
   }
 
   async getUpcoming() {
-    const in15 = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+    const { revisiones } = await this.systemConfig.getAlertThresholds();
+    const in15 = new Date(Date.now() + revisiones * 24 * 60 * 60 * 1000);
     return this.prisma.maintenance.findMany({
       where: {
         status: MaintenanceStatus.PENDIENTE,

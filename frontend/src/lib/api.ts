@@ -203,6 +203,11 @@ export const billingApi = {
   createFromTrip: (data: any) => api.post('/billing/invoices/from-trip', data),
 };
 
+export const systemConfigApi = {
+  get: (key: string) => api.get(`/system-config/${key}`),
+  upsert: (key: string, value: any, label?: string) => api.put(`/system-config/${key}`, { value, label }),
+};
+
 export const companyApi = {
   getActive: () => api.get('/company'),
   upsert: (data: any) => api.patch('/company', data),
