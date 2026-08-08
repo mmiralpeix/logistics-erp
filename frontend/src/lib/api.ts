@@ -203,6 +203,13 @@ export const billingApi = {
   createFromTrip: (data: any) => api.post('/billing/invoices/from-trip', data),
 };
 
+export const companyApi = {
+  getActive: () => api.get('/company'),
+  upsert: (data: any) => api.patch('/company', data),
+  addSalesPoint: (data: any) => api.post('/company/sales-points', data),
+  updateSalesPoint: (id: string, data: any) => api.patch(`/company/sales-points/${id}`, data),
+};
+
 export const certificationsApi = {
   getAll: (params?: any) => api.get('/certifications', { params }),
   getUncertifiedTrips: (clientId?: string) => api.get('/certifications/uncertified-trips', { params: { clientId } }),

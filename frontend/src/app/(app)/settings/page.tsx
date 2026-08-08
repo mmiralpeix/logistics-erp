@@ -1,7 +1,58 @@
 'use client';
 import { Header } from '@/components/layout/Header';
-import { getApiUrl } from '@/lib/api';
+import { getApiUrl, companyApi } from '@/lib/api';
+import { useForm } from 'react-hook-form';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { Building2, Bell, Shield, Database } from 'lucide-react';
+
+function CompanyDataCard() {
+  const qc = useQueryClient();
+  const { data: company, isLoading } = useQuery({
+    queryKey: ['company'],
+    queryFn: () => companyApi.getActive().then((r) => r.data),
+  });
+
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({ values: company ?? undefined });
+
+  const mutation = useMutation({
+    mutationFn: (data: any) => companyApi.upsert(data),
+    onSuccess: (res) => {
+      toast.success('Datos de la empresa guardados');
+      qc.setQueryData(['company'], res.data);
+      reset(res.data);
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Error al guardar los datos de la empresa'),
+  });
+
+  return (
+    <div className="card p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h3 className="section-title">Datos de la Empresa</h3>
+      </div>
+      {isLoading ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">Cargando...</p>
+      ) : (
+        <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
+          {!company && (
+            <p className="text-xs text-amber-600 dark:text-yellow-400 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-2">
+              Todavía no hay datos fiscales cargados para la empresa. Completá y guardá para crearlos.
+            </p>
+          )}
+          <div><label className="label">Razón Social</label><input {...register('razonSocial', { required: true })} className="input" placeholder="Empresa S.A." /></div>
+          <div><label className="label">CUIT</label><input {...register('cuit', { required: true })} className="input" placeholder="30-12345678-9" /></div>
+          <div><label className="label">Domicilio fiscal</label><input {...register('domicilioFiscal', { required: true })} className="input" /></div>
+          <div><label className="label">Teléfono</label><input {...register('telefono')} className="input" /></div>
+          <div><label className="label">Email</label><input {...register('email')} className="input" /></div>
+          <button type="submit" disabled={isSubmitting} className="btn-primary mt-2 disabled:opacity-60">
+            {isSubmitting ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   return (
@@ -9,20 +60,7 @@ export default function SettingsPage() {
       <Header title="Configuración del Sistema" subtitle="Parámetros generales y preferencias" />
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="card p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h3 className="section-title">Datos de la Empresa</h3>
-            </div>
-            <div className="space-y-3">
-              <div><label className="label">Razón Social</label><input className="input" defaultValue="Transportes del Sur Patagónico S.A." /></div>
-              <div><label className="label">CUIT</label><input className="input" defaultValue="30-71234500-1" /></div>
-              <div><label className="label">Domicilio fiscal</label><input className="input" defaultValue="Av. Hipólito Yrigoyen 1234, Comodoro Rivadavia" /></div>
-              <div><label className="label">Teléfono</label><input className="input" defaultValue="0297-444-1234" /></div>
-              <div><label className="label">Email</label><input className="input" defaultValue="info@transportesdelsur.com.ar" /></div>
-              <button className="btn-primary mt-2">Guardar cambios</button>
-            </div>
-          </div>
+          <CompanyDataCard />
 
           <div className="card p-6">
             <div className="flex items-center gap-3 mb-4">
