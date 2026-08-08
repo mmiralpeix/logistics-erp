@@ -98,4 +98,33 @@ export class ReportsController {
     res.setHeader('Content-Disposition', `attachment; filename=Reporte_Combustible_${from}_${to}.xlsx`);
     res.send(buffer);
   }
+
+  // Etapa 11 — reportes fiscales básicos, sobre Invoice/InvoiceItem reales.
+
+  @Get('billing/iva-ventas')
+  @ApiOperation({ summary: 'Libro IVA Ventas del período (neto, IVA y total por comprobante)' })
+  getIvaVentas(@Query('from') from: string, @Query('to') to: string) {
+    return this.reportsService.getIvaVentas(from, to);
+  }
+
+  @Get('billing/iva-ventas/excel')
+  @ApiOperation({ summary: 'Exportar Libro IVA Ventas a Excel' })
+  async downloadIvaVentasExcel(@Query('from') from: string, @Query('to') to: string, @Res() res: Response) {
+    const buffer = await this.reportsService.generateIvaVentasExcel(from, to);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=Libro_IVA_Ventas_${from}_${to}.xlsx`);
+    res.send(buffer);
+  }
+
+  @Get('billing/por-cliente')
+  @ApiOperation({ summary: 'Facturación total por cliente en el período' })
+  getFacturacionPorCliente(@Query('from') from: string, @Query('to') to: string) {
+    return this.reportsService.getFacturacionPorCliente(from, to);
+  }
+
+  @Get('billing/cartera-aging')
+  @ApiOperation({ summary: 'Cartera pendiente de cobro por antigüedad (corriente / 1-30 / 31-60 / 61-90 / 90+)' })
+  getCarteraAging() {
+    return this.reportsService.getCarteraAging();
+  }
 }

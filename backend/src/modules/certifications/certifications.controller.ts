@@ -3,6 +3,8 @@ import { CertificationsService } from './certifications.service';
 import { CreateCertificationDto } from './dto/create-certification.dto';
 import { UpdateCertificationDto } from './dto/update-certification.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { UserRole } from '@prisma/client';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('certifications')
 @UseGuards(JwtAuthGuard)
@@ -10,6 +12,7 @@ export class CertificationsController {
   constructor(private readonly certificationsService: CertificationsService) {}
 
   @Post()
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
   create(@Body() createCertificationDto: CreateCertificationDto) {
     return this.certificationsService.create(createCertificationDto);
   }
@@ -36,11 +39,13 @@ export class CertificationsController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
   update(@Param('id') id: string, @Body() updateCertificationDto: UpdateCertificationDto) {
     return this.certificationsService.update(id, updateCertificationDto);
   }
 
   @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.OPERATIONS_MANAGER)
   remove(@Param('id') id: string) {
     return this.certificationsService.remove(id);
   }

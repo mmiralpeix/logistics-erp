@@ -403,4 +403,95 @@ export class ReportsService {
     const buffer = await workbook.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }
+
+  // Etapa 11 — reportes fiscales básicos, construidos sobre Invoice/InvoiceItem reales
+  // (no sobre Trip.tarifaAcordada como el resumen ejecutivo — ver diagnóstico sección 8).
+
+  async getIvaVentas(from: string, to: string) {
+    const comprobantes = await this.prisma.invoice.findMany({
+      where: { fechaEmision: { gte: new Date(from), lte: new Date(to) }, status: { not: 'ANULADA' } },
+      include: { client: { select: { razonSocial: true, cuit: true, condicionIVA: true } } },
+      orderBy: { fechaEmision: 'asc' },
+    });
+    return {
+      from,
+      to,
+      cantidadComprobantes: comprobantes.length,
+      totalNeto: comprobantes.reduce((s, i) => s + i.subtotal, 0),
+      totalIVA: comprobantes.reduce((s, i) => s + i.iva, 0),
+      totalFacturado: comprobantes.reduce((s, i) => s + i.total, 0),
+      comprobantes,
+    };
+  }
+
+  async generateIvaVentasExcel(from: string, to: string): Promise<Buffer> {
+    const { comprobantes } = await this.getIvaVentas(from, to);
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Libro IVA Ventas');
+
+    sheet.mergeCells('A1:H1');
+    const titleCell = sheet.getCell('A1');
+    titleCell.value = `LIBRO IVA VENTAS - ${from} al ${to}`;
+    titleCell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E3A5F' } };
+
+    sheet.addRow(['Fecha', 'Comprobante', 'Tipo', 'Letra', 'Cliente', 'CUIT', 'Neto', 'IVA', 'Total']);
+    comprobantes.forEach((c: any) => {
+      sheet.addRow([
+        new Date(c.fechaEmision).toLocaleDateString('es-AR'),
+        c.numero,
+        c.tipo,
+        c.letra || '-',
+        c.client?.razonSocial,
+        c.client?.cuit,
+        c.subtotal,
+        c.iva,
+        c.total,
+      ]);
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+  }
+
+  async getFacturacionPorCliente(from: string, to: string) {
+    const invoices = await this.prisma.invoice.findMany({
+      where: { fechaEmision: { gte: new Date(from), lte: new Date(to) }, status: { not: 'ANULADA' } },
+      include: { client: { select: { razonSocial: true, cuit: true } } },
+    });
+    const byClient = new Map<string, { clientId: string; razonSocial: string; cuit: string; cantidadFacturas: number; totalFacturado: number }>();
+    for (const inv of invoices) {
+      const entry = byClient.get(inv.clientId) ?? {
+        clientId: inv.clientId,
+        razonSocial: inv.client.razonSocial,
+        cuit: inv.client.cuit,
+        cantidadFacturas: 0,
+        totalFacturado: 0,
+      };
+      entry.cantidadFacturas += 1;
+      entry.totalFacturado += inv.total;
+      byClient.set(inv.clientId, entry);
+    }
+    return Array.from(byClient.values()).sort((a, b) => b.totalFacturado - a.totalFacturado);
+  }
+
+  async getCarteraAging() {
+    const now = new Date();
+    const invoices = await this.prisma.invoice.findMany({
+      where: { status: { in: ['EMITIDA', 'VENCIDA'] } },
+      include: { client: { select: { razonSocial: true, cuit: true } } },
+    });
+
+    const buckets: Record<'corriente' | 'd1_30' | 'd31_60' | 'd61_90' | 'd90mas', any[]> = {
+      corriente: [], d1_30: [], d31_60: [], d61_90: [], d90mas: [],
+    };
+    for (const inv of invoices) {
+      const dueDate = inv.fechaVencimiento ?? inv.fechaEmision;
+      const diasVencido = Math.floor((now.getTime() - new Date(dueDate).getTime()) / (1000 * 60 * 60 * 24));
+      const bucket = diasVencido <= 0 ? 'corriente' : diasVencido <= 30 ? 'd1_30' : diasVencido <= 60 ? 'd31_60' : diasVencido <= 90 ? 'd61_90' : 'd90mas';
+      buckets[bucket].push({ ...inv, diasVencido });
+    }
+    const totales = Object.fromEntries(Object.entries(buckets).map(([k, v]) => [k, v.reduce((s, i) => s + i.total, 0)]));
+    return { buckets, totales };
+  }
 }

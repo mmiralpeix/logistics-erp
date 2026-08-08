@@ -99,9 +99,36 @@ enum InvoiceType {
   FACTURA_A
   FACTURA_B
   FACTURA_C
+  FACTURA_E
   REMITO
   NOTA_CREDITO
   NOTA_DEBITO
+}
+
+enum TaxCondition {
+  RESPONSABLE_INSCRIPTO
+  MONOTRIBUTO
+  EXENTO
+  CONSUMIDOR_FINAL
+  NO_CATEGORIZADO
+  EXPORTACION
+}
+
+enum TaxRuleType {
+  IVA
+  IIBB
+  PERCEPCION_IVA
+  PERCEPCION_IIBB
+  RETENCION_IVA
+  RETENCION_IIBB
+  RETENCION_GANANCIAS
+  OTRO
+}
+
+enum FiscalAuditAction {
+  CREATED
+  UPDATED
+  DEACTIVATED
 }
 
 enum TireType {
@@ -186,14 +213,26 @@ model Client {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  // Datos fiscales ampliados (etapa 1 del módulo de facturación argentina).
+  // jurisdictionId/numeroInscripcionIIBB/convenioMultilateral/actividadCodigo son
+  // opcionales a propósito: el motor fiscal (etapa 2+) los usa cuando están cargados,
+  // pero no rompe el flujo de facturación actual mientras no lo estén.
+  jurisdictionId        String?
+  numeroInscripcionIIBB String?
+  convenioMultilateral  Boolean @default(false)
+  actividadCodigo       String?
+
   contacts ClientContact[]
   contracts Contract[]
   trips     Trip[]
   invoices  Invoice[]
   certifications Certification[]
   rates     ClientRate[]
+  payments  Payment[]
+  jurisdiction TaxJurisdiction? @relation(fields: [jurisdictionId], references: [id])
 
   @@index([isActive])
+  @@index([jurisdictionId])
   @@map("clients")
 }
 
@@ -831,16 +870,33 @@ model Invoice {
 
   certificationId String?
 
+  // Trazabilidad fiscal (etapa 1). Todo nullable: hoy nada los completa (billing.service.ts
+  // sigue con su cálculo actual), quedan listos para cuando el motor fiscal (etapa 2) los use.
+  companyId           String?
+  salesPointId        String?
+  letra               String?
+  condicionIVACliente String?
+  netoGravado         Float?
+  netoNoGravado       Float?
+  montoExento         Float?
+  totalPercepciones   Float?
+  totalRetenciones    Float?
+  taxRulesApplied     Json?
+
   notas     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  client        Client         @relation(fields: [clientId], references: [id])
-  certification Certification? @relation(fields: [certificationId], references: [id])
-  items         InvoiceItem[]
+  client             Client              @relation(fields: [clientId], references: [id])
+  certification      Certification?      @relation(fields: [certificationId], references: [id])
+  company             Company?            @relation(fields: [companyId], references: [id])
+  salesPoint          CompanySalesPoint?  @relation(fields: [salesPointId], references: [id])
+  items               InvoiceItem[]
+  paymentAllocations  PaymentAllocation[]
 
   @@index([clientId])
   @@index([status])
+  @@index([companyId])
   @@map("invoices")
 }
 
@@ -853,8 +909,15 @@ model InvoiceItem {
   precioUnit  Float
   subtotal    Float
 
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  trip    Trip?   @relation(fields: [tripId], references: [id])
+  // Etapa 1: enganche opcional al catálogo de productos/servicios y al desglose de
+  // IVA por línea. Nullable — las líneas actuales (texto libre) siguen funcionando igual.
+  productId String?
+  tasaIVA   Float?
+  montoIVA  Float?
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  trip    Trip?    @relation(fields: [tripId], references: [id])
+  product Product? @relation(fields: [productId], references: [id])
 
   @@map("invoice_items")
 }
@@ -1203,3 +1266,176 @@ model ReserveFundTransaction {
   @@map("reserve_fund_transactions")
 }
 
+// =====================================================================
+// Facturación fiscal argentina — etapa 1 (modelo de datos)
+// Ver FACTURACION_FISCAL_DIAGNOSTICO.md. Todo lo agregado acá es aditivo:
+// no reemplaza ni modifica el flujo de facturación actual (billing.service.ts
+// sigue calculando como antes hasta que el motor fiscal de la etapa 2 lo
+// reemplace explícitamente). Ninguna alícuota real está cargada todavía.
+// =====================================================================
+
+model Company {
+  id                   String       @id @default(cuid())
+  razonSocial          String
+  nombreFantasia       String?
+  cuit                 String       @unique
+  condicionIVA         TaxCondition @default(RESPONSABLE_INSCRIPTO)
+  domicilioFiscal      String
+  ciudad               String?
+  provincia            String?
+  codigoPostal         String?
+  telefono             String?
+  email                String?
+  convenioMultilateral Boolean      @default(false)
+  jurisdictionId       String?
+  isActive             Boolean      @default(true)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+
+  jurisdiction TaxJurisdiction?    @relation(fields: [jurisdictionId], references: [id])
+  salesPoints  CompanySalesPoint[]
+  invoices     Invoice[]
+
+  @@map("companies")
+}
+
+model CompanySalesPoint {
+  id          String   @id @default(cuid())
+  companyId   String
+  numero      String
+  descripcion String?
+  habilitado  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  company  Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  counters SalesPointCounter[]
+  invoices Invoice[]
+
+  @@unique([companyId, numero])
+  @@map("company_sales_points")
+}
+
+// Numeración secuencial real por punto de venta + tipo de comprobante (reemplaza,
+// en la etapa 3, el Math.random() actual de billing.service.ts:generateInvoiceNumber).
+model SalesPointCounter {
+  id              String      @id @default(cuid())
+  salesPointId    String
+  comprobanteTipo InvoiceType
+  ultimoNumero    Int         @default(0)
+  updatedAt       DateTime    @updatedAt
+
+  salesPoint CompanySalesPoint @relation(fields: [salesPointId], references: [id], onDelete: Cascade)
+
+  @@unique([salesPointId, comprobanteTipo])
+  @@map("sales_point_counters")
+}
+
+model TaxJurisdiction {
+  id        String   @id @default(cuid())
+  nombre    String   @unique
+  codigo    String   @unique
+  organismo String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  taxRules  TaxRule[]
+  companies Company[]
+  clients   Client[]
+
+  @@map("tax_jurisdictions")
+}
+
+// Regla fiscal con vigencia temporal. jurisdictionId null = regla nacional (ej. IVA).
+// El motor fiscal (etapa 2) siempre filtra por validFrom <= fecha_operacion <= validTo;
+// si no hay regla vigente para una combinación, no inventa un valor (ver diagnóstico, sección G).
+model TaxRule {
+  id              String      @id @default(cuid())
+  jurisdictionId  String?
+  tipo            TaxRuleType
+  actividadCodigo String?
+  alicuota        Float
+  exento          Boolean     @default(false)
+  validFrom       DateTime
+  validTo         DateTime?
+  fuenteNormativa String?
+  descripcion     String?
+  status          String      @default("ACTIVA")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  jurisdiction TaxJurisdiction?     @relation(fields: [jurisdictionId], references: [id])
+  auditLogs    FiscalRuleAuditLog[]
+
+  @@index([jurisdictionId])
+  @@index([tipo])
+  @@index([validFrom, validTo])
+  @@map("tax_rules")
+}
+
+model FiscalRuleAuditLog {
+  id            String            @id @default(cuid())
+  taxRuleId     String?
+  userId        String?
+  accion        FiscalAuditAction
+  valorAnterior Json?
+  valorNuevo    Json?
+  createdAt     DateTime          @default(now())
+
+  taxRule TaxRule? @relation(fields: [taxRuleId], references: [id], onDelete: SetNull)
+
+  @@index([taxRuleId])
+  @@map("fiscal_rule_audit_logs")
+}
+
+model Product {
+  id              String   @id @default(cuid())
+  codigo          String   @unique
+  descripcion     String
+  unidadMedida    String?
+  precio          Float?
+  tipoIVADefault  Float?
+  actividadCodigo String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  invoiceItems InvoiceItem[]
+
+  @@map("products")
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  clientId    String
+  monto       Float
+  fecha       DateTime @default(now())
+  medioPago   String?
+  referencia  String?
+  notas       String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  client      Client              @relation(fields: [clientId], references: [id])
+  allocations PaymentAllocation[]
+
+  @@index([clientId])
+  @@map("payments")
+}
+
+// Un pago puede cubrir varias facturas parcial o totalmente (ej. un cliente paga
+// dos facturas juntas, o paga una factura a medias) — de ahí la tabla de asignación
+// en vez de un FK directo Payment -> Invoice.
+model PaymentAllocation {
+  id        String   @id @default(cuid())
+  paymentId String
+  invoiceId String
+  monto     Float
+  createdAt DateTime @default(now())
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@unique([paymentId, invoiceId])
+  @@index([invoiceId])
+  @@map("payment_allocations")
+}

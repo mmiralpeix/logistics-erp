@@ -16,6 +16,11 @@ import { ConsumablesModule } from './modules/consumables/consumables.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { CostsModule } from './modules/costs/costs.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { FiscalModule } from './modules/fiscal/fiscal.module';
+import { FiscalAdminModule } from './modules/fiscal-admin/fiscal-admin.module';
+import { CompanyModule } from './modules/company/company.module';
+import { ProductsModule } from './modules/products/products.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { GpsModule } from './modules/gps/gps.module';
 import { HealthModule } from './modules/health/health.module';
@@ -51,6 +56,11 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
     ConsumablesModule,
     DocumentsModule,
     CostsModule,
+    FiscalModule,
+    FiscalAdminModule,
+    CompanyModule,
+    ProductsModule,
+    PaymentsModule,
     BillingModule,
     ReportsModule,
     GpsModule,

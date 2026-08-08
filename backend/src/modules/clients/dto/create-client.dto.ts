@@ -27,6 +27,11 @@ export class CreateClientDto {
   @ApiPropertyOptional() @IsOptional() diasCredito?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() scoring?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() bloqueadoPorRiesgo?: boolean;
+  @ApiPropertyOptional({ description: 'Jurisdicción fiscal del cliente (etapa 1 del módulo de facturación).' })
+  @IsOptional() @IsString() jurisdictionId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() numeroInscripcionIIBB?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() convenioMultilateral?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() actividadCodigo?: string;
   @ApiPropertyOptional({ type: [CreateContactDto] })
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => CreateContactDto)
   contacts?: CreateContactDto[];

@@ -1,15 +1,45 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus, InvoiceType } from '@prisma/client';
+import { FiscalEngineService } from '../fiscal/fiscal-engine.service';
+import { CalculateTaxesResult } from '../fiscal/fiscal-engine.types';
+import { InvoiceNumberingService } from '../fiscal/invoice-numbering.service';
 
 @Injectable()
 export class BillingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private fiscalEngine: FiscalEngineService,
+    private numbering: InvoiceNumberingService,
+  ) {}
 
-  private generateInvoiceNumber(tipo: string) {
+  /** Numeración aleatoria original — se usa solo como fallback si todavía no hay una
+   * Company con punto de venta habilitado (ver InvoiceNumberingService, etapa 3). */
+  private generateLegacyInvoiceNumber(tipo: string) {
     const prefix = tipo === 'FACTURA_A' ? 'FA' : tipo === 'FACTURA_B' ? 'FB' : tipo === 'REMITO' ? 'R' : 'N';
     const num = Math.floor(Math.random() * 90000) + 10000;
     return `${prefix}-0001-${String(num).padStart(8, '0')}`;
+  }
+
+  private async generateInvoiceNumber(tipo: InvoiceType) {
+    return (await this.numbering.getNextNumber(tipo)) ?? this.generateLegacyInvoiceNumber(tipo);
+  }
+
+  /** Única empresa activa hoy (el sistema es single-tenant, ver diagnóstico sección A/§1). */
+  private getActiveCompany() {
+    return this.prisma.company.findFirst({ where: { isActive: true } });
+  }
+
+  private fiscalFieldsFor(result: CalculateTaxesResult, condicionIVACliente: string | null | undefined) {
+    return {
+      letra: result.letraSugerida,
+      condicionIVACliente: condicionIVACliente ?? null,
+      netoGravado: result.netoGravado,
+      netoNoGravado: result.netoNoGravado,
+      totalPercepciones: 0,
+      totalRetenciones: 0,
+      taxRulesApplied: { reglasAplicadas: result.reglasAplicadas, advertencias: result.advertencias } as any,
+    };
   }
 
   async findAll(clientId?: string, status?: InvoiceStatus, from?: string, to?: string, page: any = 1, limit: any = 20) {
@@ -54,19 +84,52 @@ export class BillingService {
 
   async create(dto: any) {
     const { items, ...invoiceData } = dto;
+    const tipo: InvoiceType = invoiceData.tipo ?? InvoiceType.FACTURA_A;
 
-    const subtotal = items.reduce((sum: number, item: any) => sum + item.precioUnit * item.cantidad, 0);
-    const iva = invoiceData.tipo === 'FACTURA_A' ? subtotal * 0.21 : 0;
-    const total = subtotal + iva;
+    const [client, company] = await Promise.all([
+      this.prisma.client.findUnique({ where: { id: invoiceData.clientId } }),
+      this.getActiveCompany(),
+    ]);
+    if (!client) throw new NotFoundException('Cliente no encontrado');
+
+    // Etapa 4: si un ítem trae productId (catálogo), su tipoIVADefault se usa como tasaIVA
+    // salvo que el ítem ya traiga una tasaIVA explícita. Sigue siendo 100% opcional — un ítem
+    // de texto libre sin productId se comporta exactamente igual que antes.
+    const productIds = [...new Set(items.map((i: any) => i.productId).filter(Boolean))] as string[];
+    const products = productIds.length
+      ? await this.prisma.product.findMany({ where: { id: { in: productIds } } })
+      : [];
+    const productById = new Map(products.map((p) => [p.id, p]));
+    const itemsWithTasa = items.map((item: any) => ({
+      ...item,
+      tasaIVA: item.tasaIVA ?? (item.productId ? productById.get(item.productId)?.tipoIVADefault ?? undefined : undefined),
+    }));
+
+    const result = await this.fiscalEngine.calculateTaxes({
+      companyCondicionIVA: company?.condicionIVA,
+      clienteCondicionIVA: client.condicionIVA,
+      tipoComprobante: tipo,
+      items: itemsWithTasa.map((item: any) => ({ descripcion: item.descripcion, cantidad: item.cantidad, precioUnit: item.precioUnit, tasaIVA: item.tasaIVA })),
+      transactionDate: invoiceData.fechaEmision ? new Date(invoiceData.fechaEmision) : new Date(),
+    });
 
     return this.prisma.invoice.create({
       data: {
         ...invoiceData,
-        numero: this.generateInvoiceNumber(invoiceData.tipo),
-        subtotal,
-        iva,
-        total,
-        items: { create: items.map((item: any) => ({ ...item, subtotal: item.precioUnit * item.cantidad })) },
+        tipo,
+        numero: await this.generateInvoiceNumber(tipo),
+        subtotal: result.neto,
+        iva: result.iva,
+        total: result.total,
+        ...this.fiscalFieldsFor(result, client.condicionIVA),
+        items: {
+          create: itemsWithTasa.map((item: any, i: number) => ({
+            ...item,
+            subtotal: item.precioUnit * item.cantidad,
+            tasaIVA: result.perItem[i]?.tasaIVA || undefined,
+            montoIVA: result.perItem[i]?.montoIVA || undefined,
+          })),
+        },
       },
       include: { client: true, items: true },
     });
@@ -113,19 +176,35 @@ export class BillingService {
     });
     if (!trip) throw new NotFoundException('Viaje no encontrado');
 
+    const tipoComprobante = (tipo as InvoiceType) ?? InvoiceType.FACTURA_A;
     const subtotal = trip.tarifaAcordada || 0;
-    const iva = tipo === 'FACTURA_A' ? subtotal * 0.21 : 0;
-    const total = subtotal + iva;
+    const company = await this.getActiveCompany();
+    // Si vino un clientId explícito (distinto al del viaje), se prioriza para condición IVA;
+    // en la práctica hoy siempre coinciden (ver diagnóstico sección A/§4).
+    const client = clientId && clientId !== trip.clientId
+      ? await this.prisma.client.findUnique({ where: { id: clientId } })
+      : trip.client;
+
+    const result = await this.fiscalEngine.calculateTaxes({
+      companyCondicionIVA: company?.condicionIVA,
+      clienteCondicionIVA: client?.condicionIVA,
+      tipoComprobante,
+      items: [{ descripcion: `Servicio de transporte ${trip.origen} → ${trip.destino} (${trip.numero})`, cantidad: 1, precioUnit: subtotal }],
+      transactionDate: new Date(),
+    });
 
     return this.prisma.invoice.create({
       data: {
-        numero: this.generateInvoiceNumber(tipo),
+        numero: await this.generateInvoiceNumber(tipoComprobante),
         clientId: clientId || trip.clientId,
-        tipo: tipo as any,
-        subtotal,
-        iva,
-        total,
-        fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        tipo: tipoComprobante,
+        subtotal: result.neto,
+        iva: result.iva,
+        total: result.total,
+        ...this.fiscalFieldsFor(result, client?.condicionIVA),
+        // diasCredito real del cliente en vez del "30 días" fijo que había antes; si no está
+        // cargado, 30 sigue siendo el fallback (comportamiento idéntico al anterior).
+        fechaVencimiento: new Date(Date.now() + (client?.diasCredito ?? 30) * 24 * 60 * 60 * 1000),
         items: {
           create: [{
             tripId,
